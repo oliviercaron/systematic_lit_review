@@ -1,0 +1,362 @@
+---
+title: "Systematic literature review"
+title-block-banner: true
+subtitle: "Automatic analysis of marketing publications using NLP <br> Data collection"
+author: "Olivier CARON - Christophe BENAVENT"
+institute: "Paris Dauphine - PSL"
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 5
+format: 
+  html:
+    theme:
+      light: yeti #yeti
+      dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1200px
+    toc: true
+    toc-location: left
+  pdf: default
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: breeze
+css: styles.css
+---
+
+## Systematic Literature Review using R
+
+```{r introduction .justify}
+library("cowsay")
+library("multicolor")
+say(what = "    Hello, we aim to show how to do a systematic literature review using Scopus
+    directly through the API using R. We then analyze the documents and the different data
+    to have a better understanding of the scholar landscape for a specific concern.
+    Here, we have a specific interest in NLP methods and we filter by the reviews 
+    that contain the words \"consumer\" or \"marketing\".",
+    by = "cat",
+    what_color = "white",
+    by_color = "rainbow")
+```
+
+## Libraries
+
+```{r libraries, echo = TRUE , message=FALSE, warning=FALSE}
+package_list <- c(
+  "tidyverse",
+  "ggplot2",
+  "bib2df", # for cleaning .bib data
+  "janitor", # useful functions for cleaning imported data
+  "rscopus", # using Scopus API
+  "biblionetwork", # creating edges
+  "tidygraph", # for creating networks
+  "ggraph", # plotting networks
+  "bibliometrix", #using shiny to do analysis of literature review
+  "rscopus",#for using scorpus
+  "readr", #manipulate csv, excel files
+  "quanteda", #textual manipulation
+  "tidyr", #to use separate_wider_delim function
+  "splitstackshape", #to use cSplit function
+  "rcrossref", #to use API for crossref
+  "rstudioapi", #to secure the tokens
+  "igraph", #to construct wonderful graphs
+  "stringr", #to count number of characters in a string
+  "plotly", #use plotly to have interactive graphs
+  "networkD3", #have fun manipulating interactive networks
+  "htmlwidgets", #to save widget 3d graphs
+  "cowsay", #funny animals talking
+  #"multicolor", #to have a multicolor font 
+  "hrbrthemes", #nice theme for ggplot2
+  "ggstatsplot", #nice visualizations with stats included in graphs
+  "ggridges", #nice graphs with density
+  "see", #Model Visualisation Toolbox for 'easystats' and 'ggplot2'
+  "countrycode", #gives continent based on country name
+  "tidygeocoder", #to get latitude and longitude to place points on worldmap, ggmap can apparently do the same but needs an API
+  "lmtest", #to do linear regression
+  "flextable", #to present results in nice tables
+  "ggthemes", #have nice themes for ggplot
+  "gganimate", #to animate ggplot
+  "transformr",# to animate ggplot
+  "gifski", #to animate ggplot
+  "text2vec", #word embeddings
+  "gglorenz",#lorenz curve and gini coefficient
+  "clipr", #to copy paste dataframe with write_clip(data)
+  "reticulate", #execute python code from R
+  #"citecorp" #
+  "lubridate", #manipulate dates, soon to be by default in the tidyverse package
+  "textrank",
+  "reactable"
+)
+for (p in package_list) 
+{
+  if (p %in% installed.packages() == FALSE) 
+  {
+    install.packages(p, dependencies = TRUE)
+  }
+  library(p, character.only = TRUE)
+}
+rm(p,package_list)
+```
+
+We can also do it from the Scopus website. We can type our search and even get the query by enabling the "advance query" button. We filter by NLP methods in marketing journals with the keywords `marketing` or `consumer` in the source (*title*, *abtract*, *author*). The pro of using directly the [rscopus](https://johnmuschelli.com/rscopus/) package is that we can execute it easily without having to connect on the website, download the file and place it in the right folder every time we want to update our code. Also, the references are easy to manipulate this way.
+
+## Getting data from Scopus through API
+
+The Scopus data that we get from the [rscopus](https://johnmuschelli.com/rscopus/) package is a bit different from the file we get when we download the metadata on the website. We here get raw data that we transform with rscopus into exploitable data. From there, three data frames are useful:
+
+| Name of data frame | Description                                                                                                                            |
+|---------------------------|---------------------------------------------|
+| `df`               | A data frame with all the papers and the information attached                                                                          |
+| `affiliation`      | A data frame with the affiliations                                                                                                     |
+| `author`           | A data frame with the authors' information. (the largest data frame since there are often multiple authors per paper per affiliation). |
+
+All these data can be merged in one data frame only providing we use the authors' data frame, containing one row for every author present in the articles.
+
+### Articles data extraction
+
+```{r extract bibliography from scopus using rscopus}
+
+#hiding api keys and Elsevier's institutional token in the code
+
+t1 <- Sys.time()
+#api_key <- rstudioapi::askForPassword(prompt = "Please enter the API key")
+api_key <- "xxxx"
+set_api_key(api_key)
+#token <- rstudioapi::askForPassword(prompt = "Please enter the Institutional Token")
+token <- "yyyy"
+hdr = inst_token_header(token)
+
+
+nlp_query <- rscopus::scopus_search("TITLE-ABS-KEY(\"natural language processing\" OR \"nlp\" OR \"text mining\" OR \"text-mining\" OR \"text analysis\" OR \"text-analysis\") AND SRCTITLE(\"marketing\" OR \"consumer\")", 
+                                     view = "COMPLETE",
+                                     headers = hdr)
+
+
+
+#we get a list with 4 different dataframes : df, affiliations, author, prism:isbn
+#nlp_data_raw <- readRDS("nlp_data_raw.rds")
+nlp_data_raw <- gen_entries_to_df(nlp_query$entries)
+#saveRDS(nlp_data_raw,"nlp_data_raw.rds")
+
+#res = author_df(last_name = "Benavent", first_name = "Christophe", verbose = FALSE, general = FALSE, headers = hdr)
+#head(res)
+#dataframes ready to use/transform
+nlp_papers       <- nlp_data_raw$df
+nlp_affiliations <- nlp_data_raw$affiliation #details of universities
+nlp_authors      <- nlp_data_raw$author
+
+#we replace "-" by "_" in the columnns' names for easier manipulation
+names(nlp_authors)      <- str_replace_all(names(nlp_authors), "-", "_")
+names(nlp_affiliations) <- str_replace_all(names(nlp_affiliations), "-", "_")
+names(nlp_papers)       <- str_replace_all(names(nlp_papers), "-", "_")
+
+nlp_authors <- nlp_authors %>%
+  dplyr::rename("afid" = `afid.$`)
+
+#we get the continent for each country
+nlp_authors      <- nlp_authors %>% select(entry_number,everything())
+nlp_affiliations <- nlp_affiliations %>% select(entry_number,everything()) %>%
+  mutate(continent = countrycode(sourcevar   = affiliation_country,
+                                 origin      = "country.name",
+                                 destination = "continent"))
+
+nlp_papers <- nlp_papers %>% select(entry_number,everything())
+
+authors_affiliations <-left_join(nlp_authors,nlp_affiliations)
+nlp_papers <- nlp_papers %>%
+  mutate(entry_number = as.numeric(entry_number))
+
+nlp_full <- left_join(authors_affiliations,nlp_papers)
+
+nlp_full <- nlp_full %>%
+  dplyr::rename("author_count" = `author_count.$`) %>%
+  mutate(author_count   = as.numeric(author_count)) %>%
+  mutate("year"         = substr(`prism:coverDate`,1,4)) %>%
+  mutate(citedby_count  = as.numeric(citedby_count))
+
+
+#csv2 uses comma as separator while csv uses decimal point .
+readr::write_excel_csv2(nlp_full,"nlp_full_data.csv")
+#nlp_references <- read.csv("nlp_references.csv", sep=";", encoding="UTF-8-BOM")
+#nlp_full <- read.csv("nlp_full_data.csv", sep=";", encoding ="UTF-8-BOM")
+print(Sys.time()-t1)
+```
+
+### Collecting the references of the articles
+
+The [`scopus_search`](https://johnmuschelli.com/rscopus/reference/scopus_search.html "scopus_search function") function doesn't allow us to get the references of the articles. We have to use the [`abstract_retrieval`](https://johnmuschelli.com/rscopus/reference/abstract_retrieval.html "abstract_retrieval function") function.
+
+```{r get references from articles using startref parameter}
+t1 <- Sys.time()
+citing_articles <- nlp_papers$`dc:identifier` # extracting the SCOPUS IDs of our articles
+citation_list <- list()
+subjects_list <- list()
+number_ref <- data.frame()
+number_ref <- number_ref %>% #dataframe with scopus_ID and the number of references attached
+  mutate(`dc:identifier` = "", 
+         nref = "")
+
+#extraction of references is somewhat complicated. Scopus doesn't allow to get all the references
+#of all the articles in one function. We then need to loop through each article we got from
+#the previous query and get the citation list of each article.
+for(i in 1:length(citing_articles))
+{
+  #list of citations
+  cat(paste0("Article n°",i,"\n"))
+  citations_query <- abstract_retrieval(citing_articles[i],
+                                        identifier = "scopus_id",
+                                        view       = "REF",
+                                        headers    = hdr)
+  #list of subjects associated with the article
+  subjects_query <- abstract_retrieval(citing_articles[i],
+                                        identifier = "scopus_id",
+                                        view = "FULL",
+                                        headers = hdr)
+  
+  #we put the list of references in the citations variables.
+  #gen_entries_to_df transforms the complicated data structure sent by Scopus into an easily manipulable dataframe
+  citations <- gen_entries_to_df(citations_query$content$`abstracts-retrieval-response`$references$reference)
+  
+  #same with subject areas
+  subjects <- gen_entries_to_df(subjects_query$content$`abstracts-retrieval-response`$`subject-areas`$`subject-area`)
+  
+  if(length(citations$df) > 0) #if request is not null
+  {
+    nb_total_refs <- as.numeric(citations_query$content$`abstracts-retrieval-response`$references$`@total-references`)
+    cat("Total number of references :", nb_total_refs,"\n")
+    
+    nb_ref_article <- nb_total_refs-40 #number of references we still need to get by querying
+    
+    if(nb_ref_article > 0)
+    {
+      cat("Number of references left to retrieve : ", nb_ref_article, "\n")
+    } else
+    {
+      cat("All references are already retrieved.\n")
+    }
+    
+    message(paste0(citing_articles[i], " ref is not empty."))
+    citations <- citations$df %>% 
+    as_tibble(.name_repair = "unique")
+    
+    #we put the number of references of the article in the number_ref dataframe created above
+    number_ref[i,1] <- citing_articles[i]
+    number_ref[i,2] <- citations_query$content$`abstracts-retrieval-response`$references$`@total-references`
+    
+    citation_list[[citing_articles[i]]] <- citations
+        
+    if (nb_total_refs > 40) #we can only get 40 references at a time, so we need to loop if there are more than 40
+    {
+        nb_query_left_to_do <- ceiling((nb_ref_article) / 40) #the number of query we need to do
+        cat("Number of requests left to do  :", nb_query_left_to_do, "\n")
+        
+      for (j in 1:nb_query_left_to_do)
+      {
+            cat("Request n°", j , "\n")
+            citations_query <- abstract_retrieval(citing_articles[i],
+                                                identifier = "scopus_id",
+                                                view       = "REF",
+                                                startref   = 40*j+1,
+                                                headers    = hdr)
+            citations <- gen_entries_to_df(citations_query$content$`abstracts-retrieval-response`$references$reference)
+            
+             if(length(citations$df) > 0) #if request is not null
+          {
+                message(paste0(citing_articles[i], " ref is not empty."))
+                citations <- citations$df %>% 
+                as_tibble(.name_repair = "unique")
+                #citation_list is a list of lists which contain every references for a specific scopus ID
+                #
+                citation_list[[citing_articles[i]]] <- bind_rows(citations,citation_list[[citing_articles[i]]])
+          }
+       }
+    }
+      
+    if(length(subjects$df) > 0)
+    {
+      message(paste0(citing_articles[i], " subject is not empty."))
+      subjects <- subjects$df %>% 
+      as_tibble(.name_repair = "unique")
+      
+      subjects_list[[citing_articles[i]]] <- bind_rows(subjects,subjects_list[[citing_articles[i]]])
+    }
+  }
+}
+
+nlp_references <- bind_rows(citation_list, .id = "citing_art")
+nlp_subjects   <- bind_rows(subjects_list, .id = "citing_art")
+
+nlp_subjects <- nlp_subjects %>%
+  group_by(citing_art) %>%
+  summarise(subjects_area = paste(`$`,collapse = " | ")) %>%
+  rename("dc:identifier" = citing_art)
+
+
+nlp_full <- left_join(nlp_full, nlp_subjects)
+nlp_full <- left_join(nlp_full, number_ref) %>%
+  mutate(nref = as.numeric(nref))
+
+set_flextable_defaults(
+  font.size    = 12, font.family = "Open Sans",
+  font.color   = "#333333",
+  table.layout = "fixed",
+  border.color = "gray",
+  padding.top  = 3, padding.bottom = 3,
+  padding.left = 4, padding.right = 4)
+
+
+
+#nlp_full <- read_csv2("nlp_full_data.csv")
+#nlp_references <- read_csv2("nlp_references.csv")
+print(Sys.time()-t1)
+```
+
+We now have collected all the data we could. A summary:
+
+```{r references we retrieved per article}
+nb_articles <- n_distinct(nlp_full$entry_number)
+nb_references_articles <- n_distinct(nlp_references$citing_art)
+count_ref <- nrow(nlp_references)
+count_ref_unique <- n_distinct(nlp_references$`scopus-eid`)
+dat <- data.frame(
+  Type = c("Articles", "Articles with refs", "Missing articles with refs", "References", "Unique Reference"),
+  n = c(nb_articles, nb_references_articles, nb_articles-nb_references_articles, count_ref, count_ref_unique ), 
+  Percentage = c(100, round(nb_references_articles/nb_articles*100,2), round(100-nb_references_articles/nb_articles*100,2), "/", "/")
+)
+
+flextable(dat)
+
+readr::write_excel_csv2(nlp_full,"nlp_full_data.csv")
+readr::write_excel_csv2(nlp_references,"nlp_references.csv")
+write.csv(nlp_full,"nlp_full_data_utf8.csv", fileEncoding = "UTF-8") #sometimes we have problem with the encoding
+write.csv(nlp_references,"nlp_references_utf8.csv", fileEncoding = "UTF-8")
+```
+
+### Checking the number of references retrieved
+
+Let's check if we have retrieved all the references we could get:
+
+```{r verifications of retrieved references Elsevier}
+
+verifreferences <- nlp_references %>%
+  group_by(citing_art) %>%
+  rename("dc:identifier" = citing_art) %>%
+  summarise(number_refs_retrieved = n())
+
+nlp_full <- left_join(nlp_full,verifreferences)
+
+screnforelsevier <- nlp_full %>%
+  distinct(`dc:identifier`, .keep_all = TRUE) %>%
+  select(`dc:identifier`, nref, number_refs_retrieved, `dc:title`, `dc:creator`, citedby_count)
+
+  
+reactable(screnforelsevier, searchable = TRUE, minRows = 5, outlined = TRUE, highlight = TRUE, paginationType = "jump")
+```

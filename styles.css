@@ -1,0 +1,12 @@
+.quarto-title-meta {
+    background-image: url(acss_logo.svg);
+    background-size: 30%;
+    background-position: right;
+    background-repeat: no-repeat;
+    padding-right: 30%;
+    background-origin: content-box;
+}
+
+body {
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+}
