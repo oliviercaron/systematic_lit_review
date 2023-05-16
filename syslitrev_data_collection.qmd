@@ -338,6 +338,9 @@ readr::write_excel_csv2(nlp_full,"nlp_full_data.csv")
 readr::write_excel_csv2(nlp_references,"nlp_references.csv")
 write.csv(nlp_full,"nlp_full_data_utf8.csv", fileEncoding = "UTF-8") #sometimes we have problem with the encoding
 write.csv(nlp_references,"nlp_references_utf8.csv", fileEncoding = "UTF-8")
+write.csv(nlp_papers,"nlp_papers_utf8.csv", fileEncoding = "UTF-8")
+write.csv(nlp_affiliations,"nlp_affiliations_utf8.csv", fileEncoding = "UTF-8")
+write.csv(nlp_authors,"nlp_authors_utf8.csv", fileEncoding = "UTF-8")
 ```
 
 ### Checking the number of references retrieved
