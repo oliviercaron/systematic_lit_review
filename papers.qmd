@@ -4,7 +4,7 @@ title-block-banner: true
 subtitle: "A papers' analysis"
 author:
   - name: Olivier Caron
-    email: caron.olivier.80@dauphine.psl.eu
+    email: olivier.caron@dauphine.psl.eu
     affiliations: 
       name: "Paris Dauphine - PSL"
       city: Paris
@@ -30,7 +30,8 @@ format:
     code-tools: true #enables to display/hide all blocks of code
     code-copy: true #enables to copy code
     grid:
-      body-width: 1400px
+      body-width: 1800px
+      margin-width: 100px
     toc: true
     toc-location: left
   pdf: default
@@ -42,6 +43,7 @@ editor: visual
 fig-align: "center"
 highlight-style: breeze
 css: styles.css
+reference-location: margin
 ---
 
 ## Libraries and loading data
@@ -49,6 +51,7 @@ css: styles.css
 ```{r libraries and load data}
 library(cowplot)
 library(tidyverse)
+library(ggstatsplot)
 
 #read.csv transforms ":" in "." so it was complicated to replicate code
 #every column name is now lowered, the dots are replaced with _
@@ -69,13 +72,16 @@ colnames(nlp_papers) <- new_colnames
 The number of papers in marketing reviews using NLP methods has increased a lot in recent years:\
 
 ```{r graph number of publications}
+#| fig-width: 60
+#| fig-height: 25
 nlp_papers <- nlp_papers %>%
   mutate(year = substr(prism_coverdate,1,4))
 
 
 #get rid of conference papers
 nlp_papers_journal_only <- nlp_papers %>%
-  filter(!grepl("conference", subtypedescription, ignore.case = TRUE))
+  filter(!grepl("conference", subtypedescription, ignore.case = TRUE)) %>%
+  filter(year < 2023)
 
 
   
@@ -92,15 +98,33 @@ g02<-ggplot(t1, aes(x=Var1, y=Freq, group=1))+
   labs( title="Number of publications per year", y="", x=NULL)
 plotgrid <- plot_grid(g01,
                       g02,
-                      labels = c('A', 'B'),
                       label_size = 10,
                       ncol=2,
                       rel_widths =  c(2,1))
-
 ggsave(filename="images/evolution_publications_nlp_marketing.png",
        width = 80, 
        height = 40, 
        units = "cm")
+plotgrid
+
+
 ```
 
-![](images/evolution_publications_nlp_marketing.png)
+```{r}
+#| fig-width: 15
+#| fig-height: 10
+nlp_papers$log_citedby = log(nlp_papers$citedby_count+1)
+ggscatterstats(
+  data  = nlp_papers,
+  x     = author_count,
+  y     = log_citedby,
+  xlab  = "Number of authors",
+  ylab  = "Ln(Number of citations+1)",
+  title = "Understanding the distribution of citations by number of authors",
+  label.var = dc_creator,
+  point.label.args = list(alpha = 0.7, size = 4, color = "grey50"),
+  xfill = "#CC79A7", ## fill for marginals on the x-axis
+  yfill = "#009E73" ## fill for marginals on the y-axis
+)
+ggsave("images/distribution_citations_authors.svg", width=15, height = 12)
+```
