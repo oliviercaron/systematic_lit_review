@@ -1,5 +1,6 @@
 ---
 title: "Systematic literature review"
+bibliography: references.bib
 title-block-banner: true
 subtitle: "A papers' analysis"
 author:
@@ -25,7 +26,6 @@ format:
       light: yeti
       dark: darkly
     code-fold: true
-    code-overflow: wrap
     code-summary: "Display code"
     code-tools: true #enables to display/hide all blocks of code
     code-copy: true #enables to copy code
@@ -58,6 +58,7 @@ library(ggstatsplot)
 #every underscore at the start or end of the column name is deleted
 
 nlp_papers <- read.csv("nlp_papers_utf8.csv", fileEncoding = "UTF-8")
+nlp_full <- read.csv("nlp_full_data_utf8.csv", fileEncoding = "UTF-8")
 new_colnames <- gsub("\\.", "_", colnames(nlp_papers)) %>%
   trimws(., whitespace = "_") %>%
   gsub("_+", "_", .) %>%
@@ -73,7 +74,7 @@ The number of papers in marketing reviews using NLP methods has increased a lot 
 
 ```{r graph number of publications}
 #| fig-width: 60
-#| fig-height: 25
+#| fig-height: 30
 nlp_papers <- nlp_papers %>%
   mutate(year = substr(prism_coverdate,1,4))
 
@@ -110,9 +111,28 @@ plotgrid
 
 ```
 
+## A look at the number of citations
+
+It seems that research endeavors within the nascent domain of marketing using NLP methodologies exhibit a resemblance to research conducted on a global scale regarding the number of citations. Indeed, it showcases a pronounced inequity, where numerous papers find themselves receiving minimal or no citations whatsoever.
+
+The subsequent graphs are done with the ggstatsplot R package [@ggstatsplot].
+
 ```{r}
-#| fig-width: 15
-#| fig-height: 10
+#| layout-nrow: 4
+#| echo: fenced
+
+set.seed(42)
+
+gghistostats(
+  data       = nlp_papers,
+  x          = citedby_count,
+  title      = "Distribution of citations",
+  test.value = 12,
+  binwidth   = 1,
+  xlab = "Number of citations"
+)
+
+
 nlp_papers$log_citedby = log(nlp_papers$citedby_count+1)
 ggscatterstats(
   data  = nlp_papers,
@@ -120,11 +140,60 @@ ggscatterstats(
   y     = log_citedby,
   xlab  = "Number of authors",
   ylab  = "Ln(Number of citations+1)",
-  title = "Understanding the distribution of citations by number of authors",
+  title = "Distribution of citations by number of authors",
   label.var = dc_creator,
+  label.expression = citedby_count > 200,
   point.label.args = list(alpha = 0.7, size = 4, color = "grey50"),
   xfill = "#CC79A7", ## fill for marginals on the x-axis
-  yfill = "#009E73" ## fill for marginals on the y-axis
+  yfill = "#009E73", ## fill for marginals on the y-axis
 )
-ggsave("images/distribution_citations_authors.svg", width=15, height = 12)
+
+ggstatsplot::ggbetweenstats(data = nlp_papers,
+                            x = subtypedescription,
+                            y = log_citedby,
+                            xlab = "",
+                            ylab = "Number of citations (ln scale)",
+                            plottype = "box",
+                            type = "p",
+                            conf.level = 0.95)
+
+nlp_article_per_country <- nlp_full %>%
+  filter(!is.na(afid)) %>%
+  group_by(entry_number) %>%
+  reframe(unique_countries = unique(affiliation_country),
+          nbcitations      = unique(citedby_count),
+          publication_id   = unique(eid),
+          title            = unique(dc.title),
+          journal          = unique(prism.publicationName),
+          first_author     = unique(dc.creator),
+          date_publication = unique(prism.coverDate),
+          nb_authors       = unique(author_count),
+          keyword          = unique(authkeywords))
+
+
+#dataframe with the sum of citations per country per article
+nlp_article25 <- nlp_article_per_country %>%
+  group_by(unique_countries) %>%
+  summarise(sumcitations = sum(nbcitations)) %>%
+  arrange(desc(sumcitations)) %>%
+  head(25)
+  
+
+  ggdotplotstats(
+  data       = nlp_article25,
+  y          = unique_countries,
+  x          = sumcitations,
+  test.value = 25,
+  type       = "robust",
+  title      = "Distribution of academic citations among the top 25 countries",
+  xlab       = "Number of citations"
+)
+
+#ggsave("images/distribution_citations_authors.svg", width=15, height = 12)
+```
+
+## The landscape of research
+
+```{r}
+
 ```
