@@ -1,0 +1,207 @@
+---
+title: "Systematic literature review"
+bibliography: references.bib
+title-block-banner: true
+subtitle: "Analysis of references"
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 5
+format:
+  html:
+    theme:
+      light: yeti
+      dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1200px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+---
+
+## Libraries and loading data
+
+```{r}
+#| label: load-packages
+#| message: false
+library(reactable)
+library(tidyverse)
+library(networkD3)
+
+list_articles <- read.csv2("nlp_full_data_final_18-08-2023.csv", encoding = "UTF-8") %>%
+  rename("entry_number" = 1)
+list_references <- read.csv2("nlp_references_final_18-08-2023.csv", encoding = "UTF-8") %>%
+  rename("citing_art" = 1)
+colnames(list_articles) <- gsub("\\.+", "_", colnames(list_articles)) # <1>
+colnames(list_articles) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_articles)) # <2>
+colnames(list_references) <- gsub("\\.+", "_", colnames(list_references))
+colnames(list_references) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_references))
+
+
+```
+
+1.  We replace the dots by one single underscore in the column names. It's easier to manipulate.
+2.  We delete the punctuation marks in the beginning and end of the column names.
+
+## Co-authorship network of NLP marketing papers
+
+Here, we manipulate our data to create a simple network using the [networkD3](http://christophergandrud.github.io/networkD3/) package. You can read the official CRAN [Documentation](https://cran.r-project.org/web/packages/networkD3/networkD3.pdf "NetworkD3 R documentation") here.
+
+```{r}
+#| label: authors-graph
+#| column: page
+
+authors <- list_articles %>%
+  #filter(citedby_count > 10) %>%
+  filter(subtypeDescription != "Erratum") %>%
+  filter(marketing == 1) %>% # <1>
+  select(entry_number, authname)
+
+# get unique entry numbers
+entry_numbers <- unique(authors$entry_number)
+
+# create empty data frame with two columns "from" and "to"
+pairs_df <- data.frame(from = character(), 
+                       to = character())
+
+# loop through each entry number and get all combinations of pairs of names two by two
+for (i in 1:length(entry_numbers)) 
+  {
+    entry_num <- entry_numbers[i]
+    names <- unique(authors$authname[authors$entry_number == entry_num])
+    if (length(names) > 1) #we can't use combn(name, 2) for solo authors, hence the if condition
+      {
+        pairs <- combn(names, 2)
+        pairs_df <- rbind(pairs_df, data.frame(from = pairs[1,], to = pairs[2,]))
+      } 
+    else #if there is only one author, we just add his name to both "from" and "to" columns: he appears in the graph as a solo node. 
+      #It's sad but at least he's there
+      {
+        pairs_df <- rbind(pairs_df, data.frame(from = names, to = names))
+      }
+}
+
+graph_collab_authors <- simpleNetwork(pairs_df,
+        Source       = 1,           # column number of source
+        Target       = 2,           # column number of target
+        linkDistance = 50,          # distance between node. Increase this value to have more space between nodes
+        charge       = -15,         # numeric value indicating either the strength of the node repulsion (negative value) or attraction (positive value)
+        fontSize     = 14,          # size of the node names
+        fontFamily   = "serif",     # font og node names
+        linkColour   = "#666",       # colour of edges, MUST be a common colour for the whole graph
+        nodeColour   = "#69b3a2",    # colour of nodes, MUST be a common colour for the whole graph
+        opacity      = 0.9,         # opacity of nodes. 0=transparent. 1=no transparency
+        zoom         = T            # Can you zoom on the figure?
+        )
+
+graph_collab_authors
+
+# save the widget
+htmlwidgets::saveWidget(graph_collab_authors,"graph_collab_authors.html")
+readr::write_excel_csv2(pairs_df,"pairs_df.csv")
+```
+
+1.  We have an interest only in articles related to marketing because there are a lot of conferences or papers related to purely technical matters that have "consumer" in the source title.
+
+The figure below is a network that shows co-authors connections. This is an undirected graph.
+
+```{r}
+#| label: data-manipulation-authors
+
+
+
+authors_articles <- list_articles %>%
+  filter(subtypeDescription != "Erratum") %>%
+  filter(marketing == 1) %>%
+  select(authname, prism_coverDate, dc_title, citedby_count) %>%
+  arrange(authname)
+
+
+reactable(authors_articles, striped = TRUE, filterable = TRUE, defaultPageSize = 5,
+          columns = list(
+          authname = colDef(name = "Name", minWidth = 40, align = "center"),
+          prism_coverDate = colDef(name = "Date", minWidth = 40, align = "center"),
+          dc_title = colDef(name = "Article Title", minWidth = 200, align = "center"),
+          citedby_count = colDef(name = "Citations", minWidth = 30, align = "center"))
+)
+
+```
+
+## Network of references
+
+Here, we want to get an overview of important articles in the field of marketing using NLP methods. To do so, we construct the same network as before but analyzing references.
+
+```{r}
+#| column: margin
+#| ncol: 2
+
+#type of publications
+dfsubtypedescription <- list_articles %>%
+  distinct(subtypeDescription) %>%
+  arrange(subtypeDescription) %>% 
+  rename("Publication Type" = 1)
+
+reactable(data = dfsubtypedescription, striped = FALSE)
+
+references_df <- list_references %>%
+  slice_max(citedby_count, n = 500) %>%
+  select(citing_art, scopus_id) %>%
+  rename("scopus_id" = scopus_id)
+
+
+references_graph <- simpleNetwork(references_df,
+        Source       = 1,                 # column number of source
+        Target       = 2,                 # column number of target
+        linkDistance = 30,          # distance between node. Increase this value to have more space between nodes
+        charge       = -100,                # numeric value indicating either the strength of the node repulsion (negative value) or attraction (positive value)
+        fontSize     = 14,               # size of the node names
+        fontFamily   = "serif",       # font og node names
+        #linkColour  = "#666",        # colour of edges, MUST be a common colour for the whole graph
+        #nodeColour  = "#black",     # colour of nodes, MUST be a common colour for the whole graph
+        opacity      = 1,              # opacity of nodes. 0=transparent. 1=no transparency
+        zoom         = T                   # Can you zoom on the figure?
+        )
+references_graph
+# save the widget
+
+#htmlwidgets::saveWidget(graph_collab_authors,"graph_collab_authors.html")
+readr::write_excel_csv2(references_df,"references_df.csv")
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
