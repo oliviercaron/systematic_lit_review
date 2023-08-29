@@ -6,5 +6,5 @@ An automatic systematic literature review of marketing publications using NLP me
 
 1. [Data collection](https://dardeum.github.io/systematic_lit_review/syslitrev_data_collection.html)
 2. [Papers Analysis (to be continued)](https://dardeum.github.io/systematic_lit_review/papers.html)
-3. To be published
+3. [Networks of authors and references](https://dardeum.github.io/systematic_lit_review/references.html)
 4. To be published
