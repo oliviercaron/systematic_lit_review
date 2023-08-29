@@ -218,9 +218,9 @@ reactable(
   defaultPageSize = 5,
   columns = list(
     scopus_eid = colDef(name = "Ref ID", minWidth = 40, align = "center"),
-    author_list_author_preferred_name_ce_indexed_name = colDef(name = "Title", minWidth = 60, align = "center"),
+    author_list_author_preferred_name_ce_indexed_name = colDef(name = "Author", minWidth = 60, align = "center"),
     prism_coverDate = colDef(name = "Date", minWidth = 40, align = "center"),
-    title = colDef(name = "Author", minWidth = 100, align = "center"),
+    title = colDef(name = "Title", minWidth = 100, align = "center"),
     sourcetitle = colDef(name = "Journal", minWidth = 70, align = "center"),
     citedby_count = colDef(name = "Citations", minWidth = 30, align = "center")
   )
