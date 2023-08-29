@@ -63,7 +63,6 @@ colnames(list_articles) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list
 colnames(list_references) <- gsub("\\.+", "_", colnames(list_references))
 colnames(list_references) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_references))
 
-
 ```
 
 1.  We replace the dots by one single underscore in the column names. It's easier to manipulate.
@@ -195,13 +194,4 @@ readr::write_excel_csv2(references_df,"references_df.csv")
 
 ```
 
-
-```{r}
-
-```
-
-
-```{r}
-
-```
 
