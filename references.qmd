@@ -132,6 +132,7 @@ The figure below is a network that shows co-authors connections. This is an undi
 
 ```{r}
 #| label: data-manipulation-authors
+#| column: page
 
 
 
@@ -157,11 +158,13 @@ reactable(authors_articles, striped = TRUE, filterable = TRUE, defaultPageSize =
 Here, we want to get an overview of important articles in the field of marketing using NLP methods. To do so, we construct the same network as before but analyzing references.
 
 ```{r}
+#| label: network-references
 #| column: margin
 #| ncol: 2
 
 #type of publications
 dfsubtypedescription <- list_articles %>%
+  filter(subtypeDescription != "Erratum") %>%
   distinct(subtypeDescription) %>%
   arrange(subtypeDescription) %>% 
   rename("Publication Type" = 1)
@@ -170,8 +173,10 @@ reactable(data = dfsubtypedescription, striped = FALSE)
 
 references_df <- list_references %>%
   slice_max(citedby_count, n = 500) %>%
-  select(citing_art, scopus_id) %>%
-  rename("scopus_id" = scopus_id)
+  select(citing_art, scopus_eid) %>%
+  mutate(citing_art = str_sub(citing_art,11)) %>%
+  mutate(scopus_eid = str_sub(scopus_eid,8))
+  
 
 
 references_graph <- simpleNetwork(references_df,
@@ -194,4 +199,31 @@ readr::write_excel_csv2(references_df,"references_df.csv")
 
 ```
 
+```{r}
+#| label: reactable-references
+#| column: page
 
+references_reactable <- list_references %>%
+  distinct(scopus_eid)
+
+references_reactable <- list_references %>%
+  distinct(scopus_eid, .keep_all = TRUE) %>%
+  select(scopus_eid, author_list_author_preferred_name_ce_indexed_name, prism_coverDate, title, sourcetitle, citedby_count) %>%
+  mutate(scopus_eid = str_sub(scopus_eid,8))
+
+reactable(
+  references_reactable,
+  striped = TRUE,
+  filterable = TRUE,
+  defaultPageSize = 5,
+  columns = list(
+    scopus_eid = colDef(name = "Ref ID", minWidth = 40, align = "center"),
+    author_list_author_preferred_name_ce_indexed_name = colDef(name = "Title", minWidth = 60, align = "center"),
+    prism_coverDate = colDef(name = "Date", minWidth = 40, align = "center"),
+    title = colDef(name = "Author", minWidth = 100, align = "center"),
+    sourcetitle = colDef(name = "Journal", minWidth = 70, align = "center"),
+    citedby_count = colDef(name = "Citations", minWidth = 30, align = "center")
+  )
+)
+
+```
