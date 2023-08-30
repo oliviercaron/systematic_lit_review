@@ -30,7 +30,7 @@ format:
     code-tools: true #enables to display/hide all blocks of code
     code-copy: true #enables to copy code
     grid:
-      body-width: 1200px
+      body-width: 1000px
       margin-width: 100px
     toc: true
     toc-location: left
@@ -155,12 +155,15 @@ reactable(authors_articles, striped = TRUE, filterable = TRUE, defaultPageSize =
 
 ## Network of references
 
-Here, we want to get an overview of important articles in the field of marketing using NLP methods. To do so, we construct the same network as before but analyzing references.
+Here, we want to get an overview of important articles in the field of marketing using NLP methods. To do so, we construct the same network as before but analyzing references. The type of publication we consider here is noted on the right
+
+Since the rendering with all the references (27710) would be to hard to render on this html page, we filter by the 500 most cited references.
 
 ```{r}
-#| label: network-references
+#| label: publication-type
 #| column: margin
-#| ncol: 2
+#| echo: false
+
 
 #type of publications
 dfsubtypedescription <- list_articles %>%
@@ -170,6 +173,13 @@ dfsubtypedescription <- list_articles %>%
   rename("Publication Type" = 1)
 
 reactable(data = dfsubtypedescription, striped = FALSE)
+
+```
+
+```{r}
+#| label: network-references
+#| column: screen-left
+
 
 references_df <- list_references %>%
   slice_max(citedby_count, n = 500) %>%
@@ -225,5 +235,22 @@ reactable(
     citedby_count = colDef(name = "Citations", minWidth = 30, align = "center")
   )
 )
+
+```
+
+```{r}
+
+data_network_references <- list_references %>%
+  mutate("auth" = ifelse(
+    is.na(prism_coverDate) | prism_coverDate == "", 
+    author_list_author_ce_indexed_name, 
+    paste(author_list_author_ce_indexed_name, substr(prism_coverDate, 1, 4))
+  )) %>%
+  select(citing_art, scopus_eid, auth, prism_coverDate, sourcetitle, title) %>%
+  mutate(citing_art = str_sub(citing_art,11)) %>%
+  mutate(scopus_eid = str_sub(scopus_eid,8))
+
+readr::write_excel_csv2(data_network_references,"data_network_references.csv")
+
 
 ```
