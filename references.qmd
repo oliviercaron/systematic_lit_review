@@ -53,6 +53,7 @@ reference-location: margin
 library(reactable)
 library(tidyverse)
 library(networkD3)
+library(reactablefmtr)
 
 list_articles <- read.csv2("nlp_full_data_final_18-08-2023.csv", encoding = "UTF-8") %>%
   rename("entry_number" = 1)
@@ -62,6 +63,8 @@ colnames(list_articles) <- gsub("\\.+", "_", colnames(list_articles)) # <1>
 colnames(list_articles) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_articles)) # <2>
 colnames(list_references) <- gsub("\\.+", "_", colnames(list_references))
 colnames(list_references) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_references))
+
+
 
 ```
 
@@ -132,7 +135,6 @@ The figure below is a network that shows co-authors connections. This is an undi
 
 ```{r}
 #| label: data-manipulation-authors
-#| column: page
 
 
 
@@ -211,7 +213,6 @@ readr::write_excel_csv2(references_df,"references_df.csv")
 
 ```{r}
 #| label: reactable-references
-#| column: page
 
 references_reactable <- list_references %>%
   distinct(scopus_eid)
@@ -239,6 +240,7 @@ reactable(
 ```
 
 ```{r}
+#| label: data-network-gephi
 
 data_network_references <- list_references %>%
   mutate("auth" = ifelse(
@@ -246,7 +248,7 @@ data_network_references <- list_references %>%
     author_list_author_ce_indexed_name, 
     paste(author_list_author_ce_indexed_name, substr(prism_coverDate, 1, 4))
   )) %>%
-  select(citing_art, scopus_eid, auth, prism_coverDate, sourcetitle, title) %>%
+  select(citing_art, scopus_eid, auth, prism_coverDate, sourcetitle, title, citedby_count) %>%
   mutate(citing_art = str_sub(citing_art,11)) %>%
   mutate(scopus_eid = str_sub(scopus_eid,8))
 
@@ -254,3 +256,54 @@ readr::write_excel_csv2(data_network_references,"data_network_references.csv")
 
 
 ```
+
+Let's take a look at the list of references, and more specifically, their rank in marketing publications
+
+```{r}
+#| label: reactable-topref
+
+topref <- data_network_references %>%
+  group_by(scopus_eid) %>%
+  reframe(n=n(),
+          auth,
+          title,
+          sourcetitle,
+          citedby_count) %>%
+  distinct(scopus_eid, .keep_all = TRUE) %>%
+  arrange(desc(n))
+
+reactable(
+  topref,
+  striped = TRUE,
+  filterable = TRUE,
+  defaultPageSize = 5,
+  columns = list(
+    n = colDef(name = "n", minWidth = 40, align = "center"),
+    auth = colDef(name = "Author", minWidth = 60, align = "center"),
+    scopus_eid = colDef(name = "Ref ID", minWidth = 40, align = "center"),
+    title = colDef(name = "Title", minWidth = 100, align = "center"),
+    sourcetitle = colDef(name = "Journal", minWidth = 70, align = "center"),
+    citedby_count = colDef(name = "Citations", minWidth = 30, align = "center")
+  )
+) %>%
+  add_title("Most recurrent references")
+
+topref20 <- topref %>%
+  head(20)
+
+topref20_gt <- topref20 %>%
+  select(-scopus_eid) %>%
+  cbind(Rank = 1:nrow(topref20)) %>%
+  relocate(Rank) %>%
+  gt() %>% 
+  cols_label(
+    auth = "First Author & Year",
+    title = "Title",
+    sourcetitle = "Journal",
+    citedby_count = "Citations"
+  )
+
+gtsave(topref20_gt,"top20ref.html")
+```
+
+It appears that most of the references in the systematic review articles come from the field of marketing, with the exception of Blei's article on the LDA algorithm. This suggests that the field of marketing has largely incorporated advances in computer science research. Discoveries in computer science provide marketing researchers with the tools to go further by looking at the textual data of brands, consumers and individuals on social networks. In a way, this situation seems natural: computer science publications are sometimes complicated to handle. Marketing researchers are therefore start to use the tools by imitating their colleagues who are early adopters.
