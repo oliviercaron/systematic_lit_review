@@ -54,6 +54,7 @@ library(reactable)
 library(tidyverse)
 library(networkD3)
 library(reactablefmtr)
+library(gt)
 
 list_articles <- read.csv2("nlp_full_data_final_18-08-2023.csv", encoding = "UTF-8") %>%
   rename("entry_number" = 1)
