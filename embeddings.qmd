@@ -1,0 +1,154 @@
+---
+title: "Systematic literature review"
+bibliography: references.bib
+title-block-banner: true
+subtitle: "An embeddings analysis"
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 5
+format:
+  html:
+    theme:
+      light: yeti
+      dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1000px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+---
+
+## Libraries and loading data
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(word2vec)
+library(quanteda)
+library(text)
+library(udpipe)
+library(text2vec)
+```
+
+## Loading data
+
+```{r}
+#| label: load-data
+
+
+list_articles <- read.csv2("nlp_full_data_final_18-08-2023.csv", encoding = "UTF-8") %>%
+  rename("entry_number" = 1)
+list_references <- read.csv2("nlp_references_final_18-08-2023.csv", encoding = "UTF-8") %>%
+  rename("citing_art" = 1)
+colnames(list_articles) <- gsub("\\.+", "_", colnames(list_articles)) # <1>
+colnames(list_articles) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_articles)) # <2>
+colnames(list_references) <- gsub("\\.+", "_", colnames(list_references))
+colnames(list_references) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_references))
+
+data_embeddings <- list_articles %>%
+  distinct(entry_number, .keep_all = TRUE) %>%
+  filter(marketing == 1) %>%
+  mutate("combined_text" = paste0(dc_title,". ", dc_description)) %>%
+  mutate("year" = substr(prism_coverDate,7,10))
+```
+
+## A glimpse of data
+
+```{r}
+#| label: glimpse-data
+
+
+data_embeddings %>%
+  head(5) %>%
+  select(entry_number, dc_creator, combined_text, year)
+```
+
+## A first Word2Vec embeddings analysis
+
+```{r}
+#| label: word2vec
+
+set.seed(42)
+model <- word2vec(x = data_embeddings$combined_text, type = "skip-gram", dim = 80, iter = 20, stopwords = "english", window = "5")
+embedding <- as.matrix(model)
+embedding <- predict(model, c("mining"), type = "embedding")
+embedding
+
+```
+
+```{r}
+lookslike <- predict(model, c("text"), type = "nearest", top_n = 20) %>% as.data.frame()
+lookslike
+
+lookslike %>%
+  ggplot(aes(x=text.similarity,y=reorder(text.term2,lookslike$text.similarity)))+
+  geom_point()
+
+
+lookslike %>%
+  ggplot(aes(x = text.similarity, y = reorder(text.term2, text.similarity))) +
+  geom_point(color = "royalblue", size = lookslike$text.similarity+2) +
+  theme_minimal() +
+  labs(x = "similarity score with term",
+       y = "") +
+  ggtitle("Top 20 similarity scores with term") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## A global vector embeddings (GloVe) analysis
+
+```{r}
+library(text2vec)
+text8_file = "~/text8"
+if (!file.exists(text8_file)) {
+  download.file("http://mattmahoney.net/dc/text8.zip", "~/text8.zip")
+  unzip ("~/text8.zip", files = "text8", exdir = "~/")
+}
+wiki = readLines(text8_file, n = 1, warn = FALSE)
+head(wiki)
+
+https://cran.r-project.org/web/packages/text2vec/vignettes/glove.html
+```
+
+```{r}
+# Create iterator over tokens
+tokens <- space_tokenizer(data_embeddings$combined_text)
+# Create vocabulary. Terms will be unigrams (simple words).
+it = itoken(tokens, progressbar = FALSE)
+vocab <- create_vocabulary(it)
+vocab
+```
+
+```{r}
+vocab <- prune_vocabulary(vocab, term_count_min = 5L)
+
+```
