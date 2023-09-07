@@ -92,13 +92,13 @@ data_embeddings %>%
   select(entry_number, dc_creator, combined_text, year)
 ```
 
-## A first Word2Vec embeddings analysis
+## A first Word2Vec embeddings analysis (skip-gram)
 
 ```{r}
 #| label: word2vec
 
 set.seed(42)
-model <- word2vec(x = data_embeddings$combined_text, type = "skip-gram", dim = 80, iter = 20, stopwords = "english", window = "5")
+model <- word2vec(x = tolower(data_embeddings$combined_text), type = "skip-gram", dim = 100, iter = 100,, verbose=10, stopwords = stopwords("english"), window = "7")
 embedding <- as.matrix(model)
 embedding <- predict(model, c("mining"), type = "embedding")
 embedding
@@ -118,9 +118,40 @@ lookslike %>%
   ggplot(aes(x = text.similarity, y = reorder(text.term2, text.similarity))) +
   geom_point(color = "royalblue", size = lookslike$text.similarity+2) +
   theme_minimal() +
-  labs(x = "similarity score with term",
+  labs(x = "similarity score",
        y = "") +
-  ggtitle("Top 20 similarity scores with term") +
+  ggtitle("Top 20 similarity scores with term 'text'" ) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## A Word2Vec embeddings analysis (cbow)
+
+```{r}
+#| label: word2vec
+
+set.seed(42)
+modelcbow <- word2vec(x = tolower(data_embeddings$combined_text), type = "cbow", dim = 100, iter = 100,, verbose=10, stopwords = stopwords("english"), window = "7")
+embedding <- as.matrix(modelcbow)
+#embedding <- predict(modelcbow, c("mining"), type = "embedding")
+#embedding
+```
+
+```{r}
+lookslike <- predict(modelcbow, c("text"), type = "nearest", top_n = 20) %>% as.data.frame()
+lookslike
+
+lookslike %>%
+  ggplot(aes(x=text.similarity,y=reorder(text.term2,lookslike$text.similarity)))+
+  geom_point()
+
+
+lookslike %>%
+  ggplot(aes(x = text.similarity, y = reorder(text.term2, text.similarity))) +
+  geom_point(color = "royalblue", size = lookslike$text.similarity+2) +
+  theme_minimal() +
+  labs(x = "similarity score",
+       y = "") +
+  ggtitle("Top 20 similarity scores with term 'text'" ) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
