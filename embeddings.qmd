@@ -74,11 +74,16 @@ colnames(list_articles) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list
 colnames(list_references) <- gsub("\\.+", "_", colnames(list_references))
 colnames(list_references) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_references))
 
+
 data_embeddings <- list_articles %>%
   distinct(entry_number, .keep_all = TRUE) %>%
   filter(marketing == 1) %>%
-  mutate("combined_text" = paste0(dc_title,". ", dc_description)) %>%
-  mutate("year" = substr(prism_coverDate, 7, 10))
+  mutate("year" = substr(prism_coverDate, 7, 10)) %>%
+  mutate(keywords = str_replace_all(authkeywords, "\\|", "")) %>%
+  mutate(keywords = str_squish(keywords)) %>%
+  mutate("combined_text" = paste0(dc_title,". ", dc_description, ". ", keywords))
+
+write.csv(data_embeddings,"data_for_embeddings.csv")
 ```
 
 ## A glimpse of data
@@ -162,6 +167,7 @@ t1=Sys.time()
 UD <- udpipe_annotate(udmodel_english, x=data_embeddings$combined_text, trace =40, parallel.cores = 6)
 Sys.time()-t1
 annotated_text <- UD %>% as.data.frame()
+write.csv(annotated_text,"annotated_udpipe.csv")
 ```
 
 ## Top 20 nouns with UDPipe
@@ -205,69 +211,122 @@ p = Pipeline(lang='english', gpu=True, cache_dir='./cache')
 
 ## 
 
-## Part of speech tagging with stanza
+## Part of speech tagging with Stanza
 
 ```{python}
 import stanza
-import json
 import pandas as pd
+from tqdm import tqdm
 
-nlp = stanza.Pipeline(lang='en', processors='tokenize,mwt,pos,lemma')
-doc = nlp('Barack Obama was born in Hawaii.')
-#print(*[f'word: {word.text+" "}\tlemma: {word.lemma}' for sent in doc.sentences for word in sent.words], sep='\n')
-print(doc)
+# Initialisation du modèle Stanza
+nlp = stanza.Pipeline(lang='en', processors='tokenize,mwt,pos,lemma,ner', use_gpu=True, tokenize_pretokenized=False, tokenize_no_ssplit=True)
 
-#transform stanza document into dic
-dicts = doc.to_dict()
+# Chargement du DataFrame depuis le fichier CSV
+df = pd.read_csv("data_for_embeddings.csv")
 
-dicts 
+# Sélectionnez les 5 premières lignes de df['combined_text']
+df_subset = df.head(5)
+testdf = pd.DataFrame()
 
-#transform dict into dataframe
-df = pd.DataFrame(dicts[0])
-df
+for text in tqdm(df_subset['combined_text'], desc="Processing Texts"):
+    doc = nlp(text)
+    dicts = doc.to_dict()
+    
+    # Convertissez le dictionnaire en un DataFrame temporaire
+    temp_df = pd.DataFrame(dicts[0])
+    
+    # Ajoutez les données du DataFrame temporaire à testdf en ignorant l'index
+    testdf = testdf.append(temp_df)
 
-df.to_csv("testdf.csv")
+# À la fin de la boucle, testdf contiendra les données traitées pour les 5 lignes sélectionnées
+
+
+
 ```
 
+```{python}
+import stanza
+import pandas as pd
+from tqdm import tqdm
+
+# Initialisation du modèle Stanza
+nlp = stanza.Pipeline(lang='en', processors='tokenize,mwt,pos,lemma,ner', use_gpu=True, tokenize_pretokenized=False, tokenize_no_ssplit=True)
+
+# Chargement du DataFrame depuis le fichier CSV
+df = pd.read_csv("data_for_embeddings.csv")
+
+
+annotated_df = pd.DataFrame()
+
+for text in tqdm(df['combined_text'], desc="Processing Texts"):
+    doc = nlp(text)
+    dicts = doc.to_dict()
+    
+    # Convertissez le dictionnaire en un DataFrame temporaire
+    temp_df = pd.DataFrame(dicts[0])
+    
+    # Ajoutez les données du DataFrame temporaire à testdf en ignorant l'index
+    annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
+
+
+
+annotated_df.to_csv("annotated_stanza.csv")
+
+```
+
+## Top 20 nouns with Stanza
+
 ```{r}
-lookslike <- predict(modelcbow, c("text"), type = "nearest", top_n = 20) %>% as.data.frame()
-lookslike
+annotation_stanza <- read.csv("annotated_stanza.csv")
+lemma <- annotation_stanza %>%
+  filter(upos == "NOUN") %>%
+  group_by(lemma) %>%
+  summarize(n = n()) %>%
+  top_n(20)
 
-lookslike %>%
-  ggplot(aes(x=text.similarity,y=reorder(text.term2,lookslike$text.similarity)))+
-  geom_point()
-
-
-lookslike %>%
-  ggplot(aes(x = text.similarity, y = reorder(text.term2, text.similarity))) +
-  geom_point(color = "royalblue", size = lookslike$text.similarity+2) +
+ggplot(lemma, aes(x = n, y = reorder(lemma, n))) +
+  geom_point(color = "royalblue") +
   theme_minimal() +
-  labs(x = "similarity score",
-       y = "") +
-  ggtitle("Top 20 similarity scores with term 'text'" ) +
+  labs(x = "Frequency",
+       y = "Lemma") +
+  ggtitle("Top 20 Most Frequent Nouns") +
   theme(plot.title = element_text(hjust = 0.5))
+```
+
+## **Custom Embeddings for BERTopic**
+
+```{python}
+from sklearn.feature_extraction.text import CountVectorizer
+from sentence_transformers import SentenceTransformer
+from bertopic import BERTopic
+import numpy as np
+import pandas as pd  # Ajout de l'importation de pandas
+
+vectorizer_model = CountVectorizer(ngram_range=(1, 2))
+
+# Prepare embeddings
+# Assurez-vous d'avoir importé et chargé votre DataFrame 'df'
+df = pd.read_csv("data_for_embeddings.csv")
+docs = df["combined_text"][:5]
+
+sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+embeddings = sentence_model.encode(docs, show_progress_bar=True)
+
+# Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
+topic_model = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
+
+# Ajustez le modèle BERTopic aux embeddings
+topics, probs = topic_model.fit_transform(docs, embeddings)
+```
+
+```{python}
+
+topic_model.get_topic_info()
+
+topic_model.get_topic(0)
 ```
 
 ## A global vector embeddings (GloVe) analysis
 
-```{r}
-library(text2vec)
-text8_file = "~/text8"
-if (!file.exists(text8_file)) {
-  download.file("http://mattmahoney.net/dc/text8.zip", "~/text8.zip")
-  unzip ("~/text8.zip", files = "text8", exdir = "~/")
-}
-wiki = readLines(text8_file, n = 1, warn = FALSE)
-head(wiki)
-
-https://cran.r-project.org/web/packages/text2vec/vignettes/glove.html
-```
-
-```{r}
-# Create iterator over tokens
-tokens <- space_tokenizer(data_embeddings$combined_text)
-# Create vocabulary. Terms will be unigrams (simple words).
-it = itoken(tokens, progressbar = FALSE)
-vocab <- create_vocabulary(it)
-vocab
+```         
 ```
