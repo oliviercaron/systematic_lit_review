@@ -296,37 +296,103 @@ ggplot(lemma, aes(x = n, y = reorder(lemma, n))) +
 ## **Custom Embeddings for BERTopic**
 
 ```{python}
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.datasets import fetch_20newsgroups
 from sentence_transformers import SentenceTransformer
 from bertopic import BERTopic
 import numpy as np
 import pandas as pd  # Ajout de l'importation de pandas
 
-vectorizer_model = CountVectorizer(ngram_range=(1, 2))
+vectorizer_model = CountVectorizer(ngram_range=(1, 2), stop_words="english")
 
 # Prepare embeddings
 # Assurez-vous d'avoir importé et chargé votre DataFrame 'df'
 df = pd.read_csv("data_for_embeddings.csv")
-docs = df["combined_text"][:5]
+
+docs_marketing = df["combined_text"].tolist()
+
 
 sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
-embeddings = sentence_model.encode(docs, show_progress_bar=True)
+embeddings = sentence_model.encode(docs_marketing, show_progress_bar=True)
 
 # Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
 topic_model = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
 
 # Ajustez le modèle BERTopic aux embeddings
-topics, probs = topic_model.fit_transform(docs, embeddings)
+topics, probs = topic_model.fit_transform(docs_marketing, embeddings)
 ```
 
 ```{python}
 
 topic_model.get_topic_info()
 
-topic_model.get_topic(0)
+len(topic_model.get_topic(-1)
 ```
 
-## A global vector embeddings (GloVe) analysis
+## Another model of embeddings (bge-large-en)
 
-```         
+```{python}
+
+model = SentenceTransformer('BAAI/bge-large-zh')
+embeddings_1 = model.encode(sentences, normalize_embeddings=True)
+embeddings_2 = model.encode(sentences, normalize_embeddings=True)
+similarity = embeddings_1 @ embeddings_2.T
+print(similarity)
+
+
+sentence_model = SentenceTransformer('BAAI/bge-large-zh')
+embeddings = sentence_model.encode(docs_marketing, show_progress_bar=True, normalize_embeddings=True)
+
+# Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
+topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
+
+# Ajustez le modèle BERTopic aux embeddings
+topics_bge, probs_bge = topic_model_bge.fit_transform(docs_marketing, embeddings)
+```
+
+```{python}
+topic_model.get_topic_info()
+
+topic_model.get_topic(3)
+
+fig_topics_bge = topic_model.visualize_topics()
+fig_topics_bge.write_html("topics_bge.html")
+
+fig_hierarchy_bge = topic_model.visualize_hierarchy()
+fig_hierarchy_bge.write_html("hierarchy_bge.html")
+
+hierarchical_topics = topic_model.hierarchical_topics(docs_marketing)
+fig_hierarchical_topics_bge = topic_model.visualize_hierarchy(hierarchical_topics=hierarchical_topics)
+fig_hierarchical_topics_bge.write_html("hierarchical_topics_bge.html")
+
+fig_barchart_bge = topic_model.visualize_barchart()
+fig_barchart_bge.write_html("barchart_bge.html")
+
+fig_heatmap_bge = topic_model.visualize_heatmap()
+fig_heatmap_bge.write_html("fig_heatmap_bge.html")
+
+```
+
+## Save BERTopic model
+
+```{python}
+# Method 1 - safetensors
+embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+topic_model.save("path/to/my/model_dir", serialization="safetensors", save_ctfidf=True, save_embedding_model=embedding_model)
+
+# Method 2 - pytorch
+embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+topic_model.save("path/to/my/model_dir", serialization="pytorch", save_ctfidf=True, save_embedding_model=embedding_model)
+
+# Method 3 - pickle
+topic_model.save("my_model", serialization="pickle")
+
+
+#save my topic model
+embedding_model = "BAAI/bge-large-zh"
+topic_model.save("embeddings_bge_model",serialization="safetensors", save_ctfidf=True, save_embedding_model=embedding_model)
+
+
+#save my embeddings model
+embeddings_df = pd.DataFrame(embeddings)
+embeddings_df.to_csv("embeddings_bge.csv", index=False)
 ```
