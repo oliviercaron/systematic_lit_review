@@ -84,6 +84,8 @@ data_embeddings <- list_articles %>%
   mutate("combined_text" = paste0(dc_title,". ", dc_description, ". ", keywords))
 
 write.csv(data_embeddings,"data_for_embeddings.csv")
+data_embeddings <- read.csv("data_for_embeddings.csv")
+embeddings <- read.csv("embeddings_bge.csv")
 ```
 
 ## A glimpse of data
@@ -190,59 +192,36 @@ ggplot(lemma, aes(x = n, y = reorder(lemma, n))) +
 
 ```
 
-## Part of speech tagging with trankit
+## Part of speech tagging with Trankit (@nguyen2021trankit)
 
 ```{python}
 from trankit import Pipeline
+import pandas as pd
+from pandas import json_normalize
+
+df = pd.read_csv("data_for_embeddings.csv")
+
 # initialize a pipeline for English
 p = Pipeline('english')
 
-# a non-empty string to process, which can be a document or a paragraph with multiple sentences
-doc_text = '''Hello! This is Trankit.'''
+#test = p.posdep(df.loc[:5]['combined_text'][1])
+#testdf = pd.DataFrame(pd.json_normalize(test['sentences'], 'tokens'))
+  
+#pos = p.posdep(all)
 
-all = p.posdep(doc_text)
+
+results = pd.DataFrame()  
+
+for text in df['combined_text']:
+    pos = p.posdep(text)
+    pos_df = pd.json_normalize(pos['sentences'], 'tokens')
+    results = pd.concat([results,pos_df])
+
+
+results.to_csv("annotated_trankit.csv")
 ```
 
-```{python}
-from trankit import Pipeline
-
-p = Pipeline(lang='english', gpu=True, cache_dir='./cache')
-```
-
-## 
-
-## Part of speech tagging with Stanza
-
-```{python}
-import stanza
-import pandas as pd
-from tqdm import tqdm
-
-# Initialisation du modèle Stanza
-nlp = stanza.Pipeline(lang='en', processors='tokenize,mwt,pos,lemma,ner', use_gpu=True, tokenize_pretokenized=False, tokenize_no_ssplit=True)
-
-# Chargement du DataFrame depuis le fichier CSV
-df = pd.read_csv("data_for_embeddings.csv")
-
-# Sélectionnez les 5 premières lignes de df['combined_text']
-df_subset = df.head(5)
-testdf = pd.DataFrame()
-
-for text in tqdm(df_subset['combined_text'], desc="Processing Texts"):
-    doc = nlp(text)
-    dicts = doc.to_dict()
-    
-    # Convertissez le dictionnaire en un DataFrame temporaire
-    temp_df = pd.DataFrame(dicts[0])
-    
-    # Ajoutez les données du DataFrame temporaire à testdf en ignorant l'index
-    testdf = testdf.append(temp_df)
-
-# À la fin de la boucle, testdf contiendra les données traitées pour les 5 lignes sélectionnées
-
-
-
-```
+## Part of speech tagging with Stanza (@qi2020stanza)
 
 ```{python}
 import stanza
