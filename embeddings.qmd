@@ -281,22 +281,28 @@ from bertopic import BERTopic
 import numpy as np
 import pandas as pd  # Ajout de l'importation de pandas
 
+# create a countvectorizer object with specified settings:
+# - ngram_range=(1, 2): generate both unigrams and bigrams from the text.
+#   this means it will consider individual words as well as pairs of consecutive words.
+# - stop_words="english": use a predefined list of English stop words to exclude common words like "the," "and," etc.
 vectorizer_model = CountVectorizer(ngram_range=(1, 2), stop_words="english")
 
-# Prepare embeddings
-# Assurez-vous d'avoir importé et chargé votre DataFrame 'df'
 df = pd.read_csv("data_for_embeddings.csv")
 
 docs_marketing = df["combined_text"].tolist()
 
 
+# create a sentence model using the "all-MiniLM-L6-v2" pre-trained model
 sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# encode the 'docs_marketing' text data into embeddings
+# and show a progress bar while processing
 embeddings = sentence_model.encode(docs_marketing, show_progress_bar=True)
 
-# Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
+# create an instance of BERToopic with vectorizer_model and other parameters
 topic_model = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
 
-# Ajustez le modèle BERTopic aux embeddings
+# adjust BERTopic to embeddings. It extracts topics and corresponding probabilities.
 topics, probs = topic_model.fit_transform(docs_marketing, embeddings)
 ```
 
