@@ -209,16 +209,63 @@ p = Pipeline('english')
   
 #pos = p.posdep(all)
 
-
 results = pd.DataFrame()  
-
+#part of speech tagging
 for text in df['combined_text']:
     pos = p.posdep(text)
     pos_df = pd.json_normalize(pos['sentences'], 'tokens')
     results = pd.concat([results,pos_df])
 
+#lemmatization
+results_lemma = pd.DataFrame()  
+for text in df['combined_text']:
+    lemma = p.lemmatize(text)
+    lemma_df = pd.json_normalize(lemma['sentences'], 'tokens')
+    results_lemma = pd.concat([results_lemma,lemma_df])
+    
+#join both data frames
+results_complete = pd.concat([results, results_lemma['text'].rename("lemma")], axis=1)
+results_complete["lemma"] = results_complete["text"]
+results_lemma.to_csv("lemmas_trankit.csv")
+results_complete.to_csv("annotated_trankit.csv")
+```
 
-results.to_csv("annotated_trankit.csv")
+## Top 20 nouns with Trankit
+
+```{python}
+import pandas as pd
+import plotly.express as px
+
+# Charger les données à partir du DataFrame "results"
+# Assurez-vous que "results" contient les mêmes colonnes que le fichier CSV original
+# (par exemple, "upos" et "lemma")
+# results = pd.read_csv("annotated_stanza.csv")
+
+# Filtrer les lignes où 'upos' est égal à "NOUN"
+noun_data = results_complete[results_complete['upos'] == 'NOUN']
+
+# Regrouper par 'lemma' et compter le nombre d'occurrences
+top_nouns = noun_data['lemma'].value_counts().reset_index()
+top_nouns.columns = ['lemma', 'n']
+top_nouns = top_nouns.head(20)
+
+# Créer un graphique à l'aide de Plotly Express
+fig = px.scatter(top_nouns, x='n', y='lemma', color='lemma',
+                 labels={'n': 'Frequency', 'lemma': 'Lemma'},
+                 title='Top 20 Most Frequent Nouns')
+
+# Personnaliser le style du graphique
+fig.update_traces(marker=dict(size=12, opacity=0.6),
+                  selector=dict(mode='markers'))
+
+fig.update_layout(title_x=0.5, title_font=dict(size=20))
+
+# Afficher le graphique
+fig.show()
+fig.write_html("top_20_nouns_trankit_python.html")
+
+
+
 ```
 
 ## Part of speech tagging with Stanza (@qi2020stanza)
