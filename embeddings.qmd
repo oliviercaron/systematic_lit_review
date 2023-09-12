@@ -136,7 +136,7 @@ lookslike %>%
 
 set.seed(42)
 modelcbow <- word2vec(x = tolower(data_embeddings$combined_text), type = "cbow", dim = 100, iter = 100,, verbose=10, stopwords = stopwords("english"), window = "7")
-embedding <- as.matrix(modelcbow)
+embedding1 <- as.matrix(modelcbow)
 #embedding <- predict(modelcbow, c("mining"), type = "embedding")
 #embedding
 ```
@@ -239,7 +239,7 @@ import plotly.express as px
 # Charger les données à partir du DataFrame "results"
 # Assurez-vous que "results" contient les mêmes colonnes que le fichier CSV original
 # (par exemple, "upos" et "lemma")
-# results = pd.read_csv("annotated_stanza.csv")
+results_complete = pd.read_csv("annotated_trankit.csv")
 
 # Filtrer les lignes où 'upos' est égal à "NOUN"
 noun_data = results_complete[results_complete['upos'] == 'NOUN']
@@ -259,6 +259,8 @@ fig.update_traces(marker=dict(size=12, opacity=0.6),
                   selector=dict(mode='markers'))
 
 fig.update_layout(title_x=0.5, title_font=dict(size=20))
+fig.update_layout(template="plotly_white")
+
 
 # Afficher le graphique
 fig.show()
@@ -427,4 +429,94 @@ topic_model.save("embeddings_bge_model",serialization="safetensors", save_ctfidf
 #save my embeddings model
 embeddings_df = pd.DataFrame(embeddings)
 embeddings_df.to_csv("embeddings_bge.csv", index=False)
+```
+
+## Project 3D embeddings (bge-large-en)
+
+```{python}
+import pandas as pd
+from sklearn.decomposition import PCA
+import hdbscan
+import plotly.express as px
+
+df = pd.read_csv("data_for_embeddings.csv")
+embeddings_bge = pd.read_csv('embeddings_bge.csv')
+
+
+
+```
+
+##  3D plot of embeddings
+
+```{python}
+import pandas as pd
+import hdbscan
+import plotly.express as px
+from sklearn.decomposition import PCA
+import plotly.io as pio
+
+
+# Étape 1 : Réduction des dimensions avec PCA
+pca = PCA(n_components=3)
+embeddings_3D = pca.fit_transform(embeddings_bge)
+
+# Étape 2 : Coller les embeddings réduits au DataFrame df
+df['X'] = embeddings_3D[:, 0]
+df['Y'] = embeddings_3D[:, 1]
+df['Z'] = embeddings_3D[:, 2]
+
+# Étape 3 : Clustering avec HDBSCAN
+clusterer = hdbscan.HDBSCAN(min_cluster_size=10, metric='euclidean')
+df['Cluster'] = clusterer.fit_predict(embeddings_3D)
+
+# Étape 4 : Création d'un DataFrame pour la visualisation
+df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
+
+# Étape 5 : Création du graphique 3D interactif avec Plotly
+fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
+fig.update_traces(marker=dict(size=5))
+fig.update_layout(title='Clustering 3D with HDBSCAN')
+fig.show()
+
+pio.write_html(fig, file="3D_embeddings.html")
+```
+
+```{python}
+import pandas as pd
+import hdbscan
+import plotly.express as px
+from sklearn.decomposition import PCA
+from sklearn.metrics import pairwise_distances
+import numpy as np
+
+# Étape 1 : Réduction des dimensions avec PCA
+pca = PCA(n_components=3)
+embeddings_3D = pca.fit_transform(embeddings_bge)
+
+# Étape 2 : Coller les embeddings réduits au DataFrame df
+df = df.dropna()
+df['X'] = embeddings_3D[:, 0]
+df['Y'] = embeddings_3D[:, 1]
+df['Z'] = embeddings_3D[:, 2]
+
+# Étape 3 : Calcul de la distance cosinus entre les embeddings
+cosine_distances = pairwise_distances(embeddings_3D, metric='cosine')
+
+# Étape 4 : Convertir les distances cosinus en distances euclidiennes
+euclidean_distances = np.sqrt(2 * (1 - cosine_distances))
+
+# Étape 5 : Clustering avec HDBSCAN en utilisant la distance euclidienne
+clusterer = hdbscan.HDBSCAN(min_cluster_size=10, metric='precomputed')
+df['Cluster'] = clusterer.fit_predict(euclidean_distances)
+
+# Étape 6 : Création d'un DataFrame pour la visualisation
+df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
+
+# Étape 7 : Création du graphique 3D interactif avec Plotly
+fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
+fig.update_traces(marker=dict(size=5))
+fig.update_layout(title='Clustering 3D with HDBSCAN (Cosine Distance)')
+fig.show()
+fig.save
+
 ```
