@@ -135,7 +135,7 @@ lookslike %>%
 #| label: word2vec
 
 set.seed(42)
-modelcbow <- word2vec(x = tolower(data_embeddings$combined_text), type = "cbow", dim = 100, iter = 100,, verbose=10, stopwords = stopwords("english"), window = "7")
+modelcbow <- word2vec(x = tolower(data_embeddings$combined_text), type = "cbow", dim = 100, iter = 100, verbose=10, stopwords = stopwords("english"), window = "7")
 embedding1 <- as.matrix(modelcbow)
 #embedding <- predict(modelcbow, c("mining"), type = "embedding")
 #embedding
@@ -321,20 +321,28 @@ ggplot(lemma, aes(x = n, y = reorder(lemma, n))) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-## **Custom Embeddings for BERTopic**
+## **Custom Embeddings model for BERTopic** (all-MiniLM-L6-v2)
+
+::: callout-note
+We use a CountVectorizer which enables us to specify the range of the ngram we want to take an interest in. We can use it before or after the topic modelling (fine tuning).\
+Here we use it before to exclude english stopwords, but after the embeddings process so that the foundation provided by stopwords in sentences is preserved in context.
+:::
 
 ```{python}
-from sklearn.datasets import fetch_20newsgroups
+#import warnings
+#warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 from sentence_transformers import SentenceTransformer
 from bertopic import BERTopic
 import numpy as np
 import pandas as pd  # Ajout de l'importation de pandas
+from sklearn.feature_extraction.text import CountVectorizer
 
 # create a countvectorizer object with specified settings:
-# - ngram_range=(1, 2): generate both unigrams and bigrams from the text.
+# - ngram_range=(1, 3): generate both unigrams, bigrams and trigrams from the text.
 #   this means it will consider individual words as well as pairs of consecutive words.
 # - stop_words="english": use a predefined list of English stop words to exclude common words like "the," "and," etc.
-vectorizer_model = CountVectorizer(ngram_range=(1, 2), stop_words="english")
+
+vectorizer_model = CountVectorizer(ngram_range=(1, 3), stop_words="english")
 
 df = pd.read_csv("data_for_embeddings.csv")
 
@@ -352,29 +360,22 @@ embeddings = sentence_model.encode(docs_marketing, show_progress_bar=True)
 topic_model = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
 
 # adjust BERTopic to embeddings. It extracts topics and corresponding probabilities.
-topics, probs = topic_model.fit_transform(docs_marketing, embeddings)
+topics, probs = topic_model.fit(docs_marketing, embeddings)
 ```
+
+## **Custom Embeddings model for BERTopic** (bge-large-en)
 
 ```{python}
 
-topic_model.get_topic_info()
-
-len(topic_model.get_topic(-1)
-```
-
-## Another model of embeddings (bge-large-en)
-
-```{python}
-
-model = SentenceTransformer('BAAI/bge-large-zh')
-embeddings_1 = model.encode(sentences, normalize_embeddings=True)
-embeddings_2 = model.encode(sentences, normalize_embeddings=True)
-similarity = embeddings_1 @ embeddings_2.T
-print(similarity)
+#model = SentenceTransformer('BAAI/bge-large-zh')
+#embeddings_1 = model.encode(sentences, normalize_embeddings=True)
+#embeddings_2 = model.encode(sentences, normalize_embeddings=True)
+#similarity = embeddings_1 @ embeddings_2.T
+#print(similarity)
 
 
-sentence_model = SentenceTransformer('BAAI/bge-large-zh')
-embeddings = sentence_model.encode(docs_marketing, show_progress_bar=True, normalize_embeddings=True)
+sentence_model_bge = SentenceTransformer('BAAI/bge-large-en')
+embeddings_bge = sentence_model_bge.encode(docs_marketing, show_progress_bar=True, normalize_embeddings=True)
 
 # Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
 topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
@@ -383,25 +384,50 @@ topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, language='english'
 topics_bge, probs_bge = topic_model_bge.fit_transform(docs_marketing, embeddings)
 ```
 
+## Visualize how each token contributes to a specific topic. 
+
+We can do it by selecting a sentence in the document. To do so, we need to first calculate topic distributions on a token level and then visualize the results:\
+More parameters here :\
+https://maartengr.github.io/BERTopic/getting_started/distribution/distribution.html
+
 ```{python}
-topic_model.get_topic_info()
+# Calculate the topic distributions on a token-level, we can add the window
+topic_distr, topic_token_distr = topic_model_bge.approximate_distribution(docs_marketing, calculate_tokens=True)
+
+# Visualize the token-level distributions, put id of document
+df_topicmodel = topic_model_bge.visualize_approximate_distribution(docs_marketing[150], topic_token_distr[150])
+df_topicmodel
+
+topics_html = df_topicmodel.to_html()
+
+with open('topics_html.html', 'w') as html_file:
+    html_file.write(topics_html)
+```
+
+## Get some information about topics and plot them
+
+```{python}
+
+topic_model_bge.get_topic_info()
+
 
 topic_model.get_topic(3)
 
-fig_topics_bge = topic_model.visualize_topics()
-fig_topics_bge.write_html("topics_bge.html")
+topic_model_bge.visualize_topics()
+fig_topics_bge = topic_model_bge.visualize_topics()
+fig_topics_bge.write_html("topics_bge_test.html")
 
-fig_hierarchy_bge = topic_model.visualize_hierarchy()
-fig_hierarchy_bge.write_html("hierarchy_bge.html")
+fig_hierarchy_bge = topic_model_bge.visualize_hierarchy()
+fig_hierarchy_bge.write_html("hierarchy_bge_test.html")
 
-hierarchical_topics = topic_model.hierarchical_topics(docs_marketing)
-fig_hierarchical_topics_bge = topic_model.visualize_hierarchy(hierarchical_topics=hierarchical_topics)
+hierarchical_topics = topic_model_bge.hierarchical_topics(docs_marketing)
+fig_hierarchical_topics_bge = topic_model_bge.visualize_hierarchy(hierarchical_topics=hierarchical_topics)
 fig_hierarchical_topics_bge.write_html("hierarchical_topics_bge.html")
 
-fig_barchart_bge = topic_model.visualize_barchart()
-fig_barchart_bge.write_html("barchart_bge.html")
+fig_barchart_bge = topic_model_bge.visualize_barchart()
+fig_barchart_bge.write_html("barchart_bge_test.html")
 
-fig_heatmap_bge = topic_model.visualize_heatmap()
+fig_heatmap_bge = topic_model_bge.visualize_heatmap()
 fig_heatmap_bge.write_html("fig_heatmap_bge.html")
 
 ```
@@ -435,35 +461,124 @@ embeddings_df.to_csv("embeddings_bge.csv", index=False)
 
 ```{python}
 import pandas as pd
-from sklearn.decomposition import PCA
-import hdbscan
-import plotly.express as px
-
-df = pd.read_csv("data_for_embeddings.csv")
-embeddings_bge = pd.read_csv('embeddings_bge.csv')
-
-
-
-```
-
-##  3D plot of embeddings
-
-```{python}
-import pandas as pd
 import hdbscan
 import plotly.express as px
 from sklearn.decomposition import PCA
 import plotly.io as pio
+import seaborn as sns
+import matplotlib.pyplot as plt
+import time
+import umap.umap_ as umap
+from sklearn.metrics import davies_bouldin_score
+from sklearn.metrics import silhouette_score, silhouette_samples
+from yellowbrick.cluster import SilhouetteVisualizer
 
+df = pd.read_csv("data_for_embeddings.csv")
+embeddings_bge = pd.read_csv('embeddings_bge.csv')
+
+##plot seaborn
+plt.figure(figsize=(16,10))
+fig = sns.scatterplot(
+    x="X", y="Y",
+    hue="Cluster",
+    palette=sns.color_palette("hls", 10),
+    data=df_vis,
+    legend="full",
+    alpha=0.3
+)
+fig = fig.get_figure()
+fig.savefig("out.svg") 
+
+```
+
+## 3D plot of embeddings with PCA as dimensional reduction technique
+
+```{python}
 
 # Étape 1 : Réduction des dimensions avec PCA
 pca = PCA(n_components=3)
 embeddings_3D = pca.fit_transform(embeddings_bge)
 
+
 # Étape 2 : Coller les embeddings réduits au DataFrame df
 df['X'] = embeddings_3D[:, 0]
 df['Y'] = embeddings_3D[:, 1]
 df['Z'] = embeddings_3D[:, 2]
+
+print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
+
+
+# Étape 3 : Clustering avec HDBSCAN
+clusterer = hdbscan.HDBSCAN(min_cluster_size=10, metric='euclidean')
+df['Cluster'] = clusterer.fit_predict(embeddings_3D)
+
+#evaluate clustering
+davies_bouldin_score(embeddings_3D, df['Cluster'])
+silhouette_score(embeddings_3D, df['Cluster'])
+
+    
+# Étape 4 : Création d'un DataFrame pour la visualisation
+df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
+
+# Étape 5 : Création du graphique 3D interactif avec Plotly
+fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
+fig.update_traces(marker=dict(size=5))
+fig.update_layout(title='Clustering 3D with HDBSCAN')
+fig.update_layout(template="plotly_white")
+fig.show()
+
+pio.write_html(fig, file="3D_embeddings_PCA.html")
+
+```
+
+## 2D plot of embeddings with TSNE as dimensional reduction technique
+
+```{python}
+
+time_start = time.time()
+tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+tsne_results = tsne.fit_transform(embeddings_bge)
+
+print('t-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
+
+df['tsne-2d-one'] = tsne_results[:,0]
+df['tsne-2d-two'] = tsne_results[:,1]
+
+davies_bouldin_score(tsne_results, labels)
+silhouette_score(tsne_results, labels)
+
+plt.figure(figsize=(16,10))
+sns.scatterplot(
+    x="tsne-2d-one", y="tsne-2d-two",
+    hue="y",
+    palette=sns.color_palette("hls", 10),
+    data=df,
+    legend="full",
+    alpha=0.3
+)
+
+plt.savefig("tsne_2D.svg", format="svg")
+```
+
+## 3D plot of embeddings with UMAP as dimensional reduction technique
+
+```{python}
+
+# Étape 1 : Réduction des dimensions avec UMAP
+umap_model = umap.UMAP(n_neighbors=15, n_components=3, min_dist=0.1, random_state=42)
+umap_embeddings = umap_model.fit_transform(embeddings_bge)
+
+plt.scatter(u[:,0], u[:,1], c=data)
+plt.title('UMAP embedding of random colours');
+plt.savefig("umap.svg", format="svg")
+
+# Étape 2 : Coller les embeddings réduits au DataFrame df
+df['X'] = umap_embeddings[:, 0]
+df['Y'] = umap_embeddings[:, 1]
+df['Z'] = umap_embeddings[:, 2]
+
+print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
+
 
 # Étape 3 : Clustering avec HDBSCAN
 clusterer = hdbscan.HDBSCAN(min_cluster_size=10, metric='euclidean')
@@ -476,47 +591,19 @@ df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
 fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
 fig.update_traces(marker=dict(size=5))
 fig.update_layout(title='Clustering 3D with HDBSCAN')
+fig.update_layout(template="plotly_white")
 fig.show()
 
-pio.write_html(fig, file="3D_embeddings.html")
-```
 
-```{python}
-import pandas as pd
-import hdbscan
-import plotly.express as px
-from sklearn.decomposition import PCA
-from sklearn.metrics import pairwise_distances
-import numpy as np
 
-# Étape 1 : Réduction des dimensions avec PCA
-pca = PCA(n_components=3)
-embeddings_3D = pca.fit_transform(embeddings_bge)
 
-# Étape 2 : Coller les embeddings réduits au DataFrame df
-df = df.dropna()
-df['X'] = embeddings_3D[:, 0]
-df['Y'] = embeddings_3D[:, 1]
-df['Z'] = embeddings_3D[:, 2]
 
-# Étape 3 : Calcul de la distance cosinus entre les embeddings
-cosine_distances = pairwise_distances(embeddings_3D, metric='cosine')
 
-# Étape 4 : Convertir les distances cosinus en distances euclidiennes
-euclidean_distances = np.sqrt(2 * (1 - cosine_distances))
 
-# Étape 5 : Clustering avec HDBSCAN en utilisant la distance euclidienne
-clusterer = hdbscan.HDBSCAN(min_cluster_size=10, metric='precomputed')
-df['Cluster'] = clusterer.fit_predict(euclidean_distances)
 
-# Étape 6 : Création d'un DataFrame pour la visualisation
-df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
-
-# Étape 7 : Création du graphique 3D interactif avec Plotly
-fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
-fig.update_traces(marker=dict(size=5))
-fig.update_layout(title='Clustering 3D with HDBSCAN (Cosine Distance)')
-fig.show()
-fig.save
+embeddings = df[['embedding_1', 'embedding_2', 'embedding_3']]  # Remplacez par les noms de vos colonnes d'embeddings
+umap_model = umap.UMAP(n_neighbors=15, n_components=3, min_dist=0.1, random_state=42)
+umap_embeddings = umap_model.fit_transform(embeddings)
+umap_df = pd.DataFrame(data=umap_embeddings, columns=['UMAP_1', 'UMAP_2', 'UMAP_3'])
 
 ```
