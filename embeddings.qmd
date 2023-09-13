@@ -406,12 +406,31 @@ with open('topics_html.html', 'w') as html_file:
 
 ## Get some information about topics and plot them
 
+### What is the representative document for each topic?
+
 ```{python}
+topicsinfo = topic_model_bge.get_topic_info()
+topicsinfo
+```
 
-topic_model_bge.get_topic_info()
+### Display representative words for each topic
 
+```{python}
+from tabulate import tabulate
 
-topic_model.get_topic(3)
+data_as_list = topicsinfo.values.tolist()
+
+# get coluumn names as headers
+headers = topicsinfo.columns.tolist()
+
+# print as a table
+table = tabulate(data_as_list, headers, tablefmt='html')
+
+with open('table_topics.html', 'w') as f:
+    f.write(table)
+```
+
+```{python}
 
 topic_model_bge.visualize_topics()
 fig_topics_bge = topic_model_bge.visualize_topics()
