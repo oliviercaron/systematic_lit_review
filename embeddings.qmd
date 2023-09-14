@@ -1,4 +1,5 @@
 ---
+pip ---
 title: "Systematic literature review"
 bibliography: references.bib
 title-block-banner: true
@@ -384,7 +385,7 @@ topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, language='english'
 topics_bge, probs_bge = topic_model_bge.fit_transform(docs_marketing, embeddings)
 ```
 
-## Visualize how each token contributes to a specific topic. 
+## Visualize how each token contributes to a specific topic.
 
 We can do it by selecting a sentence in the document. To do so, we need to first calculate topic distributions on a token level and then visualize the results:\
 More parameters here :\
@@ -443,7 +444,7 @@ hierarchical_topics = topic_model_bge.hierarchical_topics(docs_marketing)
 fig_hierarchical_topics_bge = topic_model_bge.visualize_hierarchy(hierarchical_topics=hierarchical_topics)
 fig_hierarchical_topics_bge.write_html("hierarchical_topics_bge.html")
 
-fig_barchart_bge = topic_model_bge.visualize_barchart()
+fig_barchart_bge = topic_model_bge.visualize_barchart(n_words=15)
 fig_barchart_bge.write_html("barchart_bge_test.html")
 
 fig_heatmap_bge = topic_model_bge.visualize_heatmap()
@@ -491,6 +492,7 @@ import umap.umap_ as umap
 from sklearn.metrics import davies_bouldin_score
 from sklearn.metrics import silhouette_score, silhouette_samples
 from yellowbrick.cluster import SilhouetteVisualizer
+import torch
 
 df = pd.read_csv("data_for_embeddings.csv")
 embeddings_bge = pd.read_csv('embeddings_bge.csv')
@@ -510,7 +512,7 @@ fig.savefig("out.svg")
 
 ```
 
-## 3D plot of embeddings with PCA as dimensional reduction technique
+## 3D plot of authors and year with PCA as dimensional reduction technique
 
 ```{python}
 
@@ -542,7 +544,7 @@ df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
 # Étape 5 : Création du graphique 3D interactif avec Plotly
 fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
 fig.update_traces(marker=dict(size=5))
-fig.update_layout(title='Clustering 3D with HDBSCAN')
+fig.update_layout(title='Dimensionality reduction with PCA and Clustering 3D with HDBSCAN')
 fig.update_layout(template="plotly_white")
 fig.show()
 
@@ -550,79 +552,112 @@ pio.write_html(fig, file="3D_embeddings_PCA.html")
 
 ```
 
-## 2D plot of embeddings with TSNE as dimensional reduction technique
+## 3D plot of authors and year with TSNE as dimensional reduction technique
 
 ```{python}
 
-time_start = time.time()
-tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-tsne_results = tsne.fit_transform(embeddings_bge)
+# Étape 1 : Réduction des dimensions avec t-SNE
+from sklearn.manifold import TSNE
 
-print('t-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
-
-df['tsne-2d-one'] = tsne_results[:,0]
-df['tsne-2d-two'] = tsne_results[:,1]
-
-davies_bouldin_score(tsne_results, labels)
-silhouette_score(tsne_results, labels)
-
-plt.figure(figsize=(16,10))
-sns.scatterplot(
-    x="tsne-2d-one", y="tsne-2d-two",
-    hue="y",
-    palette=sns.color_palette("hls", 10),
-    data=df,
-    legend="full",
-    alpha=0.3
-)
-
-plt.savefig("tsne_2D.svg", format="svg")
-```
-
-## 3D plot of embeddings with UMAP as dimensional reduction technique
-
-```{python}
-
-# Étape 1 : Réduction des dimensions avec UMAP
-umap_model = umap.UMAP(n_neighbors=15, n_components=3, min_dist=0.1, random_state=42)
-umap_embeddings = umap_model.fit_transform(embeddings_bge)
-
-plt.scatter(u[:,0], u[:,1], c=data)
-plt.title('UMAP embedding of random colours');
-plt.savefig("umap.svg", format="svg")
+tsne = TSNE(n_components=3)
+embeddings_3D = tsne.fit_transform(embeddings_bge)
 
 # Étape 2 : Coller les embeddings réduits au DataFrame df
-df['X'] = umap_embeddings[:, 0]
-df['Y'] = umap_embeddings[:, 1]
-df['Z'] = umap_embeddings[:, 2]
-
-print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
-
+df['X'] = embeddings_3D[:, 0]
+df['Y'] = embeddings_3D[:, 1]
+df['Z'] = embeddings_3D[:, 2]
 
 # Étape 3 : Clustering avec HDBSCAN
-clusterer = hdbscan.HDBSCAN(min_cluster_size=10, metric='euclidean')
-df['Cluster'] = clusterer.fit_predict(embeddings_3D)
+import hdbscan
+from sklearn.metrics import davies_bouldin_score, silhouette_score
+
+clusterer = hdbscan.HDBSCAN(min_cluster_size=8, metric='euclidean')
+df['Cluster_tsne'] = clusterer.fit_predict(embeddings_3D)
+
+# Évaluation du clustering
+davies_bouldin = davies_bouldin_score(embeddings_3D, df['Cluster_tsne'])
+silhouette = silhouette_score(embeddings_3D, df['Cluster_tsne'])
+
+print('Davies-Bouldin Score:', davies_bouldin)
+print('Silhouette Score:', silhouette)
 
 # Étape 4 : Création d'un DataFrame pour la visualisation
-df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster']]
+df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'Cluster_tsne']]
 
 # Étape 5 : Création du graphique 3D interactif avec Plotly
-fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
+import plotly.express as px
+import plotly.io as pio
+
+fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='Cluster_tsne', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
 fig.update_traces(marker=dict(size=5))
-fig.update_layout(title='Clustering 3D with HDBSCAN')
+fig.update_layout(title='Dimensionality reduction with t-SNE and Clustering 3D with HDBSCAN')
 fig.update_layout(template="plotly_white")
 fig.show()
 
+pio.write_html(fig, file="3D_embeddings_TSNE.html")
+
+```
+
+## 2D plot of authors and year with PCA as dimensional reduction technique
+
+```{python}
+
+df = df[df['citedby_count'] > 20]
+doc_marketing_sup20citations = df['combined_text']
+
+sentence_model_bge = SentenceTransformer('BAAI/bge-large-en',device='cuda')
+embeddings_bge_sup20citations = sentence_model_bge.encode(doc_marketing_sup20citations, show_progress_bar=True, normalize_embeddings=True)
+
+pca = PCA(n_components=2)
+embeddings_2D = pca.fit_transform(embeddings_bge)
+
+# Étape 2 : Coller les embeddings réduits au DataFrame df
+df['X'] = embeddings_2D[:, 0]
+df['Y'] = embeddings_2D[:, 1]
+
+print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
+
+# Étape 3 : Clustering avec HDBSCAN
+clusterer = hdbscan.HDBSCAN(min_cluster_size=8, metric='euclidean')
+df['Cluster'] = clusterer.fit_predict(embeddings_2D)
+
+# Évaluation du clustering
+davies_bouldin = davies_bouldin_score(embeddings_2D, df['Cluster'])
+silhouette = silhouette_score(embeddings_2D, df['Cluster'])
+
+print('Davies-Bouldin Score:', davies_bouldin)
+print('Silhouette Score:', silhouette)
+
+# Étape 4 : Création d'un DataFrame pour la visualisation
+df_vis = df[['X', 'Y', 'dc_creator', 'year', 'Cluster']]
+
+# Étape 5 : Création du graphique 2D interactif avec Plotly
+fig = px.scatter(df_vis, x='X', y='Y', color='Cluster'))
+fig.update_traces(marker=dict(size=7))
+fig.update_layout(title='2D plot with Dimensionality reduction with PCA and Clustering with HDBSCAN')
+fig.update_layout(template="plotly_white")
+fig.show()
+
+pio.write_html(fig, file="2D_embeddings_PCA.html")
 
 
+```
 
+cuda
 
+```{python}
+import torch
+torch.cuda.is_available()
 
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
+print(f"Is CUDA supported by this system? {torch.cuda.is_available()}")
+print(f"CUDA version: {torch.version.cuda}")
 
-embeddings = df[['embedding_1', 'embedding_2', 'embedding_3']]  # Remplacez par les noms de vos colonnes d'embeddings
-umap_model = umap.UMAP(n_neighbors=15, n_components=3, min_dist=0.1, random_state=42)
-umap_embeddings = umap_model.fit_transform(embeddings)
-umap_df = pd.DataFrame(data=umap_embeddings, columns=['UMAP_1', 'UMAP_2', 'UMAP_3'])
+# Storing ID of the current CUDA device
+cuda_id = torch.cuda.current_device()
+print(f"ID of the current CUDA device: {cuda_id}")
+
+print(f"Name of the current CUDA device: {torch.cuda.get_device_name(cuda_id)}")
 
 ```
