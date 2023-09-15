@@ -161,7 +161,7 @@ lookslike %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-## Part of speech tagging with UDPipe
+## Part of speech tagging with UDPipe (@straka-strakova-2017-tokenizing)
 
 ```{r}
 udpipe_download_model(language = "english")
@@ -322,7 +322,49 @@ ggplot(lemma, aes(x = n, y = reorder(lemma, n))) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-## **Custom Embeddings model for BERTopic** (all-MiniLM-L6-v2)
+## **Python libraries and loading data**
+
+```{python}
+import warnings
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
+
+from sentence_transformers import SentenceTransformer, util
+from bertopic import BERTopic
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import davies_bouldin_score, silhouette_score, silhouette_samples
+from yellowbrick.cluster import SilhouetteVisualizer
+
+import numpy as np
+import pandas as pd  # Ajout de l'importation de pandas
+import hdbscan
+import plotly.express as px
+import plotly.io as pio
+import seaborn as sns
+import matplotlib.pyplot as plt
+import time
+import umap.umap_ as umap
+import torch
+
+df = pd.read_csv("data_for_embeddings.csv")
+df['title_abstract'] = df['dc_title'].astype(str) + '. ' + df['dc_description'].astype(str)
+docs_marketing = df["combined_text"].tolist()
+```
+
+## CUDA Status and Device Info
+
+```{python}
+print(f"Is CUDA supported by this system? {torch.cuda.is_available()}")
+print(f"CUDA version: {torch.version.cuda}")
+
+# Storing ID of the current CUDA device
+cuda_id = torch.cuda.current_device()
+print(f"ID of the current CUDA device: {cuda_id}")
+
+print(f"Name of the current CUDA device: {torch.cuda.get_device_name(cuda_id)}")
+```
+
+## **Custom Embeddings model for BERTopic** (all-mpnet-base-v2)
 
 ::: callout-note
 We use a CountVectorizer which enables us to specify the range of the ngram we want to take an interest in. We can use it before or after the topic modelling (fine tuning).\
@@ -330,13 +372,6 @@ Here we use it before to exclude english stopwords, but after the embeddings pro
 :::
 
 ```{python}
-#import warnings
-#warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
-from sentence_transformers import SentenceTransformer
-from bertopic import BERTopic
-import numpy as np
-import pandas as pd  # Ajout de l'importation de pandas
-from sklearn.feature_extraction.text import CountVectorizer
 
 # create a countvectorizer object with specified settings:
 # - ngram_range=(1, 3): generate both unigrams, bigrams and trigrams from the text.
@@ -345,24 +380,184 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 vectorizer_model = CountVectorizer(ngram_range=(1, 3), stop_words="english")
 
-df = pd.read_csv("data_for_embeddings.csv")
-
-docs_marketing = df["combined_text"].tolist()
-
-
-# create a sentence model using the "all-MiniLM-L6-v2" pre-trained model
-sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+# create a sentence model using the "all-mpnet-base-v2" pre-trained model 
+sentence_model = SentenceTransformer("all-mpnet-base-v2", device='cuda')
 
 # encode the 'docs_marketing' text data into embeddings
 # and show a progress bar while processing
 embeddings = sentence_model.encode(docs_marketing, show_progress_bar=True)
 
 # create an instance of BERToopic with vectorizer_model and other parameters
-topic_model = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
+topic_model = BERTopic(vectorizer_model=vectorizer_model, calculate_probabilities=True, verbose=True, min_topic_size=5, nr_topics=13)
 
 # adjust BERTopic to embeddings. It extracts topics and corresponding probabilities.
-topics, probs = topic_model.fit(docs_marketing, embeddings)
+topics, probs = topic_model.fit_transform(docs_marketing, embeddings_array)
 ```
+
+## **Custom Embeddings model for BERTopic** (xlnet)
+
+```{python}
+
+from transformers import XLNetTokenizer, XLNetModel
+import torch
+import pandas as pd
+import numpy as np
+from tqdm import tqdm
+
+# check if cuda is available
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+    print(f'using gpu: {torch.cuda.get_device_name(0)}')
+else:
+    device = torch.device('cpu')
+    print('cuda is not available, using cpu.')
+
+# load xlnet tokenizer and model on gpu
+tokenizer = XLNetTokenizer.from_pretrained('xlnet-large-cased')
+model = XLNetModel.from_pretrained('xlnet-large-cased').to(device)
+
+# list of phrases
+phrases = docs_marketing
+
+# create a list to store the embeddings
+embeddings_list = []
+
+# use tqdm to create a progress bar
+for phrase in tqdm(phrases, desc="calculating embeddings"):
+    # tokenize the phrase
+    inputs = tokenizer(phrase, return_tensors="pt").to(device)
+    
+    # get embeddings
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    # retrieve the last hidden state
+    last_hidden_states = outputs.last_hidden_state
+    
+    # calculate the average of embeddings for each phrase
+    average_embedding = last_hidden_states.mean(dim=1).cpu().numpy()
+    
+    # add the embedding to the list
+    embeddings_list.append(average_embedding)
+
+# flatten the list of embeddings
+embeddings_array = np.concatenate(embeddings_list)
+
+# if you want a dataframe, you can use the following commands:
+
+#flat_embeddings = [embedding[0] for embedding in embeddings_list]
+
+# create a dataframe from the list of embeddings
+#dftest = pd.DataFrame(flat_embeddings)
+
+# display the dataframe
+#print(dftest)
+
+
+
+```
+
+## TEST TEST TEST WORD2VEC PLOT TEST TEST TEST
+
+```{python}
+import nltk
+from nltk.tokenize import word_tokenize
+from gensim.models import Word2Vec
+
+# Assurez-vous d'avoir téléchargé les données nécessaires pour NLTK (une seule fois)
+nltk.download('punkt')
+
+
+# Tokenisation des phrases et entraînement du modèle Word2Vec
+vector_size = 100  # Taille des vecteurs d'embedding
+window_size = 7    # Fenêtre de contexte
+min_count = 50      # Ignorer les mots ayant une fréquence inférieure à min_count
+sg = 0             # CBOW (skip-gram si sg=1)
+
+tokenized_docs_marketing = [word_tokenize(sentence) for sentence in docs_marketing]
+
+model = Word2Vec(tokenized_docs_marketing, vector_size=vector_size, window=window_size, min_count=min_count, sg=sg)
+
+# Maintenant, vous pouvez accéder aux embeddings de mots, par exemple :
+embedding_machine = model.wv['machine']
+print(embedding_machine)
+
+
+```
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+
+# Obtenez les embeddings de tous les mots dans le modèle Word2Vec
+embeddings = [model.wv[word] for word in model.wv.index_to_key]
+
+# Convertissez la liste d'embeddings en un tableau NumPy
+embeddings_array = np.array(embeddings)
+
+# Utilisez PCA pour réduire la dimension à 2D
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(embeddings_array)
+
+# Utilisez t-SNE pour une réduction de dimension non linéaire à 2D
+tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
+tsne_result = tsne.fit_transform(embeddings_array)
+
+# Visualisation avec PCA
+plt.figure(figsize=(10, 5))
+plt.scatter(pca_result[:, 0], pca_result[:, 1], alpha=0.5)
+for i, word in enumerate(model.wv.index_to_key):
+    plt.annotate(word, xy=(pca_result[i, 0], pca_result[i, 1]), alpha=0.7)
+plt.title('2D projection of word embeddings (t-SNE)')
+plt.show()
+
+# Visualisation avec t-SNE
+import plotly.express as px
+
+# Créez un DataFrame Pandas pour stocker les résultats de t-SNE
+import pandas as pd
+tsne_df = pd.DataFrame(tsne_result, columns=['Dimension 1', 'Dimension 2'])
+tsne_df['Word'] = model.wv.index_to_key
+
+# Créez un nuage de points interactif avec Plotly
+fig = px.scatter(tsne_df, x='Dimension 1', y='Dimension 2', text='Word', title='Projection en 2D des embeddings de mots (t-SNE)')
+fig.update_traces(textposition='top center', textfont_size=10, marker=dict(size=8, opacity=0.5))
+fig.show()
+
+
+```
+
+```{python}
+from sklearn.metrics.pairwise import cosine_similarity
+#test similarity
+query_embedding = sentence_model_bge.encode('Dogs are mammals.')
+passage_embedding = sentence_model_bge.encode('Fish are aquatic animals.')
+similarity = query_embedding @ passage_embedding
+print(similarity)
+print("Similarity:", util.dot_score(query_embedding, passage_embedding))
+
+similarity_cosine = cosine_similarity([query_embedding], [passage_embedding])
+print("Similarity (Cosine):", similarity_cosine[0][0])
+
+
+
+
+
+
+uery_embedding = sentence_model.encode('Dogs are mammals.')
+passage_embedding = sentence_model.encode('Fish are aquatic animals.')
+similarity = query_embedding @ passage_embedding
+print(similarity)
+print("Similarity:", util.dot_score(query_embedding, passage_embedding))
+
+similarity_cosine = cosine_similarity([query_embedding], [passage_embedding])
+print("Similarity (Cosine):", similarity_cosine[0][0])
+
+```
+
+## TEST TEST TEST WORD2VEC PLOT TEST TEST TEST
 
 ## **Custom Embeddings model for BERTopic** (bge-large-en)
 
@@ -374,15 +569,14 @@ topics, probs = topic_model.fit(docs_marketing, embeddings)
 #similarity = embeddings_1 @ embeddings_2.T
 #print(similarity)
 
-
-sentence_model_bge = SentenceTransformer('BAAI/bge-large-en')
+sentence_model_bge = SentenceTransformer('BAAI/bge-large-en-v1.5', device='cuda')
 embeddings_bge = sentence_model_bge.encode(docs_marketing, show_progress_bar=True, normalize_embeddings=True)
 
 # Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
-topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, language='english', calculate_probabilities=True, verbose=True)
+topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, calculate_probabilities=True, verbose=True, min_topic_size=8, nr_topics=13)
 
 # Ajustez le modèle BERTopic aux embeddings
-topics_bge, probs_bge = topic_model_bge.fit_transform(docs_marketing, embeddings)
+topics_bge, probs_bge = topic_model_bge.fit_transform(docs_marketing, embeddings_bge)
 ```
 
 ## Visualize how each token contributes to a specific topic.
@@ -401,6 +595,8 @@ df_topicmodel
 
 topics_html = df_topicmodel.to_html()
 
+topics_html
+
 with open('topics_html.html', 'w') as html_file:
     html_file.write(topics_html)
 ```
@@ -410,8 +606,11 @@ with open('topics_html.html', 'w') as html_file:
 ### What is the representative document for each topic?
 
 ```{python}
-topicsinfo = topic_model_bge.get_topic_info()
+topicsinfo = topic_model.get_topic_info()
 topicsinfo
+
+topicsinfo_bge = topic_model_bge.get_topic_info()
+topicsinfo_bge
 ```
 
 ### Display representative words for each topic
@@ -431,24 +630,48 @@ with open('table_topics.html', 'w') as f:
     f.write(table)
 ```
 
+### Visualize topics
+
 ```{python}
 
-topic_model_bge.visualize_topics()
-fig_topics_bge = topic_model_bge.visualize_topics()
-fig_topics_bge.write_html("topics_bge_test.html")
+topic_model.visualize_topics()
+fig_topics = topic_model.visualize_topics()
+fig_topics.write_html("topics_13.html")
+
+```
+
+### Topics hierarchy
+
+```{python}
 
 fig_hierarchy_bge = topic_model_bge.visualize_hierarchy()
 fig_hierarchy_bge.write_html("hierarchy_bge_test.html")
+```
+
+### Hierarchical topics
+
+```{python}
 
 hierarchical_topics = topic_model_bge.hierarchical_topics(docs_marketing)
 fig_hierarchical_topics_bge = topic_model_bge.visualize_hierarchy(hierarchical_topics=hierarchical_topics)
 fig_hierarchical_topics_bge.write_html("hierarchical_topics_bge.html")
 
-fig_barchart_bge = topic_model_bge.visualize_barchart(n_words=15)
-fig_barchart_bge.write_html("barchart_bge_test.html")
+```
 
-fig_heatmap_bge = topic_model_bge.visualize_heatmap()
-fig_heatmap_bge.write_html("fig_heatmap_bge.html")
+### Barchart topics
+
+```{python}
+
+fig_barchart = topic_model.visualize_barchart(width = 300, height = 300, n_words=10, topics=None, top_n_topics=20)
+fig_barchart.write_html("barchart_13topics.html")
+```
+
+### Heatmap topics
+
+```{python}
+
+fig_heatmap = topic_model.visualize_heatmap()
+fig_heatmap.write_html("fig_heatmap_13topics.html")
 
 ```
 
@@ -477,22 +700,11 @@ embeddings_df = pd.DataFrame(embeddings)
 embeddings_df.to_csv("embeddings_bge.csv", index=False)
 ```
 
-## Project 3D embeddings (bge-large-en)
+## Plotting authors and text based on embeddings
+
+### Project 3D embeddings (bge-large-en)
 
 ```{python}
-import pandas as pd
-import hdbscan
-import plotly.express as px
-from sklearn.decomposition import PCA
-import plotly.io as pio
-import seaborn as sns
-import matplotlib.pyplot as plt
-import time
-import umap.umap_ as umap
-from sklearn.metrics import davies_bouldin_score
-from sklearn.metrics import silhouette_score, silhouette_samples
-from yellowbrick.cluster import SilhouetteVisualizer
-import torch
 
 df = pd.read_csv("data_for_embeddings.csv")
 embeddings_bge = pd.read_csv('embeddings_bge.csv')
@@ -512,7 +724,7 @@ fig.savefig("out.svg")
 
 ```
 
-## 3D plot of authors and year with PCA as dimensional reduction technique
+### 3D plot of authors and year with PCA as dimensional reduction technique
 
 ```{python}
 
@@ -552,7 +764,7 @@ pio.write_html(fig, file="3D_embeddings_PCA.html")
 
 ```
 
-## 3D plot of authors and year with TSNE as dimensional reduction technique
+### 3D plot of authors and year with TSNE as dimensional reduction technique
 
 ```{python}
 
@@ -598,38 +810,46 @@ pio.write_html(fig, file="3D_embeddings_TSNE.html")
 
 ```
 
-## 2D plot of authors and year with PCA as dimensional reduction technique
+### 2D plot of authors and year with PCA as dimensional reduction technique
 
 ```{python}
 
 df = df[df['citedby_count'] > 20]
-doc_marketing_sup20citations = df['combined_text']
+doc_marketing_sup20citations = df['combined_text'].to_list()
 
-sentence_model_bge = SentenceTransformer('BAAI/bge-large-en',device='cuda')
+sentence_model_bge = SentenceTransformer('BAAI/bge-large-en', device='cuda')
 embeddings_bge_sup20citations = sentence_model_bge.encode(doc_marketing_sup20citations, show_progress_bar=True, normalize_embeddings=True)
 
-pca = PCA(n_components=2)
-embeddings_2D = pca.fit_transform(embeddings_bge)
+pca = PCA(n_components=50)
+embeddings_2D = pca.fit_transform(embeddings_bge_sup20citations)
+print ("Proportion of Variance Explained : ", pca.explained_variance_ratio_)
+    
+out_sum = np.cumsum(pca.explained_variance_ratio_)  
+print ("Cumulative Prop. Variance Explained: ", out_sum)
+
+type(embeddings_2D)
+type(doc_marketing_sup20citations)
+doc_marketing_sup20citations = pd.DataFrame(doc_marketing_sup20citations, columns=["combined_text"])  # Replace "Column1", "Column2", ... with actual column names
 
 # Étape 2 : Coller les embeddings réduits au DataFrame df
-df['X'] = embeddings_2D[:, 0]
-df['Y'] = embeddings_2D[:, 1]
+doc_marketing_sup20citations['X'] = embeddings_2D[:, 0]
+doc_marketing_sup20citations['Y'] = embeddings_2D[:, 1]
 
 print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
 
 # Étape 3 : Clustering avec HDBSCAN
-clusterer = hdbscan.HDBSCAN(min_cluster_size=8, metric='euclidean')
-df['Cluster'] = clusterer.fit_predict(embeddings_2D)
+clusterer = hdbscan.HDBSCAN( metric='euclidean')
+doc_marketing_sup20citations['Cluster'] = clusterer.fit_predict(embeddings_2D)
 
 # Évaluation du clustering
-davies_bouldin = davies_bouldin_score(embeddings_2D, df['Cluster'])
-silhouette = silhouette_score(embeddings_2D, df['Cluster'])
+davies_bouldin = davies_bouldin_score(embeddings_2D, doc_marketing_sup20citations['Cluster'])
+silhouette = silhouette_score(embeddings_2D, doc_marketing_sup20citations['Cluster'])
 
 print('Davies-Bouldin Score:', davies_bouldin)
 print('Silhouette Score:', silhouette)
 
 # Étape 4 : Création d'un DataFrame pour la visualisation
-df_vis = df[['X', 'Y', 'dc_creator', 'year', 'Cluster']]
+df_vis = doc_marketing_sup20citations[['X', 'Y', 'dc_creator', 'year', 'Cluster']]
 
 # Étape 5 : Création du graphique 2D interactif avec Plotly
 fig = px.scatter(df_vis, x='X', y='Y', color='Cluster'))
@@ -639,25 +859,4 @@ fig.update_layout(template="plotly_white")
 fig.show()
 
 pio.write_html(fig, file="2D_embeddings_PCA.html")
-
-
-```
-
-cuda
-
-```{python}
-import torch
-torch.cuda.is_available()
-
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-
-print(f"Is CUDA supported by this system? {torch.cuda.is_available()}")
-print(f"CUDA version: {torch.version.cuda}")
-
-# Storing ID of the current CUDA device
-cuda_id = torch.cuda.current_device()
-print(f"ID of the current CUDA device: {cuda_id}")
-
-print(f"Name of the current CUDA device: {torch.cuda.get_device_name(cuda_id)}")
-
 ```
