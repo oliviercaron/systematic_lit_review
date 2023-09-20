@@ -376,7 +376,7 @@ print(f"Name of the current CUDA device: {torch.cuda.get_device_name(cuda_id)}")
 ## **BERTopic** with **Custom Embeddings model** (all-mpnet-base-v2)
 
 ::: callout-note
-We use a CountVectorizer which enables us to specify the range of the ngram we want to take an interest in. We can use it before or after the topic modelling (fine tuning).\
+We use a CountVectorizer which enables us to specify the range of the ngram we want in our topic model. We can use it before or after the topic modelling (update topic).\
 Here we use it before the topic modelling to exclude english stopwords, but after the embeddings process so that the foundation provided by stopwords in sentences is preserved in context.
 :::
 
@@ -387,7 +387,7 @@ Here we use it before the topic modelling to exclude english stopwords, but afte
 #   this means it will consider individual words as well as pairs of consecutive words.
 # - stop_words="english": use a predefined list of English stop words to exclude common words like "the," "and," etc.
 
-vectorizer_model = CountVectorizer(ngram_range=(1, 3), stop_words="english")
+vectorizer_model = CountVectorizer(ngram_range=(1, 3)) #, stop_words="english"
 # reduce the impact of frequent words
 ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
 
@@ -399,10 +399,14 @@ sentence_model = SentenceTransformer("all-mpnet-base-v2", device='cuda')
 embeddings_mpnet = sentence_model.encode(docs_marketing, show_progress_bar=True)
 
 # create an instance of BERToopic with vectorizer_model and other parameters
-topic_model_mpnet = BERTopic(ctfidf_model=ctfidf_model, calculate_probabilities=True, verbose=True, min_topic_size=5)
+topic_model_mpnet = BERTopic(ctfidf_model=ctfidf_model, calculate_probabilities=True, verbose=True, min_topic_size=5, nr_topics=14, vectorizer_model=vectorizer_model)
 
 # adjust BERTopic to embeddings. It extracts topics and corresponding probabilities.
 topics_mpnet, probs_mpnet = topic_model_mpnet.fit_transform(docs_marketing, embeddings_mpnet)
+
+#update topic
+updated_vectorizer_model = CountVectorizer(stop_words="english", ngram_range=(1, 3))
+topic_model_mpnet.update_topics(docs_marketing, vectorizer_model=updated_vectorizer_model)
 ```
 
 ## **BERTopic** with **Custom Embeddings model (multi-qa-mpnet-base-dot-v1)**
@@ -489,19 +493,6 @@ topics_xlnet, probs_xlnet = topic_model_xlnet.fit_transform(docs_marketing, embe
 
 ```{python}
 #model = SentenceTransformer('BAAI/bge-large-zh')
-#embeddings_1 = model.encode(sentences, normalize_embeddings=True)
-#embeddings_2 = model.encode(sentences, normalize_embeddings=True)
-#similarity = embeddings_1 @ embeddings_2.T
-#print(similarity)
-
-sentence_model_bge = SentenceTransformer('BAAI/bge-large-en-v1.5', device='cuda')
-embeddings_bge = sentence_model_bge.encode(docs_marketing, show_progress_bar=True, normalize_embeddings=True)
-
-# Créez une instance de BERTopic avec votre vectorizer_model et d'autres paramètres
-topic_model_bge = BERTopic(vectorizer_model=vectorizer_model, calculate_probabilities=True, verbose=True, min_topic_size=5, nr_topics=14)
-
-# Ajustez le modèle BERTopic aux embeddings
-topics_bge, probs_bge = topic_model_bge.fit_transform(docs_marketing, embeddings_bge)#model = SentenceTransformer('BAAI/bge-large-zh')
 #embeddings_1 = model.encode(sentences, normalize_embeddings=True)
 #embeddings_2 = model.encode(sentences, normalize_embeddings=True)
 #similarity = embeddings_1 @ embeddings_2.T
@@ -632,7 +623,7 @@ with open('topics_html.html', 'w') as html_file:
 ### What is the representative document for each topic?
 
 ```{python}
-topicsinfo = topic_model.get_topic_info()
+topicsinfo = topic_model.get_topic_info()[1:]
 topicsinfo
 ```
 
