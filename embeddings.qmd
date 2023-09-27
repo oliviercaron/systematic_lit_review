@@ -1,5 +1,4 @@
 ---
-pip ---
 title: "Systematic literature review"
 bibliography: references.bib
 title-block-banner: true
@@ -102,7 +101,7 @@ data_embeddings %>%
 ## A first Word2Vec embeddings analysis (skip-gram)
 
 ```{r}
-#| label: word2vec
+#| label: word2vec-skipgram
 
 set.seed(42)
 model <- word2vec(x = tolower(data_embeddings$combined_text), type = "skip-gram", dim = 100, iter = 100,, verbose=10, stopwords = stopwords("english"), window = "7")
@@ -133,7 +132,7 @@ lookslike %>%
 ## A Word2Vec embeddings analysis (cbow)
 
 ```{r}
-#| label: word2vec
+#| label: word2vec-cbow
 
 set.seed(42)
 modelcbow <- word2vec(x = tolower(data_embeddings$combined_text), type = "cbow", dim = 100, iter = 100, verbose=10, stopwords = stopwords("english"), window = "7")
@@ -388,7 +387,7 @@ The aim of this function is to swiftly create various BERTopic experiments while
 Some explanations:
 
 | Parameter name   | Description                                                                                                                                                                                                                |
-|-------------|-----------------------------------------------------------|
+|----------------|--------------------------------------------------------|
 | docs             | The documents we want to analyze (list).                                                                                                                                                                                   |
 | embeddings_model | Specifies the embeddings model we want to load and use.                                                                                                                                                                    |
 | min_topic_size   | It is used to specify what the minimum size of a topic can be. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#min_topic_size "min_topic_size"). |
