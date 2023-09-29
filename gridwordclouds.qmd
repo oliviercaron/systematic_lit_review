@@ -1,0 +1,61 @@
+---
+title: "Systematic literature review"
+bibliography: references.bib
+title-block-banner: true
+subtitle: "Topic Wordclouds"
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 5
+format:
+  html:
+    theme:
+      light: yeti
+      dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1000px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+---
+
+## Topic Wordclouds
+
+### [Color palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4)
+
+::: {layout-nrow="4"}
+![Topic 1](wordclouds/wordcloud_topic0_GrandBudapest2_4.png){width="23%"}
+![Topic 2](wordclouds/wordcloud_topic1_GrandBudapest2_4.png){width="23%"} ![Topic 3](wordclouds/wordcloud_topic2_GrandBudapest2_4.png){width="23%"} ![Topic 4](wordclouds/wordcloud_topic3_GrandBudapest2_4.png){width="23%"} ![Topic 5](wordclouds/wordcloud_topic4_GrandBudapest2_4.png){width="23%"} ![Topic 6](wordclouds/wordcloud_topic5_GrandBudapest2_4.png){width="23%"} ![Topic 7](wordclouds/wordcloud_topic6_GrandBudapest2_4.png){width="23%"} ![Topic 8](wordclouds/wordcloud_topic7_GrandBudapest2_4.png){width="23%"} ![Topic 9](wordclouds/wordcloud_topic8_GrandBudapest2_4.png){width="23%"} ![Topic 10](wordclouds/wordcloud_topic9_GrandBudapest2_4.png){width="23%"} ![Topic 11](wordclouds/wordcloud_topic10_GrandBudapest2_4.png){width="23%"} ![Topic 12](wordclouds/wordcloud_topic11_GrandBudapest2_4.png){width="23%"} ![Topic 13](wordclouds/wordcloud_topic12_GrandBudapest2_4.png){width="23%"} ![Topic 14](wordclouds/wordcloud_topic13_GrandBudapest2_4.png){width="23%"} ![Topic 15](wordclouds/wordcloud_topic14_GrandBudapest2_4.png){width="23%"} ![Topic 16](wordclouds/wordcloud_topic15_GrandBudapest2_4.png){width="23%"}
+:::
+
+### [Palette : Scientific - Sequential - Oslo_10](https://jiffyclub.github.io/palettable/scientific/sequential/#oslo_10)
+
+::: {layout-nrow="4"}
+![Topic 1](wordclouds/wordcloud_topic0_Oslo_10.png){width="23%"} ![Topic 2](wordclouds/wordcloud_topic1_Oslo_10.png){width="23%"} ![Topic 3](wordclouds/wordcloud_topic2_Oslo_10.png){width="23%"} ![Topic 4](wordclouds/wordcloud_topic3_Oslo_10.png){width="23%"} ![Topic 5](wordclouds/wordcloud_topic4_Oslo_10.png){width="23%"} ![Topic 6](wordclouds/wordcloud_topic5_Oslo_10.png){width="23%"} ![Topic 7](wordclouds/wordcloud_topic6_Oslo_10.png){width="23%"} ![Topic 8](wordclouds/wordcloud_topic7_Oslo_10.png){width="23%"} ![Topic 9](wordclouds/wordcloud_topic8_Oslo_10.png){width="23%"} ![Topic 10](wordclouds/wordcloud_topic9_Oslo_10.png){width="23%"} ![Topic 11](wordclouds/wordcloud_topic10_Oslo_10.png){width="23%"} ![Topic 12](wordclouds/wordcloud_topic11_Oslo_10.png){width="23%"} ![Topic 13](wordclouds/wordcloud_topic12_Oslo_10.png){width="23%"} ![Topic 14](wordclouds/wordcloud_topic13_Oslo_10.png){width="23%"} ![Topic 15](wordclouds/wordcloud_topic14_Oslo_10.png){width="23%"} ![Topic 16](wordclouds/wordcloud_topic15_Oslo_10.png){width="23%"}
+:::
