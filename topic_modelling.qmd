@@ -413,80 +413,53 @@ text = create_wordcloud_text(topic_model, 0)
 ```{python}
 #| label: palettes-wordcloud
 
-# A lot of palettes here: https://jiffyclub.github.io/palettable/
+# A lot of palettes available here: https://jiffyclub.github.io/palettable/
 
 palettes = [
+    ('wesanderson.GrandBudapest2_4', 'GrandBudapest2_4'),
+    ('scientific.sequential.Oslo_10', 'Oslo_10'),
+    ('scientific.sequential.GrayC_10', 'GrayC_10'),
+    ('scientific.sequential.GrayC_4', 'GrayC_4'),
+    ('scientific.sequential.GrayC_5', 'GrayC_5'),
+    ('scientific.sequential.GrayC_6', 'GrayC_6'),
+    ('scientific.sequential.GrayC_3', 'GrayC_3'),
+    #('colorbrewer.diverging.RdYlBu_9', 'RdYlBu_9')
+    #('colorbrewer.diverging.RdYlBu_10', 'RdYlBu_10'),
+    #('colorbrewer.diverging.RdYlBu_11', 'RdYlBu_11')
     #('colorbrewer.diverging.RdYlBu_3', 'RdYlBu_3'),
     #('colorbrewer.diverging.RdYlBu_4', 'RdYlBu_4'),
     #('colorbrewer.diverging.RdYlBu_5', 'RdYlBu_5'),
     #('colorbrewer.diverging.RdYlBu_6', 'RdYlBu_6'),
     #('colorbrewer.diverging.RdYlBu_7', 'RdYlBu_7'),
-    #('wesanderson.GrandBudapest2_4', 'GrandBudapest2_4')
-    ('scientific.sequential.Oslo_10', 'Oslo_10')
-    #('colorbrewer.diverging.RdYlBu_9', 'RdYlBu_9')
-    #('colorbrewer.diverging.RdYlBu_10', 'RdYlBu_10'),
-    #('colorbrewer.diverging.RdYlBu_11', 'RdYlBu_11')
 ]
 
 
 # Define the number of topics
 nb_topics = len(topic_model.get_topic_info()) - 1  # Exclude topic -1 (outliers from BERTopic)
 
-# Check and create the "wordclouds" folder if it doesn't exist
-output_folder = "wordclouds"
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
-
-# Loop to generate word clouds
-for i in range(0, nb_topics):
-    text = create_wordcloud_text(model=topic_model, topic=i)
-    for palette, palette_name in palettes:
+# Loop through topics and palettes
+for palette, palette_name in palettes:
+    progress_bar = tqdm(total=nb_topics, desc=f"Palette: {palette_name}", position=0, leave=True)
+    
+    for i in range(0, nb_topics):
+        text = create_wordcloud_text(model=topic_model, topic=i)
         try:
             # Generate the wordcloud with the specified palette and save it in the "wordclouds" folder
             output_name = os.path.join(output_folder, f'wordcloud_topic{i}_{palette_name}.png')
             stylecloud.gen_stylecloud(text=text,
                                       palette=palette, background_color='white',
-                                      size=1024,
+                                      size=512,
                                       gradient='radial', output_name=output_name, collocations=True)
         except AttributeError:
             print(f"Palette {palette_name} does not exist.")
+        
+        # Update the progress bar for the current palette
+        progress_bar.update(1)
+    
+    # Close the progress bar for the current palette
+    progress_bar.close()
+
 print("\nAll the wordclouds have been generated in the wordclouds folder.")
-```
-
-```{r}
-#| label: grid-wordclouds
-
-library(gridExtra)
-library(grid)
-library(png)  # If you're working with PNG images
-
-# Define the folder path where your wordcloud images are located
-folder_path <- "/wordclouds"  # Replace with your actual folder path
-
-# List all files in the folder
-all_files <- list.files(folder_path)
-
-# Define a regular expression pattern to match file names
-pattern <- "^wordcloud_topic[0-9]+_GrandBudapest2_[0-9]+\\.png$"
-
-# Use grepl to filter files that match the pattern
-matching_files <- all_files[grepl(pattern, all_files)]
-
-# Read and prepare the matching images
-image_list <- lapply(matching_files, function(file) {
-  image <- readPNG(file.path(folder_path, file))  # Adjust for JPEG if needed
-  rasterGrob(image, interpolate = TRUE)
-})
-
-# Create a grid of images
-grid.arrange(
-  grobs = image_list,
-  nrow = 1,  # Number of rows in the grid
-  ncol = length(image_list)  # Number of columns based on the number of images
-)
-
-```
-
 ```
 
 
@@ -508,13 +481,6 @@ grid.arrange(
 ![Topic 15](wordclouds/wordcloud_topic14_GrandBudapest2_4.png){width=23%}
 ![Topic 16](wordclouds/wordcloud_topic15_GrandBudapest2_4.png){width=23%}
 :::
-
-```{python}
-#| label: combined-wordclouds
-
-
-```
-
 
 
 ## **BERTopic** with **Custom Embeddings model** (xlnet) (@DBLP:journals/corr/abs-1906-08237)
@@ -700,7 +666,7 @@ fig.write_html("word2vec_embeddings_3d_plot.html")
 ```{python}
 #| label: word2vec-2dplot
 
-# Calculate word frequencies in your text data
+# Calculate word frequencies in text data
 word_frequencies = {}  # Dictionary to store word frequencies
 for sentence in tokenized_docs_marketing:
     for word in sentence:
@@ -761,7 +727,7 @@ topics_list = topic_models[embeddings_model_name].topics_
 # put the topics' number in the df of marketing documents
 df["topic"] = topics_list
 
-# get the correspondance between topic number and topic name
+# get the correspondence between topic number and topic name
 topic_info_df = topic_models[embeddings_model_name].get_topic_info()
 topic_info_df
 selected_columns = topic_info_df[["Topic", "Name"]]
