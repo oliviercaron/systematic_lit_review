@@ -52,6 +52,7 @@ reference-location: margin
 #| message: false
 
 library(tidyverse)
+library(gt)
 ```
 
 ## Loading data R
@@ -90,10 +91,11 @@ data_embeddings <- list_articles %>%
 
 data_embeddings %>%
   head(5) %>%
-  select(entry_number, dc_creator, combined_text, year)
+  select(entry_number, dc_creator, combined_text, year) %>%
+  gt()
 ```
 
-## **Python libraries and loading data**
+## Python libraries and loading data
 
 ```{python}
 #| label: load-data-packages-python
@@ -103,13 +105,12 @@ warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 import matplotlib.pyplot as plt
 import nltk
-import np
+import numpy as np
 import os
 import palettable
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
-import seaborn as sns
 import string
 import stylecloud
 import time
@@ -172,7 +173,7 @@ The aim of this function is to swiftly create various BERTopic experiments while
 Some explanations:
 
 | Parameter name   | Description                                                                                                                                                                                                                |
-|------------------|------------------------------------------------------|
+|-------------------|-----------------------------------------------------|
 | docs             | The documents we want to analyze (list).                                                                                                                                                                                   |
 | embeddings_model | Specifies the embeddings model we want to load and use.                                                                                                                                                                    |
 | min_topic_size   | It is used to specify what the minimum size of a topic can be. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#min_topic_size "min_topic_size"). |
@@ -216,11 +217,6 @@ def create_bertopic(docs, embeddings_model, min_topic_size, nr_topics):
 
     # return the trained bertopic model
     return topic_model
-
-#topic_model_test = create_bertopic(docs_marketing, "allenai-specter", 5, 13)
-
-#model_name = "test"
-#visualize_bertopic(topic_model_test, model_name)
 ```
 
 ### Function to visualize BERTopics
@@ -367,13 +363,62 @@ print(table_with_centered_title)
 #sentence_model.get_sentence_embedding_dimension()
 ```
 
+### Extracting Topics from BERTopic Model
+
+#### Representative documents of topics
+
+```{python}
+#| label: extract-topics-bertopic
+#| column: page-right
+
+
+# we can access the different topic models like this
+embeddings_model_name = "all-mpnet-base-v2"
+topics_list = topic_models[embeddings_model_name].topics_
+
+
+# len(topic_models[embeddings_model_name].probabilities_) # = 405 like the docs_marketings
+# len(topic_models[embeddings_model_name].topics_)        # = 405 like the docs_marketings
+# type(topic_models[embeddings_model_name].topics_)      # list
+
+# put the topics' number in the df of marketing documents
+df["topic"] = topics_list
+
+# get the correspondence between topic number and topic name
+topic_info_df = topic_models[embeddings_model_name].get_topic_info()
+topic_info_df
+selected_columns = topic_info_df[["Topic", "Name"]]
+
+
+```
+
+#### Distribution of topics
+
+```{python}
+#| label: distribution-topics
+
+#todo: plotly graph of distribution of topics among articles
+# then put it into df
+df["topic_name"] = df["topic"].map(selected_columns.set_index("Topic")["Name"])
+
+# for info, the distribution of topics (many outliers)
+topic_counts = df["topic"].value_counts()
+
+topic_counts_df = pd.DataFrame(topic_counts)
+
+
+fig = px.histogram(topic_counts_df, x='topic', title='Distribution of topics among articles')
+fig.show()
+
+
+```
 ### Visualize how each token contributes to a specific topic.
 
 We can do it by selecting a sentence in the document. To do so, we need to first calculate topic distributions on a token level and then visualize the results:\
 More parameters here :\
 https://maartengr.github.io/BERTopic/getting_started/distribution/distribution.html
 
-Here, we take the most cited article as an example
+Here, we take the most cited article as an example.
 
 ```{python}
 #| label: token-contribution-topic
@@ -388,8 +433,6 @@ df_topicmodel
 
 topics_html = df_topicmodel.to_html()
 
-topics_html
-
 with open('images/topics_contribution.html', 'w') as html_file:
     html_file.write(topics_html)
 ```
@@ -398,6 +441,7 @@ with open('images/topics_contribution.html', 'w') as html_file:
 
 ```{python}
 #| label: wordcloud-function
+#| message: false
 
 from wordcloud import WordCloud
 
@@ -409,11 +453,20 @@ def create_wordcloud_text(model, topic):
 text = create_wordcloud_text(topic_model, 0)
 ```
 
-
 ```{python}
 #| label: palettes-wordcloud
 
 # A lot of palettes available here: https://jiffyclub.github.io/palettable/
+import os
+from tqdm import tqdm
+import stylecloud
+
+# Set the full path to the output folder
+output_folder = "wordclouds"
+
+# Make sure the output folder exists, or create it if it doesn't
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
 
 palettes = [
     ('wesanderson.GrandBudapest2_4', 'GrandBudapest2_4'),
@@ -422,29 +475,21 @@ palettes = [
     ('scientific.sequential.GrayC_4', 'GrayC_4'),
     ('scientific.sequential.GrayC_5', 'GrayC_5'),
     ('scientific.sequential.GrayC_6', 'GrayC_6'),
-    ('scientific.sequential.GrayC_3', 'GrayC_3'),
-    #('colorbrewer.diverging.RdYlBu_9', 'RdYlBu_9')
-    #('colorbrewer.diverging.RdYlBu_10', 'RdYlBu_10'),
-    #('colorbrewer.diverging.RdYlBu_11', 'RdYlBu_11')
-    #('colorbrewer.diverging.RdYlBu_3', 'RdYlBu_3'),
-    #('colorbrewer.diverging.RdYlBu_4', 'RdYlBu_4'),
-    #('colorbrewer.diverging.RdYlBu_5', 'RdYlBu_5'),
-    #('colorbrewer.diverging.RdYlBu_6', 'RdYlBu_6'),
-    #('colorbrewer.diverging.RdYlBu_7', 'RdYlBu_7'),
+    ('scientific.sequential.GrayC_3', 'GrayC_3')
 ]
-
 
 # Define the number of topics
 nb_topics = len(topic_model.get_topic_info()) - 1  # Exclude topic -1 (outliers from BERTopic)
 
 # Loop through topics and palettes
 for palette, palette_name in palettes:
+    # Create a progress bar for the current palette
     progress_bar = tqdm(total=nb_topics, desc=f"Palette: {palette_name}", position=0, leave=True)
     
     for i in range(0, nb_topics):
         text = create_wordcloud_text(model=topic_model, topic=i)
         try:
-            # Generate the wordcloud with the specified palette and save it in the "wordclouds" folder
+            # Generate the word cloud with the specified palette and save it in the "wordclouds" folder
             output_name = os.path.join(output_folder, f'wordcloud_topic{i}_{palette_name}.png')
             stylecloud.gen_stylecloud(text=text,
                                       palette=palette, background_color='white',
@@ -459,34 +504,48 @@ for palette, palette_name in palettes:
     # Close the progress bar for the current palette
     progress_bar.close()
 
-print("\nAll the wordclouds have been generated in the wordclouds folder.")
+print("\nAll word clouds have been generated in the 'wordclouds' folder.")
+
+
 ```
 
+#### [Color palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4)
 
-::: {layout-nrow=4}
-![Topic 1](wordclouds/wordcloud_topic0_GrandBudapest2_4.png){width=23%}
-![Topic 2](wordclouds/wordcloud_topic1_GrandBudapest2_4.png){width=23%}
-![Topic 3](wordclouds/wordcloud_topic2_GrandBudapest2_4.png){width=23%}
-![Topic 4](wordclouds/wordcloud_topic3_GrandBudapest2_4.png){width=23%}
-![Topic 5](wordclouds/wordcloud_topic4_GrandBudapest2_4.png){width=23%}
-![Topic 6](wordclouds/wordcloud_topic5_GrandBudapest2_4.png){width=23%}
-![Topic 7](wordclouds/wordcloud_topic6_GrandBudapest2_4.png){width=23%}
-![Topic 8](wordclouds/wordcloud_topic7_GrandBudapest2_4.png){width=23%}
-![Topic 9](wordclouds/wordcloud_topic8_GrandBudapest2_4.png){width=23%}
-![Topic 10](wordclouds/wordcloud_topic9_GrandBudapest2_4.png){width=23%}
-![Topic 11](wordclouds/wordcloud_topic10_GrandBudapest2_4.png){width=23%}
-![Topic 12](wordclouds/wordcloud_topic11_GrandBudapest2_4.png){width=23%}
-![Topic 13](wordclouds/wordcloud_topic12_GrandBudapest2_4.png){width=23%}
-![Topic 14](wordclouds/wordcloud_topic13_GrandBudapest2_4.png){width=23%}
-![Topic 15](wordclouds/wordcloud_topic14_GrandBudapest2_4.png){width=23%}
-![Topic 16](wordclouds/wordcloud_topic15_GrandBudapest2_4.png){width=23%}
-:::
+|                               Topic 0                               |                               Topic 1                               |                               Topic 2                               |                               Topic 3                               |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic1_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic2_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_GrandBudapest2_4.png){width="90%"}  |
+|                             **Topic 4**                             |                             **Topic 5**                             |                             **Topic 6**                             |                             **Topic 7**                             |
+| ![](wordclouds/wordcloud_topic4_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic5_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic6_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_GrandBudapest2_4.png){width="90%"}  |
+|                             **Topic 8**                             |                             **Topic 9**                             |                            **Topic 10**                             |                            **Topic 11**                             |
+| ![](wordclouds/wordcloud_topic8_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic9_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic10_GrandBudapest2_4.png){width="90%"} | ![](wordclouds/wordcloud_topic11_GrandBudapest2_4.png){width="90%"} |
+|                            **Topic 12**                             |                            **Topic 13**                             |                            **Topic 14**                             |                            **Topic 15**                             |
+| ![](wordclouds/wordcloud_topic12_GrandBudapest2_4.png){width="90%"} | ![](wordclouds/wordcloud_topic13_GrandBudapest2_4.png){width="90%"} | ![](wordclouds/wordcloud_topic14_GrandBudapest2_4.png){width="90%"} | ![](wordclouds/wordcloud_topic15_GrandBudapest2_4.png){width="90%"} |
 
+### Some visualizations of the topics
 
-## **BERTopic** with **Custom Embeddings model** (xlnet) (@DBLP:journals/corr/abs-1906-08237)
+```{=html}
+<iframe width="1500" height="800" src="images/all-mpnet-base-v2-17topics/documents_topics.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1200" height="1300" src="images/all-mpnet-base-v2-17topics/barchart.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1200" height="850" src="images/all-mpnet-base-v2-17topics/heatmap.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1200" height="500" src="images/all-mpnet-base-v2-17topics/hierarchical.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1300" height="500" src="images/all-mpnet-base-v2-17topics/topicsovertime.html" title="Quarto Documentation"></iframe>
+```
+## BERTopic with Custom Embeddings model (xlnet)
+
+(@DBLP:journals/corr/abs-1906-08237)
 
 ```{python}
 #| label: bertopic-xlnet
+#| eval: false
+#| echo: false
 
 # check if cuda is available
 if torch.cuda.is_available():
@@ -542,10 +601,7 @@ topic_model_xlnet = BERTopic(vectorizer_model=vectorizer_model, calculate_probab
 
 topics_xlnet, probs_xlnet = topic_model_xlnet.fit_transform(docs_marketing, embeddings_array)
 
-
 ```
-
-## 
 
 ## Word2Vec model (tokenization with nltk)
 
@@ -593,38 +649,42 @@ model = Word2Vec(
 
 similar_words = model.wv.most_similar("learning", topn=20)
 similar_words_df = pd.DataFrame(similar_words, columns=['Word', 'Similarity score'])
-similar_words_df
+df_similar_words = pd.DataFrame(similar_words_df)
 
+#df_similar_words
 ```
 
 ### Plot similar words for "learning"
 
 ```{python}
 #| label: similar-words-learning
+#| column: page-right
 
-# Créer un graphique à l'aide de Plotly Express
-fig = px.scatter(similar_words_df, x='Similarity score', y='Word', color='Word',
-                 title='Top 20 Most Similar Words for "learning"')
-
-# Customize the style of the plot
-fig.update_traces(marker=dict(size=12, opacity=0.6),
-                  selector=dict(mode='markers'),
-                  showlegend=False)
-
-fig.update_layout(title_x=0.5, title_font=dict(size=20))
-fig.update_layout(template="plotly_white")
+# Plot graph with Plotly Express
+if 'figlearning' not in globals():
+    figlearning = px.scatter(similar_words_df, x='Similarity score', y='Word', color='Word',
+                     title='Top 20 Most Similar Words for "learning"')
+    
+    # Customize the style of the plot
+    figlearning.update_traces(marker=dict(size=12, opacity=0.6),
+                      selector=dict(mode='markers'),
+                      showlegend=False)
+    
+    figlearning.update_layout(title_x=0.5, title_font=dict(size=20))
+    figlearning.update_layout(template="plotly_white")
 
 # Show the plot
-fig.show()
+#figlearning.show()
 
 # Save the plot as an HTML file
-fig.write_html("similar_words_plot.html")
+figlearning.write_html("similar_words_plot.html")
 ```
 
 ### Plot Word2Vec embeddings in 3D with plotly
 
 ```{python}
 #| label: word2vec-3dplot
+#| column: page-right
 
 # Extract word vectors and corresponding words from the Word2Vec model
 word_vectors = [model.wv[word] for word in model.wv.index_to_key]
@@ -641,18 +701,22 @@ tsne_result = tsne.fit_transform(word_vectors_array)
 # Create a DataFrame with the reduced dimensions and words
 tsne_df = pd.DataFrame({'Word': words, 'Dimension 1': tsne_result[:, 0], 'Dimension 2': tsne_result[:, 1], 'Dimension 3': tsne_result[:, 2]})
 
-# Create a 3D scatter plot with Plotly Express
-fig = px.scatter_3d(tsne_df, x='Dimension 1', y='Dimension 2', z='Dimension 3', text='Word', title='3D Word Embedding Visualization')
+# Check if the rendering has already been done
+if 'fig' not in globals():
+    # Rendering code (this will only be executed once)
+    
+    # Create a 3D scatter plot with Plotly Express
+    fig = px.scatter_3d(tsne_df, x='Dimension 1', y='Dimension 2', z='Dimension 3', text='Word', title='3D Word Embedding Visualization')
 
-# Customize the style of the plot
-fig.update_traces(marker=dict(size=6, opacity=0.6),
-                  selector=dict(mode='markers+text'))
+    # Customize the style of the plot
+    fig.update_traces(marker=dict(size=6, opacity=0.6),
+                      selector=dict(mode='markers+text'))
 
-fig.update_layout(title_x=0.5, title_font=dict(size=20))
-fig.update_layout(template="plotly_white")
-
+    fig.update_layout(title_x=0.5, title_font=dict(size=20))
+    fig.update_layout(template="plotly_white")
+    
 # Show the plot
-fig.show()
+#fig.show()
 
 # Save the plot as an HTML file
 fig.write_html("word2vec_embeddings_3d_plot.html")
@@ -665,6 +729,7 @@ fig.write_html("word2vec_embeddings_3d_plot.html")
 
 ```{python}
 #| label: word2vec-2dplot
+#| column: page-right
 
 # Calculate word frequencies in text data
 word_frequencies = {}  # Dictionary to store word frequencies
@@ -681,71 +746,45 @@ tsne_df = pd.DataFrame({'Word': words, 'Dimension 1': tsne_result[:, 0], 'Dimens
 # Add a new column for word frequencies
 tsne_df['Frequency'] = tsne_df['Word'].apply(lambda word: word_frequencies.get(word, 1))
 
-# Create a 2D scatter plot with Plotly Express
-fig = px.scatter(
-    tsne_df,
-    x='Dimension 1',
-    y='Dimension 2',
-    text='Word',
-    title='2D Word Embedding Visualization with Point Size based on Frequency',
-    size_max=50,  # Set the maximum size of words
-    size='Frequency',
-    color_discrete_sequence=['blue'],# Use raw frequency for text size
-)
-
-# Customize the style of the plot
-fig.update_traces(opacity=0.6)
-
-fig.update_layout(title_x=0.5, title_font=dict(size=20))
-fig.update_layout(template="plotly_white")
+if 'figw2v' not in globals():
+    # Rendering code (this will only be executed once)
+    # Create a 2D scatter plot with Plotly Express
+    figw2v = px.scatter(
+        tsne_df,
+        x='Dimension 1',
+        y='Dimension 2',
+        text='Word',
+        title='2D Word Embedding Visualization with Point Size based on Frequency',
+        size_max=50,  # Set the maximum size of words
+        size='Frequency',
+        color_discrete_sequence=['blue'],# Use raw frequency for text size
+    )
+    
+    # Customize the style of the plot
+    figw2v.update_traces(opacity=0.6)
+    
+    figw2v.update_layout(title_x=0.5, title_font=dict(size=20))
+    figw2v.update_layout(template="plotly_white")
 
 # Show the plot
-fig.show()
+#figw2v.show()
 
 # Save the plot as an HTML file
-fig.write_html("word2vec_embeddings_2d_plot.html")
+figw2v.write_html("word2vec_embeddings_2d_plot.html")
 
 
 ```
 
 ## Plotting authors and text based on BERTopic
 
-### Extracting Topics from BERTopic Model
 
-```{python}
-#| label: extract-topics-bertopic
-
-# we can access the different topic models like this
-embeddings_model_name = "all-mpnet-base-v2"
-topics_list = topic_models[embeddings_model_name].topics_
-
-
-# len(topic_models[embeddings_model_name].probabilities_) # = 405 like the docs_marketings
-# len(topic_models[embeddings_model_name].topics_)        # = 405 like the docs_marketings
-# type(topic_models[embeddings_model_name].topics_)      # list
-
-# put the topics' number in the df of marketing documents
-df["topic"] = topics_list
-
-# get the correspondence between topic number and topic name
-topic_info_df = topic_models[embeddings_model_name].get_topic_info()
-topic_info_df
-selected_columns = topic_info_df[["Topic", "Name"]]
-
-
-# then put it into df
-df["topic_name"] = df["topic"].map(selected_columns.set_index("Topic")["Name"])
-
-# for info, the distribution of topics (many outliers)
-topic_counts = df["topic"].value_counts()
-topic_counts
-
-```
 
 ### 3D plot of authors (t-SNE + BERTopic clustering)
 
 ```{python}
 #| label: plot-authors-year-3D
+#| column: page-right
+
 
 # Step 1: Perform t-SNE dimensionality reduction on word vectors to 3D
 tsne = TSNE(n_components=3, perplexity=30, learning_rate=200, n_iter=1337, random_state=42, verbose=1)
@@ -765,13 +804,17 @@ print('Silhouette Score:', silhouette)
 
 # Step 4: Create a DataFrame for visualization
 df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'topic']]
+df_vis = df_vis[df_vis['topic'] != -1] # We exclude topic = -1 because they are outliers
 
-# Step 5: Create an interactive 3D scatter plot with Plotly
-fig = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='topic', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
-fig.update_traces(marker=dict(size=5))
-fig.update_layout(title='Dimensionality reduction with t-SNE and Clustering with BERTopic')
-fig.update_layout(template="plotly_white")
-fig.show()
+if 'fig3D' not in globals():
+    # Rendering code (this will only be executed once)
+    # Step 5: Create an interactive 3D scatter plot with Plotly
+    fig3D = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='topic', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
+    fig3D.update_traces(marker=dict(size=5))
+    fig3D.update_layout(title='Dimensionality reduction with t-SNE and Clustering with BERTopic')
+    fig3D.update_layout(template="plotly_white")
+    
+#fig3D.show()
 
 # Step 6: Save the interactive 3D scatter plot as an HTML file
 pio.write_html(fig, file="3D_authors_embeddings_TSNE_BERTopic.html")
@@ -782,6 +825,8 @@ pio.write_html(fig, file="3D_authors_embeddings_TSNE_BERTopic.html")
 
 ```{python}
 #| label: plot-authors-year-2d
+#| column: page-right
+
 
 # Perform t-SNE to reduce the word vectors to 2D
 tsne = TSNE(n_components=2, perplexity=30, learning_rate=200, n_iter=1337, random_state=42, verbose=1)
@@ -802,18 +847,20 @@ color_map = {
     topic_name: f'rgb({r},{g},{b})' for topic_name, r, g, b in zip(df_vis['topic_name'].unique(), range(0, 256, 30), range(0, 256, 30), range(0, 256, 30))
 }
 
-# Step 5: Create an interactive 2D plot with Plotly
-fig = px.scatter(df_vis, x='X', y='Y', color='topic_name', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1),
-                 color_discrete_map=color_map)  # Use color_discrete_map to specify colors
+if 'fig2D' not in globals():
+    # Rendering code (this will only be executed once)
+    # Step 5: Create an interactive 2D plot with Plotly
+    fig2D = px.scatter(df_vis, x='X', y='Y', color='topic_name', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1),
+                     color_discrete_map=color_map)  # Use color_discrete_map to specify colors
+    
+    fig2D.update_traces(marker=dict(size=5))
+    fig2D.update_layout(title='Dimensionality reduction with t-SNE (2D) and Clustering with BERTopic')
+    fig2D.update_layout(template="plotly_white")
+    
+    # Add a custom legend title
+    fig2D.update_layout(legend_title_text='Topic Names')
 
-fig.update_traces(marker=dict(size=5))
-fig.update_layout(title='Dimensionality reduction with t-SNE (2D) and Clustering with BERTopic')
-fig.update_layout(template="plotly_white")
-
-# Add a custom legend title
-fig.update_layout(legend_title_text='Topic Names')
-
-fig.show()
+#fig.show()
 
 pio.write_html(fig, file="2D_authors_embeddings_TSNE_BERTopic.html")
 ```

@@ -8,7 +8,7 @@
 
 <meta name="author" content="Olivier Caron">
 <meta name="author" content="Christophe Benavent">
-<meta name="dcterms.date" content="2023-09-29">
+<meta name="dcterms.date" content="2023-10-02">
 
 <title>Systematic literature review</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <div class="quarto-title-block"><div><h1 class="title">Systematic literature review</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+      <div class="quarto-title-block"><div><h1 class="title">Systematic literature review</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
             <p class="subtitle lead">Topic Wordclouds</p>
                       </div>
   </div>
@@ -115,7 +115,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">September 29, 2023</p>
+        <p class="date">October 2, 2023</p>
       </div>
     </div>
     
@@ -133,6 +133,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#color-palette-wesanderson---grandbudapest-2_4" id="toc-color-palette-wesanderson---grandbudapest-2_4" class="nav-link" data-scroll-target="#color-palette-wesanderson---grandbudapest-2_4"><span class="header-section-number">1.1</span> Color palette : WesAnderson - GrandBudapest 2_4</a></li>
   <li><a href="#palette-scientific---sequential---oslo_10" id="toc-palette-scientific---sequential---oslo_10" class="nav-link" data-scroll-target="#palette-scientific---sequential---oslo_10"><span class="header-section-number">1.2</span> Palette : Scientific - Sequential - Oslo_10</a></li>
+  <li><a href="#palette-scientific---sequential---grayc_6" id="toc-palette-scientific---sequential---grayc_6" class="nav-link" data-scroll-target="#palette-scientific---sequential---grayc_6"><span class="header-section-number">1.3</span> Palette : Scientific - Sequential - Grayc_6</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -144,27 +145,196 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 <section id="topic-wordclouds" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="topic-wordclouds"><span class="header-section-number">1</span> Topic Wordclouds</h2>
 <section id="color-palette-wesanderson---grandbudapest-2_4" class="level3" data-number="1.1">
 <h3 data-number="1.1" class="anchored" data-anchor-id="color-palette-wesanderson---grandbudapest-2_4"><span class="header-section-number">1.1</span> <a href="https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4">Color palette : WesAnderson - GrandBudapest 2_4</a></h3>
-<div class="quarto-layout-panel">
-<div class="quarto-layout-row quarto-layout-valign-top">
-<div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
-<p><img src="wordclouds/wordcloud_topic0_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 1"> <img src="wordclouds/wordcloud_topic1_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 2"> <img src="wordclouds/wordcloud_topic2_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 3"> <img src="wordclouds/wordcloud_topic3_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 4"> <img src="wordclouds/wordcloud_topic4_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 5"> <img src="wordclouds/wordcloud_topic5_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 6"> <img src="wordclouds/wordcloud_topic6_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 7"> <img src="wordclouds/wordcloud_topic7_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 8"> <img src="wordclouds/wordcloud_topic8_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 9"> <img src="wordclouds/wordcloud_topic9_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 10"> <img src="wordclouds/wordcloud_topic10_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 11"> <img src="wordclouds/wordcloud_topic11_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 12"> <img src="wordclouds/wordcloud_topic12_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 13"> <img src="wordclouds/wordcloud_topic13_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 14"> <img src="wordclouds/wordcloud_topic14_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 15"> <img src="wordclouds/wordcloud_topic15_GrandBudapest2_4.png" class="img-fluid" style="width:23.0%" alt="Topic 16"></p>
-</div>
-</div>
-</div>
+<table class="table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Topic 0</th>
+<th style="text-align: center;">Topic 1</th>
+<th style="text-align: center;">Topic 2</th>
+<th style="text-align: center;">Topic 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic0_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic1_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic2_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic3_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Topic 4</strong></td>
+<td style="text-align: center;"><strong>Topic 5</strong></td>
+<td style="text-align: center;"><strong>Topic 6</strong></td>
+<td style="text-align: center;"><strong>Topic 7</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic4_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic5_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic6_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic7_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Topic 8</strong></td>
+<td style="text-align: center;"><strong>Topic 9</strong></td>
+<td style="text-align: center;"><strong>Topic 10</strong></td>
+<td style="text-align: center;"><strong>Topic 11</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic8_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic9_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic10_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic11_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Topic 12</strong></td>
+<td style="text-align: center;"><strong>Topic 13</strong></td>
+<td style="text-align: center;"><strong>Topic 14</strong></td>
+<td style="text-align: center;"><strong>Topic 15</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic12_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic13_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic14_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic15_GrandBudapest2_4.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="palette-scientific---sequential---oslo_10" class="level3" data-number="1.2">
 <h3 data-number="1.2" class="anchored" data-anchor-id="palette-scientific---sequential---oslo_10"><span class="header-section-number">1.2</span> <a href="https://jiffyclub.github.io/palettable/scientific/sequential/#oslo_10">Palette : Scientific - Sequential - Oslo_10</a></h3>
-<div class="quarto-layout-panel">
-<div class="quarto-layout-row quarto-layout-valign-top">
-<div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
-<p><img src="wordclouds/wordcloud_topic0_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 1"> <img src="wordclouds/wordcloud_topic1_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 2"> <img src="wordclouds/wordcloud_topic2_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 3"> <img src="wordclouds/wordcloud_topic3_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 4"> <img src="wordclouds/wordcloud_topic4_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 5"> <img src="wordclouds/wordcloud_topic5_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 6"> <img src="wordclouds/wordcloud_topic6_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 7"> <img src="wordclouds/wordcloud_topic7_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 8"> <img src="wordclouds/wordcloud_topic8_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 9"> <img src="wordclouds/wordcloud_topic9_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 10"> <img src="wordclouds/wordcloud_topic10_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 11"> <img src="wordclouds/wordcloud_topic11_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 12"> <img src="wordclouds/wordcloud_topic12_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 13"> <img src="wordclouds/wordcloud_topic13_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 14"> <img src="wordclouds/wordcloud_topic14_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 15"> <img src="wordclouds/wordcloud_topic15_Oslo_10.png" class="img-fluid" style="width:23.0%" alt="Topic 16"></p>
-</div>
-</div>
-</div>
+<table class="table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Topic 0</th>
+<th style="text-align: center;">Topic 1</th>
+<th style="text-align: center;">Topic 2</th>
+<th style="text-align: center;">Topic 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic0_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic1_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic2_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic3_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Topic 4</strong></td>
+<td style="text-align: center;"><strong>Topic 5</strong></td>
+<td style="text-align: center;"><strong>Topic 6</strong></td>
+<td style="text-align: center;"><strong>Topic 7</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic4_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic5_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic6_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic7_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Topic 8</strong></td>
+<td style="text-align: center;"><strong>Topic 9</strong></td>
+<td style="text-align: center;"><strong>Topic 10</strong></td>
+<td style="text-align: center;"><strong>Topic 11</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic8_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic9_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic10_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic11_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>Topic 12</strong></td>
+<td style="text-align: center;"><strong>Topic 13</strong></td>
+<td style="text-align: center;"><strong>Topic 14</strong></td>
+<td style="text-align: center;"><strong>Topic 15</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic12_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic13_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic14_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic15_Oslo_10.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="palette-scientific---sequential---grayc_6" class="level3" data-number="1.3">
+<h3 data-number="1.3" class="anchored" data-anchor-id="palette-scientific---sequential---grayc_6"><span class="header-section-number">1.3</span> <a href="https://jiffyclub.github.io/palettable/scientific/sequential/#grayc_6">Palette : Scientific - Sequential - Grayc_6</a></h3>
+<table class="table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Topic 0</th>
+<th style="text-align: center;">Topic 1</th>
+<th style="text-align: center;">Topic 2</th>
+<th style="text-align: center;">Topic 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic0_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic1_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic2_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic3_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Topic 4</td>
+<td style="text-align: center;">Topic 5</td>
+<td style="text-align: center;">Topic 6</td>
+<td style="text-align: center;">Topic 7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic4_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic5_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic6_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic7_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Topic 8</td>
+<td style="text-align: center;">Topic 9</td>
+<td style="text-align: center;">Topic 10</td>
+<td style="text-align: center;">Topic 11</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic8_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic9_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic10_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+<td style="text-align: center;"><img src="wordclouds/wordcloud_topic11_GrayC_6.png" class="img-fluid" style="width:90.0%"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Topic 12</td>
+<td style="text-align: center;">Topic 13</td>
+<td style="text-align: center;">Topic 14</td>
+<td style="text-align: center;">Topic 15</td>
+</tr>
+</tbody>
+</table>
 <!-- -->
 
 </section>
@@ -571,67 +741,94 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   }
 });
 </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
-<div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Systematic literature review"</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="an">bibliography:</span><span class="co"> references.bib</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="an">title-block-banner:</span><span class="co"> true</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Topic Wordclouds"</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">  - name: Olivier Caron</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">    email: olivier.caron@dauphine.psl.eu</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">    affiliations: </span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">      name: "Paris Dauphine - PSL"</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">      city: Paris</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">      state: France</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">  - name: Christophe Benavent</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">    email: christophe.benavent@dauphine.psl.eu</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">    affiliations: </span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">      name: "Paris Dauphine - PSL"</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">      city: Paris</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">      state: France</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="an">date :</span><span class="co"> "last-modified"</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="an">number-depth:</span><span class="co"> 5</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co">    theme:</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co">      light: yeti</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co">      dark: darkly</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co">    code-summary: "Display code"</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true #enables to display/hide all blocks of code</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co">    code-copy: true #enables to copy code</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="co">    grid:</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="co">      body-width: 1000px</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="co">      margin-width: 100px</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-location: left</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="an">execute:</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="co">  echo: true</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="co">  warning: false</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="co">  message: false</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="an">editor:</span><span class="co"> visual</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="an">fig-align:</span><span class="co"> "center"</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="an">highlight-style:</span><span class="co"> ayu</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="an">css:</span><span class="co"> styles.css</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="an">reference-location:</span><span class="co"> margin</span></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="fu">## Topic Wordclouds</span></span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="fu">### [Color palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4)</span></span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>::: {layout-nrow="4"}</span>
-<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="al">![Topic 1](wordclouds/wordcloud_topic0_GrandBudapest2_4.png)</span>{width="23%"}</span>
-<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="al">![Topic 2](wordclouds/wordcloud_topic1_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 3](wordclouds/wordcloud_topic2_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 4](wordclouds/wordcloud_topic3_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 5](wordclouds/wordcloud_topic4_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 6](wordclouds/wordcloud_topic5_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 7](wordclouds/wordcloud_topic6_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 8](wordclouds/wordcloud_topic7_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 9](wordclouds/wordcloud_topic8_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 10](wordclouds/wordcloud_topic9_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 11](wordclouds/wordcloud_topic10_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 12](wordclouds/wordcloud_topic11_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 13](wordclouds/wordcloud_topic12_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 14](wordclouds/wordcloud_topic13_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 15](wordclouds/wordcloud_topic14_GrandBudapest2_4.png)</span>{width="23%"} <span class="al">![Topic 16](wordclouds/wordcloud_topic15_GrandBudapest2_4.png)</span>{width="23%"}</span>
-<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="fu">### [Palette : Scientific - Sequential - Oslo_10](https://jiffyclub.github.io/palettable/scientific/sequential/#oslo_10)</span></span>
-<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>::: {layout-nrow="4"}</span>
-<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="al">![Topic 1](wordclouds/wordcloud_topic0_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 2](wordclouds/wordcloud_topic1_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 3](wordclouds/wordcloud_topic2_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 4](wordclouds/wordcloud_topic3_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 5](wordclouds/wordcloud_topic4_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 6](wordclouds/wordcloud_topic5_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 7](wordclouds/wordcloud_topic6_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 8](wordclouds/wordcloud_topic7_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 9](wordclouds/wordcloud_topic8_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 10](wordclouds/wordcloud_topic9_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 11](wordclouds/wordcloud_topic10_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 12](wordclouds/wordcloud_topic11_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 13](wordclouds/wordcloud_topic12_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 14](wordclouds/wordcloud_topic13_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 15](wordclouds/wordcloud_topic14_Oslo_10.png)</span>{width="23%"} <span class="al">![Topic 16](wordclouds/wordcloud_topic15_Oslo_10.png)</span>{width="23%"}</span>
-<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>:::</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Systematic literature review"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="an">bibliography:</span><span class="co"> references.bib</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="an">title-block-banner:</span><span class="co"> true</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Topic Wordclouds"</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">  - name: Olivier Caron</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">    email: olivier.caron@dauphine.psl.eu</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">    affiliations: </span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">      name: "Paris Dauphine - PSL"</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">      city: Paris</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">      state: France</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">  - name: Christophe Benavent</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">    email: christophe.benavent@dauphine.psl.eu</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">    affiliations: </span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">      name: "Paris Dauphine - PSL"</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">      city: Paris</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">      state: France</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="an">date :</span><span class="co"> "last-modified"</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="an">toc:</span><span class="co"> true</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> true</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="an">number-depth:</span><span class="co"> 5</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">    theme:</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">      light: yeti</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">      dark: darkly</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">    code-summary: "Display code"</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true #enables to display/hide all blocks of code</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">    code-copy: true #enables to copy code</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">    grid:</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">      body-width: 1000px</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">      margin-width: 100px</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-location: left</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="an">execute:</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">  echo: true</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="co">  warning: false</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="co">  message: false</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="an">editor:</span><span class="co"> visual</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="an">fig-align:</span><span class="co"> "center"</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="an">highlight-style:</span><span class="co"> ayu</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="an">css:</span><span class="co"> styles.css</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="an">reference-location:</span><span class="co"> margin</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="fu">## Topic Wordclouds</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="fu">### [Color palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4)</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>|                               Topic 0                               |                               Topic 1                               |                               Topic 2                               |                               Topic 3                               |</span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>|:----------------:|:----------------:|:----------------:|:----------------:|</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic0_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic1_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic2_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic3_GrandBudapest2_4.png)</span>{width="90%"}  |</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>|                             **Topic 4**                             |                             **Topic 5**                             |                             **Topic 6**                             |                             **Topic 7**                             |</span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic4_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic5_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic6_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic7_GrandBudapest2_4.png)</span>{width="90%"}  |</span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>|                             **Topic 8**                             |                             **Topic 9**                             |                            **Topic 10**                             |                            **Topic 11**                             |</span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic8_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic9_GrandBudapest2_4.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic10_GrandBudapest2_4.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic11_GrandBudapest2_4.png)</span>{width="90%"} |</span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>|                            **Topic 12**                             |                            **Topic 13**                             |                            **Topic 14**                             |                            **Topic 15**                             |</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic12_GrandBudapest2_4.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic13_GrandBudapest2_4.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic14_GrandBudapest2_4.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic15_GrandBudapest2_4.png)</span>{width="90%"} |</span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="fu">### [Palette : Scientific - Sequential - Oslo_10](https://jiffyclub.github.io/palettable/scientific/sequential/#oslo_10)</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>|                          Topic 0                           |                          Topic 1                           |                          Topic 2                           |                          Topic 3                           |</span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>|:----------------:|:----------------:|:----------------:|:----------------:|</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic0_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic1_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic2_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic3_Oslo_10.png)</span>{width="90%"}  |</span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>|                        **Topic 4**                         |                        **Topic 5**                         |                        **Topic 6**                         |                        **Topic 7**                         |</span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic4_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic5_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic6_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic7_Oslo_10.png)</span>{width="90%"}  |</span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a>|                        **Topic 8**                         |                        **Topic 9**                         |                        **Topic 10**                        |                        **Topic 11**                        |</span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic8_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic9_Oslo_10.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic10_Oslo_10.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic11_Oslo_10.png)</span>{width="90%"} |</span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>|                        **Topic 12**                        |                        **Topic 13**                        |                        **Topic 14**                        |                        **Topic 15**                        |</span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic12_Oslo_10.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic13_Oslo_10.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic14_Oslo_10.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic15_Oslo_10.png)</span>{width="90%"} |</span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="fu">### [Palette : Scientific - Sequential - Grayc_6](https://jiffyclub.github.io/palettable/scientific/sequential/#grayc_6)</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |</span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>|:----------------:|:----------------:|:----------------:|:----------------:|</span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic0_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic1_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic2_GrayC_6.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic3_GrayC_6.png)</span>{width="90%"}  |</span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |</span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic4_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic5_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic6_GrayC_6.png)</span>{width="90%"}  | <span class="al">![](wordclouds/wordcloud_topic7_GrayC_6.png)</span>{width="90%"}  |</span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |</span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>| <span class="al">![](wordclouds/wordcloud_topic8_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic9_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic10_GrayC_6.png)</span>{width="90%"} | <span class="al">![](wordclouds/wordcloud_topic11_GrayC_6.png)</span>{width="90%"} |</span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |</span>
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
