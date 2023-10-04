@@ -1,0 +1,928 @@
+---
+title: "Systematic literature review"
+bibliography: references.bib
+title-block-banner: true
+subtitle: "Topic modelling"
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 5
+format:
+  html:
+    theme:
+      light: yeti
+      dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1000px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+---
+
+## Libraries R
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(dplyr)
+library(gt)
+library(stringr)
+```
+
+## Loading data R
+
+```{r}
+#| label: load-data-r
+
+
+list_articles <- read.csv2("nlp_full_data_final_18-08-2023.csv", encoding = "UTF-8") %>%
+  rename("entry_number" = 1)
+list_references <- read.csv2("nlp_references_final_18-08-2023.csv", encoding = "UTF-8") %>%
+  rename("citing_art" = 1)
+colnames(list_articles) <- gsub("\\.+", "_", colnames(list_articles)) # <1>
+colnames(list_articles) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_articles)) # <2>
+colnames(list_references) <- gsub("\\.+", "_", colnames(list_references))
+colnames(list_references) <- gsub("^[[:punct:]]+|[[:punct:]]+$", "", colnames(list_references))
+
+
+data_embeddings <- list_articles %>%
+  distinct(entry_number, .keep_all = TRUE) %>%
+  filter(marketing == 1) %>%
+  mutate("year" = substr(prism_coverDate, 7, 10)) %>%
+  mutate(keywords = str_replace_all(authkeywords, "\\|", "")) %>%
+  mutate(keywords = str_squish(keywords)) %>%
+  mutate("combined_text" = paste0(dc_title,". ", dc_description, ". ", keywords))
+
+#write.csv(data_embeddings,"data_for_embeddings.csv")
+#data_embeddings <- read.csv("data_for_embeddings.csv")
+#embeddings <- read.csv("embeddings_bge.csv")
+```
+
+## A glimpse of data
+
+```{r}
+#| label: glimpse-data
+
+data_embeddings %>%
+  head(2) %>%
+  select(entry_number, dc_creator, combined_text, year) %>%
+  gt()
+```
+
+## Python libraries and loading data
+
+```{python}
+#| label: load-data-packages-python
+
+import warnings
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
+
+import matplotlib.pyplot as plt
+import nltk
+import numpy as np
+import os
+import palettable
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
+import string
+import stylecloud
+import time
+import torch
+import umap.umap_ as umap
+
+
+from bertopic import BERTopic
+from bertopic.vectorizers import ClassTfidfTransformer
+from bertopic.representation import MaximalMarginalRelevance
+from gensim.models import Word2Vec
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from palettable import colorbrewer
+from sentence_transformers import SentenceTransformer, util
+from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.manifold import TSNE
+from sklearn.metrics import davies_bouldin_score, silhouette_score, silhouette_samples
+from tabulate import tabulate
+from tqdm import tqdm
+from transformers import XLNetTokenizer, XLNetModel
+from yellowbrick.cluster import SilhouetteVisualizer
+from wordcloud import WordCloud
+
+
+
+df = pd.read_csv("data_for_embeddings.csv")
+#df['title_abstract'] = df['dc_title'].astype(str) + '. ' + df['dc_description'].astype(str)
+docs_marketing = df["combined_text"].tolist()
+```
+
+## CUDA Status and Device Info
+
+```{python}
+#| label: cuda
+
+print(f"Is CUDA supported by this system? {torch.cuda.is_available()}")
+print(f"CUDA version: {torch.version.cuda}")
+
+# Storing ID of the current CUDA device
+cuda_id = torch.cuda.current_device()
+print(f"ID of the current CUDA device: {cuda_id}")
+
+print(f"Name of the current CUDA device: {torch.cuda.get_device_name(cuda_id)}")
+```
+
+## Detect interpretable topics with BERTopic
+
+::: callout-note
+We use a CountVectorizer which enables us to specify the range of the ngram we want in our topic model. We can use it before or after the topic modelling (update topic).\
+Here we use it before the topic modelling to exclude english stopwords, but after the embeddings process so that the foundation provided by stopwords in sentences is preserved in context.
+:::
+
+### Function to create BERTopics with custom embeddings
+
+The aim of this function is to swiftly create various BERTopic experiments while maintaining the same parameters, except for the choice of the embedding model. This enables the generation of distinct BERTopic results, facilitating meaningful comparisons among them.
+
+Some explanations:
+
+| Parameter name   | Description                                                                                                                                                                                                                |
+|---------------------|---------------------------------------------------|
+| docs             | The documents we want to analyze (list).                                                                                                                                                                                   |
+| embeddings_model | Specifies the embeddings model we want to load and use.                                                                                                                                                                    |
+| min_topic_size   | It is used to specify what the minimum size of a topic can be. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#min_topic_size "min_topic_size"). |
+| nr_topics        | The number of topics we want to reduce our results to. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#nr_topics "min_topic_size").              |
+
+```{python}
+#| label: bertopic-function
+
+def create_bertopic(docs, embeddings_model, min_topic_size, nr_topics):
+  
+    # initialize a count-based tf-idf transformer
+    ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
+
+    # initialize a sentence transformer model for embeddings
+    sentence_model = SentenceTransformer(embeddings_model, device='cuda')
+
+    # generate embeddings for the input documents
+    embeddings = sentence_model.encode(docs, show_progress_bar=True)
+    
+    # create the representation model
+    #representation_model = MaximalMarginalRelevance(diversity=1)
+
+    # create a bertopic model with specified parameters
+    topic_model = BERTopic(
+        ctfidf_model=ctfidf_model,
+        calculate_probabilities=True,
+        verbose=True,
+        min_topic_size=min_topic_size,
+        nr_topics=nr_topics,
+        top_n_words=20
+        #representation_model=representation_model
+    )
+
+    # fit the bertopic model to the input documents and embeddings
+    topics, probs = topic_model.fit_transform(docs, embeddings)
+
+    # update the vectorizer model used by bertopic
+    # `min_df` is the minimum document frequency for terms (words or n-grams) in the CountVectorizer.
+    updated_vectorizer_model = CountVectorizer(stop_words="english", ngram_range=(1, 3), min_df=3)
+    topic_model.update_topics(docs, vectorizer_model=updated_vectorizer_model)
+
+    # return the trained bertopic model
+    return topic_model
+```
+
+### Function to visualize BERTopics
+
+Creates a folder in Images/ with the model_name input with various plots in html files.
+
+```{python}
+#| label: viz-bertopic
+
+def generate_topics_table(topic_model):
+    # get topic information from the model
+    topics_info = topic_model.get_topic_info()
+
+    #  check if topics_info is empty or None
+    if topics_info is None or topics_info.empty:
+        return "No topics found."
+
+    # convert the data into a list
+    data_as_list = topics_info.values.tolist()
+
+    # get column names as headers
+    headers = topics_info.columns.tolist()
+
+    # generate the table in HTML format
+    table = tabulate(data_as_list, headers, tablefmt='html')
+
+    return table
+
+        
+
+def visualize_bertopic(topic_model, model_name, nr_topics):
+    # create the "images" folder if it doesn't exist already
+    if not os.path.exists("images"):
+        os.makedirs("images")
+
+    # create a subfolder for the specific topic model
+    model_folder = os.path.join("images", model_name+"-"+str(nr_topics)+"topics")
+    
+    # create the model folder if it doesn't exist already
+    if not os.path.exists(model_folder):
+        os.makedirs(model_folder)
+    else:
+        # delete existing files in the model folder if it exists
+        for file in os.listdir(model_folder):
+            os.remove(os.path.join(model_folder, file))
+
+    # generate topics information table
+    topics_table = generate_topics_table(topic_model)
+    with open(os.path.join(model_folder, 'table_topics.html'), 'w') as f:
+        f.write(topics_table)
+    
+    # visualize topics
+    fig_topics = topic_model.visualize_topics()
+    fig_topics.write_html(os.path.join(model_folder, "topicsinfo.html"))
+
+    # visualize hierarchy
+    fig_hierarchy = topic_model.visualize_hierarchy()
+    fig_hierarchy.write_html(os.path.join(model_folder, "hierarchy.html"))
+
+    # visualize hierarchical topics
+    hierarchical_topics = topic_model.hierarchical_topics(docs_marketing)
+    fig_hierarchical_topics = topic_model.visualize_hierarchy(hierarchical_topics=hierarchical_topics)
+    fig_hierarchical_topics.write_html(os.path.join(model_folder, "hierarchical.html"))
+
+    # visualize the bar chart
+    fig_barchart = topic_model.visualize_barchart(width=300, height=300, n_words=10, topics=None, top_n_topics=20)
+    fig_barchart.write_html(os.path.join(model_folder, "barchart.html"))
+
+    # visualize the heatmap
+    fig_heatmap = topic_model.visualize_heatmap()
+    fig_heatmap.write_html(os.path.join(model_folder, "heatmap.html"))
+    
+    # topics over time
+    years =  df['year'].to_list()
+    topics_over_time = topic_model.topics_over_time(docs_marketing, years)
+    fig_topics_over_time = topic_model.visualize_topics_over_time(topics_over_time, top_n_topics=20, normalize_frequency=True)
+    fig_topics_over_time.write_html(os.path.join(model_folder, "topicsovertime.html"))
+```
+
+### Create topics for a list of embeddings model
+
+We must specify the number of topics we want to create (`nbtopics`) and the minimum number of documents to form a topic (`nbmintopicsize`).
+
+```{python}
+#| label: create-bertopics
+
+#09/26/2023 -----------------------------------------
+#to-do  clean code : embeddings are charged twice for viz purposes (document viz) because it is loaded a first time in the create_bertopic function and again in the loop (can't use just the model name in visualize_bertopic function.)
+#---------------------------------------------------
+
+# list of embeddings models
+list_embeddings = ["all-mpnet-base-v2"]
+#list_embeddings = ["all-mpnet-base-v2","multi-qa-mpnet-base-dot-v1","all-roberta-large-v1","all-MiniLM-L12-v2"]
+
+# create a list to store model information
+table_data = []
+topic_models = {}
+#nbtopics is the number of topics we want to create/reduce to
+#nbmintopicsize is the minimum number of documents to form a topic
+nbtopics = 17
+nbmintopicsize = 5
+
+
+# loop through the list of embeddings models and create topic_model + viz in images
+for embeddings_model in list_embeddings:
+    print(f"\nCreating BERTopics with the {embeddings_model} Sentence-Transformers pretrained model.")
+    topic_model = create_bertopic(docs_marketing, embeddings_model, nbmintopicsize, nbtopics)
+    print(f"\nCreating BERTopic visualizations in the `images\\{embeddings_model}-{nbtopics}topics` folder.")
+    visualize_bertopic(topic_model, embeddings_model, nbtopics)
+    chargedmodel = SentenceTransformer(embeddings_model, device='cuda')
+    
+     # visualize the documents
+    model_folder = os.path.join("images", embeddings_model+"-"+str(nbtopics)+"topics")
+    embeddings = chargedmodel.encode(docs_marketing, show_progress_bar=False)
+    fig_documents = topic_model.visualize_documents(docs_marketing, embeddings=embeddings)
+    fig_documents.write_html(os.path.join(model_folder, "documents_topics.html"))
+    
+    # to summarize embeddings' models
+    dimensions =  chargedmodel.get_sentence_embedding_dimension()
+    max_tokens = chargedmodel.max_seq_length
+    # store the topic_model in the dictionary with the embeddings name as key
+    topic_models[embeddings_model] = topic_model
+    # add model information to the table data list
+    table_data.append([embeddings_model, dimensions, max_tokens])
+
+
+# table headers
+headers = ["Embeddings Model", "Dimensions", "Max Tokens"]
+
+# title for the table, centered
+table_title = "Summary of Embeddings Models used"
+
+# create the table with centered title
+table = tabulate(table_data, headers, tablefmt="pretty")
+table_lines = table.split("\n")
+table_lines.insert(0, table_title.center(len(table_lines[0])))
+table_with_centered_title = "\n".join(table_lines)
+
+# display the table with centered title
+print("\n")
+print(table_with_centered_title)
+
+#sentence_model.max_seq_length
+#sentence_model.get_sentence_embedding_dimension()
+```
+
+## Topics Results
+
+### Representative documents of topics
+
+```{python}
+#| label: extract-topics-bertopic
+
+# we can access the different topic models like this
+embeddings_model_name = "all-mpnet-base-v2"
+topics_list = topic_models[embeddings_model_name].topics_
+
+
+# len(topic_models[embeddings_model_name].probabilities_) # = 405 like the docs_marketings
+# len(topic_models[embeddings_model_name].topics_)        # = 405 like the docs_marketings
+# type(topic_models[embeddings_model_name].topics_)      # list
+
+# put the topics' number in the df of marketing documents
+df["topic"] = topics_list
+
+# get the correspondence between topic number and topic name
+topic_info_df = topic_models[embeddings_model_name].get_topic_info()
+
+selected_columns = topic_info_df[["Topic", "Name"]]
+
+topic_info_df
+
+
+```
+
+### Distribution of topics
+
+```{python}
+#| label: distribution-topics
+
+df["topic_name"] = df["topic"].map(selected_columns.set_index("Topic")["Name"])
+
+# Calculate the count and percentage of each topic
+topic_counts = df["topic_name"].value_counts().reset_index()
+topic_counts.columns = ["topic_name", "count"]
+topic_counts["percentage"] = (topic_counts["count"] / sum(topic_counts['count'])) * 100
+
+# Add "(outliers)" to the name of the first topic of topic_counts
+topic_counts.iloc[0, 0] = "<b>(outliers)</b> " + topic_counts.iloc[0, 0]
+
+if 'figdistrib' not in globals():
+    figdistrib = px.bar(topic_counts, x="topic_name", y="percentage", title="Distribution of Topics Among Articles",
+                        hover_data=["count"])
+    figdistrib.update_layout(template="plotly_white")
+    # Some aesthetics on the graph
+    figdistrib.update_xaxes(title_text="BERTopics")
+    figdistrib.update_yaxes(title_text="Percentage of articles")
+    figdistrib.update_traces(marker_color="rgb(158,202,225)", marker_line_color="rgb(8,48,107)", marker_line_width=1.5, opacity=0.6)
+    figdistrib.update_layout(title_x=0.5, title_xanchor="center")
+
+#figdistrib.show()
+
+```
+
+### Distribution of topics without outliers
+
+```{python}
+#| label: distribution-topics-nooutliers
+
+# Creates dataframe from Series
+topic_counts_no_outliers = df["topic_name"].value_counts().reset_index()
+
+# Excluding the first row (outliers) from topic_counts
+topic_counts_no_outliers = topic_counts_no_outliers.iloc[1:]
+
+# Calculate the count and percentage of each topic without considering outliers
+topic_counts_no_outliers.columns = ["topic_name", "count"]
+topic_counts_no_outliers["percentage"] = (topic_counts_no_outliers["count"] / sum(topic_counts_no_outliers['count'])) * 100
+
+
+
+if 'figdistrib2' not in globals():
+    figdistrib2 = px.bar(topic_counts_no_outliers, x="topic_name", y="percentage", title="Distribution of Topics Among Articles",
+                        hover_data=["count"])
+    figdistrib2.update_layout(template="plotly_white")
+    # Some aesthetics on the graph
+    figdistrib2.update_xaxes(title_text="BERTopics")
+    figdistrib2.update_yaxes(title_text="Percentage of articles")
+    figdistrib2.update_traces(marker_color="rgb(158,202,225)", marker_line_color="rgb(8,48,107)", marker_line_width=1.5, opacity=0.6)
+    figdistrib2.update_layout(title_x=0.5, title_xanchor="center")
+
+#figdistrib.show()
+```
+
+### Visualize how each token contributes to a specific topic.
+
+We can do it by selecting a sentence in the document. To do so, we need to first calculate topic distributions on a token level and then visualize the results:\
+More parameters here :\
+https://maartengr.github.io/BERTopic/getting_started/distribution/distribution.html
+
+Here, we take the most cited article as an example.
+
+```{python}
+#| label: token-contribution-topic
+
+
+# Calculate the topic distributions on a token-level for the all-mpnet-base-v2 model, we can add the window
+topic_distr, topic_token_distr = topic_models["all-mpnet-base-v2"].approximate_distribution(docs_marketing, calculate_tokens=True)
+
+# Visualize the token-level distributions, put id of document
+df_topicmodel = topic_models["all-mpnet-base-v2"].visualize_approximate_distribution(docs_marketing[382], topic_token_distr[382])
+df_topicmodel
+
+topics_html = df_topicmodel.to_html()
+
+with open('images/topics_contribution.html', 'w') as html_file:
+    html_file.write(topics_html)
+```
+
+### Some visualizations of the topics
+
+```{=html}
+<iframe width="1500" height="800" src="images/all-mpnet-base-v2-17topics/documents_topics.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1250" height="1300" src="images/all-mpnet-base-v2-17topics/barchart.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1200" height="850" src="images/all-mpnet-base-v2-17topics/heatmap.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1200" height="500" src="images/all-mpnet-base-v2-17topics/hierarchical.html" title="Quarto Documentation"></iframe>
+```
+```{=html}
+<iframe width="1300" height="500" src="images/all-mpnet-base-v2-17topics/topicsovertime.html" title="Quarto Documentation"></iframe>
+```
+### Wordclouds of BERTopics
+
+```{python}
+#| label: wordcloud-function
+#| message: false
+
+from wordcloud import WordCloud
+
+def create_wordcloud_text(model, topic):
+    text = {word.upper(): value for word, value in topic_model.get_topic(topic)}
+    return text
+
+
+text = create_wordcloud_text(topic_model, 0)
+```
+
+```{python}
+#| label: palettes-wordcloud
+#| output: false
+
+# A lot of palettes available here: https://jiffyclub.github.io/palettable/
+import os
+from tqdm import tqdm
+import stylecloud
+
+# Set the full path to the output folder
+output_folder = "wordclouds"
+
+# Make sure the output folder exists, or create it if it doesn't
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
+
+palettes = [
+    ('wesanderson.GrandBudapest2_4', 'GrandBudapest2_4')
+    #('scientific.sequential.Oslo_10', 'Oslo_10'),
+    #('scientific.sequential.GrayC_10', 'GrayC_10'),
+    #('scientific.sequential.GrayC_4', 'GrayC_4'),
+    #('scientific.sequential.GrayC_5', 'GrayC_5'),
+    #('scientific.sequential.GrayC_6', 'GrayC_6'),
+    #('scientific.sequential.GrayC_3', 'GrayC_3'),
+    #('colorbrewer.sequential.Blues_9', 'Blues_9'),
+    #('colorbrewer.sequential.BuGn_9', 'BuGn_9'),
+    #('colorbrewer.sequential.BuPu_9', 'BuPu_9'),
+    #('colorbrewer.sequential.GnBu_9', 'GnBu_9'),
+    #('colorbrewer.sequential.OrRd_9', 'OrRd_9'),
+    #('colorbrewer.sequential.Oranges_9', 'Oranges_9'),
+    #('colorbrewer.sequential.PuRd_9', 'PuRd_9'),
+    #('colorbrewer.sequential.YlOrRd_9', 'YlOrRd_9'),
+    #('wesanderson.GrandBudapest3_6', 'GrandBudapest3_6'),
+    #('wesanderson.Moonrise7_5', 'Moonrise7_5'),
+    #('wesanderson.Zissou_5', 'Zissou_5'),
+    #('scientific.sequential.Bilbao_10', 'Bilbao_10')
+]
+
+# Define the number of topics
+nb_topics = len(topic_model.get_topic_info()) - 1  # Exclude topic -1 (outliers from BERTopic)
+
+# Loop through topics and palettes
+for palette, palette_name in palettes:
+    # Create a progress bar for the current palette
+    progress_bar = tqdm(total=nb_topics, desc=f"Palette: {palette_name}", position=0, leave=True)
+    
+    for i in range(0, nb_topics):
+        text = create_wordcloud_text(model=topic_model, topic=i)
+        try:
+            # Generate the word cloud with the specified palette and save it in the "wordclouds" folder
+            output_name = os.path.join(output_folder, f'wordcloud_topic{i}_{palette_name}.png')
+            stylecloud.gen_stylecloud(text=text,
+                                      palette=palette, background_color='white',
+                                      size=512,
+                                      gradient='radial', output_name=output_name, collocations=True)
+        except AttributeError:
+            print(f"Palette {palette_name} does not exist.")
+        
+        # Update the progress bar for the current palette
+        progress_bar.update(1)
+    
+    # Close the progress bar for the current palette
+    progress_bar.close()
+
+```
+
+```{python}
+print("\nAll word clouds have been generated in the 'wordclouds' folder.")
+
+```
+
+#### Wordcloud using the [Scientific - Sequential - Oslo_10](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4) color palette
+
+More to see here: [Grid wordclouds](https://oliviercaron.github.io/systematic_lit_review/gridwordclouds.html)
+
+|                          Topic 0                           |                          Topic 1                           |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic1_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic2_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Oslo_10.png){width="90%"}  |
+|                        **Topic 4**                         |                        **Topic 5**                         |                        **Topic 6**                         |                        **Topic 7**                         |
+| ![](wordclouds/wordcloud_topic4_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic5_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic6_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Oslo_10.png){width="90%"}  |
+|                        **Topic 8**                         |                        **Topic 9**                         |                        **Topic 10**                        |                        **Topic 11**                        |
+| ![](wordclouds/wordcloud_topic8_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic9_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic10_Oslo_10.png){width="90%"} | ![](wordclouds/wordcloud_topic11_Oslo_10.png){width="90%"} |
+|                        **Topic 12**                        |                        **Topic 13**                        |                        **Topic 14**                        |                        **Topic 15**                        |
+| ![](wordclouds/wordcloud_topic12_Oslo_10.png){width="90%"} | ![](wordclouds/wordcloud_topic13_Oslo_10.png){width="90%"} | ![](wordclouds/wordcloud_topic14_Oslo_10.png){width="90%"} | ![](wordclouds/wordcloud_topic15_Oslo_10.png){width="90%"} |
+
+## BERTopic with Custom Embeddings model (xlnet)
+
+(@DBLP:journals/corr/abs-1906-08237)
+
+```{python}
+#| label: bertopic-xlnet
+#| eval: false
+#| echo: false
+
+# check if cuda is available
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+    print(f'using gpu: {torch.cuda.get_device_name(0)}')
+else:
+    device = torch.device('cpu')
+    print('cuda is not available, using cpu.')
+
+# load xlnet tokenizer and model on gpu
+tokenizer = XLNetTokenizer.from_pretrained('xlnet-large-cased')
+model = XLNetModel.from_pretrained('xlnet-large-cased').to(device)
+
+# list of phrases
+phrases = docs_marketing
+
+# create a list to store the embeddings
+embeddings_list = []
+
+# use tqdm to create a progress bar
+for phrase in tqdm(phrases, desc="calculating embeddings"):
+    # tokenize the phrase
+    inputs = tokenizer(phrase, return_tensors="pt").to(device)
+    
+    # get embeddings
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    # retrieve the last hidden state
+    last_hidden_states = outputs.last_hidden_state
+    
+    # calculate the average of embeddings for each phrase
+    average_embedding = last_hidden_states.mean(dim=1).cpu().numpy()
+    
+    # add the embedding to the list
+    embeddings_list.append(average_embedding)
+
+# flatten the list of embeddings
+embeddings_array = np.concatenate(embeddings_list)
+
+# if we want a dataframe, we can use the following commands:
+
+flat_embeddings = [embedding[0] for embedding in embeddings_list]
+
+# create a dataframe from the list of embeddings
+dftest = pd.DataFrame(flat_embeddings)
+
+# display the dataframe
+#print(dftest)
+
+
+topic_model_xlnet = BERTopic(vectorizer_model=vectorizer_model, calculate_probabilities=True, verbose=True, min_topic_size=5, nr_topics=14)
+
+topics_xlnet, probs_xlnet = topic_model_xlnet.fit_transform(docs_marketing, embeddings_array)
+
+```
+
+## Word2Vec model (tokenization with nltk)
+
+```{python}
+#| label: word2vec
+
+
+# Define your Word2Vec parameters
+vector_size = 300   # Set the embedding vector size
+window_size = 15   # Define the context window size
+min_count = 5     # Ignore words with a frequency below min_count
+sg = 1             # Use CBOW (or skip-gram if sg=1)
+
+# Function to check if a word is a string (excluding numbers)
+def is_string(word):
+    return isinstance(word, str) and not any(char.isdigit() for char in word)
+
+# Load NLTK stopwords
+stop_words = set(stopwords.words("english"))
+
+# tokenize the marketing documents into sentences, convert to lowercase, remove stopwords,
+# remove punctuation, and keep only words made of letters
+def preprocess_text(text):
+    tokens = word_tokenize(text)
+    filtered_tokens = [
+        word.lower()
+        for word in tokens
+        if is_string(word)
+        and word.lower() not in stop_words
+        and word not in string.punctuation
+        and word.isalpha()  # Check if the word contains only letters
+    ]
+    return filtered_tokens
+
+tokenized_docs_marketing = [preprocess_text(sentence) for sentence in docs_marketing]
+
+# train the Word2Vec model
+model = Word2Vec(
+    tokenized_docs_marketing, 
+    vector_size=vector_size, 
+    window=window_size, 
+    min_count=min_count, 
+    sg=sg
+)
+
+similar_words = model.wv.most_similar("learning", topn=20)
+similar_words_df = pd.DataFrame(similar_words, columns=['Word', 'Similarity score'])
+df_similar_words = pd.DataFrame(similar_words_df)
+
+#df_similar_words
+```
+
+### Plot similar words for "learning"
+
+```{python}
+#| label: similar-words-learning
+#| column: page-right
+
+# Plot graph with Plotly Express
+if 'figlearning' not in globals():
+    figlearning = px.scatter(similar_words_df, x='Similarity score', y='Word', color='Word',
+                     title='Top 20 Most Similar Words for "learning"')
+    
+    # Customize the style of the plot
+    figlearning.update_traces(marker=dict(size=12, opacity=0.6),
+                      selector=dict(mode='markers'),
+                      showlegend=False)
+    
+    figlearning.update_layout(title_x=0.5, title_font=dict(size=20))
+    figlearning.update_layout(template="plotly_white")
+
+# Show the plot
+#figlearning.show()
+
+# Save the plot as an HTML file
+figlearning.write_html("similar_words_plot.html")
+```
+
+### Plot Word2Vec embeddings in 3D with plotly
+
+The visualization is quite heavy so it's not displayed here but you can find it here: [visualization](https://oliviercaron.github.io/systematic_lit_review/word2vec_embeddings_3d_plot.html)
+
+```{python}
+#| label: word2vec-3dplot
+#| column: page-right
+
+# Extract word vectors and corresponding words from the Word2Vec model
+word_vectors = [model.wv[word] for word in model.wv.index_to_key]
+words = model.wv.index_to_key
+#len(words) => 2122 words and vectors
+
+# Convert word_vectors to a NumPy array
+word_vectors_array = np.array(word_vectors)
+
+# Perform t-SNE to reduce the word vectors to 3D
+tsne = TSNE(n_components=3, perplexity=30, learning_rate=200, n_iter=500, random_state=42, verbose=1)
+tsne_result = tsne.fit_transform(word_vectors_array)
+
+# Create a DataFrame with the reduced dimensions and words
+tsne_df = pd.DataFrame({'Word': words, 'Dimension 1': tsne_result[:, 0], 'Dimension 2': tsne_result[:, 1], 'Dimension 3': tsne_result[:, 2]})
+
+# Check if the rendering has already been done
+if 'figlearning' not in globals():
+    # Rendering code (this will only be executed once)
+    
+    # Create a 3D scatter plot with Plotly Express
+    fig3D = px.scatter_3d(tsne_df, x='Dimension 1', y='Dimension 2', z='Dimension 3', text='Word', title='3D Word Embedding Visualization')
+
+    # Customize the style of the plot
+    fig3D.update_traces(marker=dict(size=6, opacity=0.6),
+                      selector=dict(mode='markers+text'))
+
+    fig3D.update_layout(title_x=0.5, title_font=dict(size=20))
+    fig3D.update_layout(template="plotly_white")
+    
+    # Save the plot as an HTML file
+    fig3D.write_html("word2vec_embeddings_3d_plot.html")
+    
+# Show the plot
+#fig.show()
+
+
+
+
+
+```
+
+### Plot Word2Vec embeddings in 2D with plotly
+
+```{python}
+#| label: word2vec-2dplot
+#| column: page-right
+
+# Calculate word frequencies in text data
+word_frequencies = {}  # Dictionary to store word frequencies
+for sentence in tokenized_docs_marketing:
+    for word in sentence:
+        if word in word_frequencies:
+            word_frequencies[word] += 1
+        else:
+            word_frequencies[word] = 1
+
+# Create a DataFrame with the reduced dimensions, words, and frequencies
+tsne_df = pd.DataFrame({'Word': words, 'Dimension 1': tsne_result[:, 0], 'Dimension 2': tsne_result[:, 1]})
+
+# Add a new column for word frequencies
+tsne_df['Frequency'] = tsne_df['Word'].apply(lambda word: word_frequencies.get(word, 1))
+
+if 'figw2v' not in globals():
+    # Rendering code (this will only be executed once)
+    # Create a 2D scatter plot with Plotly Express
+    figw2v = px.scatter(
+        tsne_df,
+        x='Dimension 1',
+        y='Dimension 2',
+        text='Word',
+        title='2D Word Embedding Visualization with Point Size based on Frequency',
+        size_max=50,  # Set the maximum size of words
+        size='Frequency',
+        color_discrete_sequence=['blue'],# Use raw frequency for text size
+    )
+    
+    # Customize the style of the plot
+    figw2v.update_traces(opacity=0.6)
+    
+    figw2v.update_layout(title_x=0.5, title_font=dict(size=20))
+    figw2v.update_layout(template="plotly_white")
+
+# Show the plot
+#figw2v.show()
+
+# Save the plot as an HTML file
+figw2v.write_html("word2vec_embeddings_2d_plot.html")
+
+
+```
+
+## Plotting authors and text based on BERTopic
+
+### 3D plot of authors (t-SNE + BERTopic clustering)
+
+The visualization is quite heavy so it's not displayed here but you can find it here: [visualization](https://oliviercaron.github.io/systematic_lit_review/3D_authors_embeddings_TSNE_BERTopic.html)\
+
+```{python}
+#| label: plot-authors-year-3D
+#| column: page-right
+
+
+# Step 1: Perform t-SNE dimensionality reduction on word vectors to 3D
+tsne = TSNE(n_components=3, perplexity=30, learning_rate=200, n_iter=1337, random_state=42, verbose=1)
+tsne_result = tsne.fit_transform(embeddings)
+
+# Step 2: Append the reduced embeddings to the DataFrame df
+df['X'] = tsne_result[:, 0]
+df['Y'] = tsne_result[:, 1]
+df['Z'] = tsne_result[:, 2]
+
+# Clustering evaluation
+davies_bouldin = davies_bouldin_score(tsne_result, df['topic'])
+silhouette = silhouette_score(tsne_result, df['topic'])
+
+print('Davies-Bouldin Score:', davies_bouldin)
+print('Silhouette Score:', silhouette)
+
+# Step 4: Create a DataFrame for visualization
+df_vis = df[['X', 'Y', 'Z', 'dc_creator', 'year', 'topic']]
+df_vis = df_vis[df_vis['topic'] != -1] # We exclude topic = -1 because they are outliers
+
+if 'figlearning' not in globals():
+    # Rendering code (this will only be executed once)
+    # Step 5: Create an interactive 3D scatter plot with Plotly
+    fig3D_2 = px.scatter_3d(df_vis, x='X', y='Y', z='Z', color='topic', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1))
+    fig3D_2.update_traces(marker=dict(size=5))
+    fig3D_2.update_layout(title='Dimensionality reduction with t-SNE and Clustering with BERTopic')
+    fig3D_2.update_layout(template="plotly_white")
+    # Step 6: Save the interactive 3D scatter plot as an HTML file
+    pio.write_html(fig3D_2, file="3D_authors_embeddings_TSNE_BERTopic.html")
+
+#fig3D.show()
+
+
+
+```
+
+### 2D plot of authors (t-SNE + BERTopic clustering)
+
+```{python}
+#| label: plot-authors-year-2d
+#| column: page-right
+
+
+# Perform t-SNE to reduce the word vectors to 2D
+tsne = TSNE(n_components=2, perplexity=30, learning_rate=200, n_iter=1337, random_state=42, verbose=1)
+tsne_result = tsne.fit_transform(embeddings)
+
+# Cluster evaluation
+davies_bouldin = davies_bouldin_score(tsne_result, df['topic'])
+silhouette = silhouette_score(tsne_result, df['topic'])
+
+print('Davies-Bouldin Score:', davies_bouldin)
+print('Silhouette Score:', silhouette)
+
+# Step 4: Create a DataFrame for 2D visualization
+df_vis = df[['X', 'Y', 'dc_creator', 'year', 'topic_name']]  # Use 'topic_name' instead of 'topic'
+
+# Define a color map for topic names
+color_map = {
+    topic_name: f'rgb({r},{g},{b})' for topic_name, r, g, b in zip(df_vis['topic_name'].unique(), range(0, 256, 30), range(0, 256, 30), range(0, 256, 30))
+}
+
+if 'fig2D' not in globals():
+    # Rendering code (this will only be executed once)
+    # Step 5: Create an interactive 2D plot with Plotly
+    fig2D = px.scatter(df_vis, x='X', y='Y', color='topic_name', text=df_vis.apply(lambda row: f"{row['dc_creator']}, {row['year']}", axis=1),
+                     color_discrete_map=color_map)  # Use color_discrete_map to specify colors
+    
+    fig2D.update_traces(marker=dict(size=5))
+    fig2D.update_layout(title='Dimensionality reduction with t-SNE (2D) and Clustering with BERTopic')
+    fig2D.update_layout(template="plotly_white")
+    
+    # Add a custom legend title
+    fig2D.update_layout(legend_title_text='Topic Names')
+
+#fig.show()
+
+pio.write_html(fig2D, file="2D_authors_embeddings_TSNE_BERTopic.html")
+```

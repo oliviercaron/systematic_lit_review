@@ -45,17 +45,173 @@ css: styles.css
 reference-location: margin
 ---
 
-## Libraries R
+## Libraries R and loading data
 
 ```{r}
 #| label: load-packages
 #| message: false
 
 library(tidyverse)
+library(reactable)
+library(plotly)
+
+#load data
+data_embeddings <- read.csv("data_for_embeddings.csv")
+annotations_stanza <- read.csv("annotated_stanza.csv")
+annotations_udpipe <- read.csv("annotated_udpipe.csv")
+annotations_trankit <- read.csv("annotated_trankit.csv")
+
 ```
+
+## Loading of all annotations (Stanza, UDPipe, Trankit)
 
 ```{r}
-data_embeddings <- read.csv("data_for_embeddings.csv")
+#| label: list-annotations
+
+#annotation filter on PROPN
+annotations_stanza_propn <- annotations_stanza %>% filter(upos == "PROPN")
+annotations_udpipe_propn <- annotations_udpipe %>% filter(upos == "PROPN")
+annotations_trankit_propn <- annotations_trankit %>% filter(upos == "PROPN")
+
+#list of most frequent words in annotatinos
+toppropn_stanza <- annotations_stanza_propn %>% count(lemma, sort = TRUE) %>% drop_na() %>% filter(n > 1)
+toppropn_udpipe <- annotations_udpipe_propn %>% count(lemma, sort = TRUE) %>% drop_na() %>% filter(n > 1)
+toppropn_trankit <- annotations_trankit_propn %>% count(lemma, sort = TRUE) %>% drop_na() %>% filter(n > 1)
+
 ```
 
+### Table of most frequent PROPN words in the Stanza annotations
 
+```{r}
+#| label: reactable-stanza
+
+#reactable of most frequent words in annotations_propn
+toppropn_stanza %>% 
+  reactable(
+    searchable = TRUE,
+    defaultColDef = colDef(
+      minWidth = 100,
+      sortable = TRUE
+    )
+  )
+```
+
+### Table of most frequent PROPN words in the UDPipe annotations
+
+```{r}
+#| label: reactable-udpipe
+
+#reactable of most frequent words in annotations_propn
+toppropn_udpipe %>% 
+  reactable(
+    searchable = TRUE,
+    defaultColDef = colDef(
+      minWidth = 100,
+      sortable = TRUE
+    )
+  )
+```
+
+### Table of most frequent PROPN words in the Trankit annotations
+
+```{r}
+#| label: reactable-trankit
+
+#reactable of most frequent words in annotations_propn
+toppropn_trankit %>% 
+  reactable(
+    searchable = TRUE,
+    defaultColDef = colDef(
+      minWidth = 100,
+      sortable = TRUE
+    )
+  )
+```
+
+## NLP techniques in Marketing
+
+We want to provide a list of recurrent techniques in marketing. The tables above clearly show that some of them are often used. Let's focus first on them in no particular order.
+
+-   LIWC
+
+-   Leximancer
+
+-   BERT
+
+-   ChatGPT
+
+-   PassivePy
+
+```{r}
+#| label: nlp-techniques
+
+#detect and count the words above in the "combined_text" column of data_embeddings
+data_embeddings$combined_text <- tolower(data_embeddings$combined_text)
+data_embeddings$liwc <- str_count(data_embeddings$combined_text, "liwc")
+data_embeddings$leximancer <- str_count(data_embeddings$combined_text, "leximancer")
+data_embeddings$bert <- str_count(data_embeddings$combined_text, "bert")
+data_embeddings$chatgpt <- str_count(data_embeddings$combined_text, "chatgpt")
+data_embeddings$passivepy <- str_count(data_embeddings$combined_text, "passivepy")
+
+# Group by year and calculate the cumulative sum for each technique
+sum_data <- data_embeddings %>%
+  group_by(year) %>%
+  summarize(
+    sum_liwc = sum(liwc),
+    sum_leximancer = sum(leximancer),
+    sum_bert = sum(bert),
+    sum_chatgpt = sum(chatgpt),
+    sum_passivepy = sum(passivepy)
+  ) %>%
+  ungroup()
+
+cumulative_data <- sum_data %>%
+  mutate(
+    cum_liwc = cumsum(sum_liwc),
+    cum_leximancer = cumsum(sum_leximancer),
+    cum_bert = cumsum(sum_bert),
+    cum_chatgpt = cumsum(sum_chatgpt),
+    cum_passivepy = cumsum(sum_passivepy)
+  ) %>%
+  filter(year > 2012)
+
+fig <- ggplot(cumulative_data, aes(x = year)) +
+  geom_line(aes(y = cum_liwc, linetype = "LIWC", color = "LIWC")) +
+  geom_line(aes(y = cum_leximancer, linetype = "Leximancer", color = "Leximancer")) +
+  geom_line(aes(y = cum_bert, linetype = "BERT", color = "BERT")) +
+  geom_line(aes(y = cum_chatgpt, linetype = "ChatGPT", color = "ChatGPT")) +
+  geom_line(aes(y = cum_passivepy, linetype = "PassivePy", color = "PassivePy")) +
+  scale_color_manual(
+    name = "Techniques",
+    values = c(
+      "LIWC" = "#F8766D",
+      "Leximancer" = "#00BFC4",
+      "BERT" = "#7CAE00",
+      "ChatGPT" = "#C77CFF",
+      "PassivePy" = "#619CFF"
+    )
+  ) +
+  scale_linetype_manual(
+    name = "Techniques",
+    values = c(
+      "LIWC" = "solid",
+      "Leximancer" = "dashed",
+      "BERT" = "dotted",
+      "ChatGPT" = "dotdash",
+      "PassivePy" = "longdash"
+    ),
+    guide = guide_legend(override.aes = list(linetype = "solid"))  # Set the legend linetype to "solid"
+  ) +
+  labs(
+    title = "Evolution of NLP techniques in marketing",
+    subtitle = "Cumulative sum of the number of articles mentioning each technique",
+    x = "Year",
+    y = "Cumulative number of occurrences"
+  ) +
+  scale_x_continuous(breaks = seq(2010, 2023, by = 1), labels = seq(2010, 2023, by = 1)) +  # Set breaks and labels
+  theme_minimal() +
+  theme(legend.position = "bottom")  # Move the legend to the bottom for better visibility
+
+ggplotly(fig)
+
+```

@@ -51,10 +51,10 @@ library(tidyverse)
 
 ## Topic Wordclouds
 
-### [Color palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4)
+### [Palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest2_4)
 
 |                               Topic 0                               |                               Topic 1                               |                               Topic 2                               |                               Topic 3                               |
-|:-------------------------------------------------------------------:|:-------------------------------------------------------------------:|:-------------------------------------------------------------------:|:-------------------------------------------------------------------:|
+|:----------------:|:----------------:|:----------------:|:----------------:|
 | ![](wordclouds/wordcloud_topic0_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic1_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic2_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_GrandBudapest2_4.png){width="90%"}  |
 |                             **Topic 4**                             |                             **Topic 5**                             |                             **Topic 6**                             |                             **Topic 7**                             |
 | ![](wordclouds/wordcloud_topic4_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic5_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic6_GrandBudapest2_4.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_GrandBudapest2_4.png){width="90%"}  |
@@ -66,7 +66,7 @@ library(tidyverse)
 ### [Palette : Scientific - Sequential - Oslo_10](https://jiffyclub.github.io/palettable/scientific/sequential/#oslo_10)
 
 |                          Topic 0                           |                          Topic 1                           |                          Topic 2                           |                          Topic 3                           |
-|:----------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|
+|:----------------:|:----------------:|:----------------:|:----------------:|
 | ![](wordclouds/wordcloud_topic0_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic1_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic2_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Oslo_10.png){width="90%"}  |
 |                        **Topic 4**                         |                        **Topic 5**                         |                        **Topic 6**                         |                        **Topic 7**                         |
 | ![](wordclouds/wordcloud_topic4_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic5_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic6_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Oslo_10.png){width="90%"}  |
@@ -78,10 +78,144 @@ library(tidyverse)
 ### [Palette : Scientific - Sequential - Grayc_6](https://jiffyclub.github.io/palettable/scientific/sequential/#grayc_6)
 
 |                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
-|:---------------------------------------------------------:|:---------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|
+|:----------------:|:----------------:|:----------------:|:----------------:|
 | ![](wordclouds/wordcloud_topic0_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic1_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic2_GrayC_6.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_GrayC_6.png){width="90%"}  |
 |                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
 | ![](wordclouds/wordcloud_topic4_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic5_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic6_GrayC_6.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_GrayC_6.png){width="90%"}  |
 |                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
 | ![](wordclouds/wordcloud_topic8_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic9_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic10_GrayC_6.png){width="90%"} | ![](wordclouds/wordcloud_topic11_GrayC_6.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+
+### [Palette : Colorbrewer - Sequential - BuGn_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/#bugn_9)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_BuGn_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_BuGn_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_BuGn_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_BuGn_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_BuGn_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_BuGn_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - Blues_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/#blues_9)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_Blues_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Blues_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_Blues_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Blues_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_Blues_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_Blues_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - BuPu_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/#bupu_9)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_BuPu_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_BuPu_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_BuPu_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_BuPu_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_BuPu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_BuPu_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - GnBu_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_GnBu_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_GnBu_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_GnBu_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_GnBu_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_GnBu_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_GnBu_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - OrRd_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_OrRd_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_OrRd_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_OrRd_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_OrRd_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_OrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_OrRd_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - Oranges_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_Oranges_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Oranges_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_Oranges_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Oranges_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_Oranges_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_Oranges_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - PuRd_9](https://jiffyclub.github.io/palettable/colorbrewer/sequential/)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_PuRd_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_PuRd_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_PuRd_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_PuRd_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_PuRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_PuRd_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Colorbrewer - Sequential - YlOrRd_9](https://jiffyclub.github.io/palettable/scientific/sequential/#grayc_6)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic1_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic2_YlOrRd_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_YlOrRd_9.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic5_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic6_YlOrRd_9.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_YlOrRd_9.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic9_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic10_YlOrRd_9.png){width="90%"} | ![](wordclouds/wordcloud_topic11_YlOrRd_9.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : WesAnderson - GrandBudapest 2_4](https://jiffyclub.github.io/palettable/wesanderson/#grandbudapest3_6)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic1_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic2_GrandBudapest3_6.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_GrandBudapest3_6.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic5_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic6_GrandBudapest3_6.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_GrandBudapest3_6.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic9_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic10_GrandBudapest3_6.png){width="90%"} | ![](wordclouds/wordcloud_topic11_GrandBudapest3_6.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+
+### [Palette : WesAnderson - Moonrise7_5](https://jiffyclub.github.io/palettable/wesanderson/)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic1_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic2_Moonrise7_5.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Moonrise7_5.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic5_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic6_Moonrise7_5.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Moonrise7_5.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic9_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic10_Moonrise7_5.png){width="90%"} | ![](wordclouds/wordcloud_topic11_Moonrise7_5.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : WesAnderson - Zissou_5](https://jiffyclub.github.io/palettable/wesanderson/)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic1_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic2_Zissou_5.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Zissou_5.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic5_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic6_Zissou_5.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Zissou_5.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic9_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic10_Zissou_5.png){width="90%"} | ![](wordclouds/wordcloud_topic11_Zissou_5.png){width="90%"} |
+|                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
+
+### [Palette : Scientific - Sequential - Bilbao_10](https://jiffyclub.github.io/palettable/scientific/sequential/#bilbao_10)
+
+|                          Topic 0                          |                          Topic 1                          |                          Topic 2                           |                          Topic 3                           |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+| ![](wordclouds/wordcloud_topic0_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic1_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic2_Bilbao_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Bilbao_10.png){width="90%"}  |
+|                          Topic 4                          |                          Topic 5                          |                          Topic 6                           |                          Topic 7                           |
+| ![](wordclouds/wordcloud_topic4_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic5_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic6_Bilbao_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Bilbao_10.png){width="90%"}  |
+|                          Topic 8                          |                          Topic 9                          |                          Topic 10                          |                          Topic 11                          |
+| ![](wordclouds/wordcloud_topic8_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic9_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic10_Bilbao_10.png){width="90%"} | ![](wordclouds/wordcloud_topic11_Bilbao_10.png){width="90%"} |
 |                         Topic 12                          |                         Topic 13                          |                          Topic 14                          |                          Topic 15                          |
