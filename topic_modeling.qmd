@@ -2,7 +2,7 @@
 title: "Systematic literature review"
 bibliography: references.bib
 title-block-banner: true
-subtitle: "Topic modelling"
+subtitle: "Topic modeling"
 author:
   - name: Olivier Caron
     email: olivier.caron@dauphine.psl.eu
