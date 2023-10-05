@@ -58,6 +58,11 @@ library(text)
 library(udpipe)
 library(plotly)
 library(text2vec)
+library(parallel)
+library(reactable)
+num_cores <- detectCores(logical = TRUE)
+num_cores
+cat('Number of logical cores to use when training Word2vec model: ', num_cores, '\n')
 ```
 
 ## Loading data
@@ -103,26 +108,49 @@ data_embeddings %>%
 
 ```{r}
 #| label: word2vec-skipgram
-
+ 
 set.seed(42)
-model <- word2vec(x = tolower(data_embeddings$combined_text), type = "skip-gram", dim = 100, iter = 100,, verbose=10, stopwords = stopwords("english"), window = "7")
+model <- word2vec(x = tolower(data_embeddings$combined_text),
+                  type = "skip-gram",
+                  dim = 500,
+                  iter = 250,
+                  min_count = 3,
+                  hs = 1,
+                  verbose=10,
+                  stopwords = stopwords("english"),
+                  window = "7",
+                  threads = num_cores)
 embedding <- as.matrix(model)
 
 
 ```
 
+### Let's try to find softwares related to text analysis using additions of word embeddings
+
 ```{r}
 #| label: plotly-embedding-skipgram
-lookslike <- predict(model, c("text"), type = "nearest", top_n = 20) %>% as.data.frame()
-lookslike
+#| panel: center
 
-fig <- lookslike %>%
-  ggplot(aes(x = text.similarity, y = reorder(text.term2, text.similarity))) +
-  geom_point(color = "royalblue", size = lookslike$text.similarity+2) +
+#addition of the wordd embeddings "text", "analysis" and "software"
+embedding_text <- predict(model, c("text"), type = "embedding")
+embedding_analysis <- predict(model, c("analysis"), type = "embedding")
+embedding_software <- predict(model, c("software"), type = "embedding")
+embedding_text_software <- embedding_text + embedding_analysis + embedding_software
+
+lookslike <- predict(model, embedding_text_software, type = "nearest", top_n = 200) %>% as.data.frame() %>% mutate(text.similarity = round(text.similarity, 2)) %>% select(text.term, text.similarity)
+reactable(lookslike, searchable = TRUE, defaultColDef = colDef(
+  maxWidth = 200,
+  sortable = TRUE,
+  resizable = TRUE
+))
+
+fig <- lookslike %>% top_n(20, text.similarity) %>%
+  ggplot(aes(x = text.similarity, y = reorder(text.term, text.similarity))) +
+  geom_point(color = "royalblue") +
   theme_minimal() +
   labs(x = "similarity score",
        y = "") +
-  ggtitle("Top 20 similarity scores with term 'text'" ) +
+  ggtitle("Top 20 similarity scores with 'text'+'analysis'+'software' embeddings" ) +
   theme(plot.title = element_text(hjust = 0.5))
 
 ggplotly(fig)
@@ -134,7 +162,16 @@ ggplotly(fig)
 #| label: word2vec-cbow
 
 set.seed(42)
-modelcbow <- word2vec(x = tolower(data_embeddings$combined_text), type = "cbow", dim = 100, iter = 100, verbose=10, stopwords = stopwords("english"), window = "7")
+modelcbow <- word2vec(x = tolower(data_embeddings$combined_text),
+                  type = "cbow",
+                  dim = 500,
+                  iter = 250,
+                  min_count = 3,
+                  hs = 1,
+                  verbose=10,
+                  stopwords = stopwords("english"),
+                  window = "7",
+                  threads = num_cores)
 embedding1 <- as.matrix(modelcbow)
 #embedding <- predict(modelcbow, c("mining"), type = "embedding")
 #embedding
@@ -142,20 +179,41 @@ embedding1 <- as.matrix(modelcbow)
 
 ```{r}
 #| label: plotly-embedding-cbow
-lookslike <- predict(modelcbow, c("text"), type = "nearest", top_n = 20) %>% as.data.frame()
-lookslike
+#| panel: center
 
-fig <- lookslike %>%
-  ggplot(aes(x = text.similarity, y = reorder(text.term2, text.similarity))) +
-  geom_point(color = "royalblue", size = lookslike$text.similarity+2) +
+#addition of the wordd embeddings "text", "analysis" and "software"
+embedding_text <- predict(modelcbow, c("text"), type = "embedding")
+embedding_analysis <- predict(modelcbow, c("analysis"), type = "embedding")
+embedding_software <- predict(modelcbow, c("software"), type = "embedding")
+embedding_text_software <- embedding_text + embedding_analysis + embedding_software
+
+lookslike <- predict(modelcbow, embedding_text_software, type = "nearest", top_n = 200) %>% as.data.frame() %>% mutate(text.similarity = round(text.similarity, 2)) %>% select(text.term, text.similarity)
+reactable(lookslike, searchable = TRUE, defaultColDef = colDef(
+  maxWidth = 200,
+  sortable = TRUE,
+  resizable = TRUE
+))
+
+fig <- lookslike %>% top_n(20, text.similarity) %>%
+  ggplot(aes(x = text.similarity, y = reorder(text.term, text.similarity))) +
+  geom_point(color = "royalblue") +
   theme_minimal() +
   labs(x = "similarity score",
        y = "") +
-  ggtitle("Top 20 similarity scores with term 'text'" ) +
+  ggtitle("Top 20 similarity scores with 'text'+'analysis'+'software' embeddings" ) +
   theme(plot.title = element_text(hjust = 0.5))
 
 ggplotly(fig)
+
 ```
+
+It seems that skip-gram performs better here. Skip-gram is better at capturing infrequent words, while CBOW is faster and has better representations for more frequent words. Also, skip-gram trains the context word from the center word, while CBOW trains the center word from the context word.
+
+More simply:
+
+-   CBOW model tries to predict the missing word given a set of context words;
+
+-   Skip-gram model tries to predict the other context missing words given a word.
 
 ## Part of speech tagging with UDPipe (@straka-strakova-2017-tokenizing)
 
