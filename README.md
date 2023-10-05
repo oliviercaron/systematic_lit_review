@@ -7,6 +7,6 @@ An automatic systematic literature review of marketing publications using NLP me
 1. [Data collection](https://oliviercaron.github.io/systematic_lit_review/syslitrev_data_collection.html)
 2. [Papers Analysis (to be continued)](https://oliviercaron.github.io/systematic_lit_review/papers.html)
 3. [Networks of authors and references](https://oliviercaron.github.io/systematic_lit_review/references.html)
-4. [Lexical annotation and POS tagging](https://oliviercaron.github.io/systematic_lit_review/annotations.html)
+4. [Lexical annotation/Part of Speech tagging](https://oliviercaron.github.io/systematic_lit_review/annotations.html)
 5. [Topic modeling](https://oliviercaron.github.io/systematic_lit_review/topic_modeling.html)
 6. [NLP Techniques used in marketing articles](https://oliviercaron.github.io/systematic_lit_review/nlp_techniques.html)
