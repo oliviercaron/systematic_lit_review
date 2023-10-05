@@ -174,7 +174,7 @@ The aim of this function is to swiftly create various BERTopic experiments while
 Some explanations:
 
 | Parameter name   | Description                                                                                                                                                                                                                |
-|---------------------|---------------------------------------------------|
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | docs             | The documents we want to analyze (list).                                                                                                                                                                                   |
 | embeddings_model | Specifies the embeddings model we want to load and use.                                                                                                                                                                    |
 | min_topic_size   | It is used to specify what the minimum size of a topic can be. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#min_topic_size "min_topic_size"). |
@@ -586,7 +586,7 @@ print("\nAll word clouds have been generated in the 'wordclouds' folder.")
 More to see here: [Grid wordclouds](https://oliviercaron.github.io/systematic_lit_review/gridwordclouds.html)
 
 |                          Topic 0                           |                          Topic 1                           |                          Topic 2                           |                          Topic 3                           |
-|:----------------:|:----------------:|:----------------:|:----------------:|
+|:----------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|
 | ![](wordclouds/wordcloud_topic0_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic1_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic2_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Oslo_10.png){width="90%"}  |
 |                        **Topic 4**                         |                        **Topic 5**                         |                        **Topic 6**                         |                        **Topic 7**                         |
 | ![](wordclouds/wordcloud_topic4_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic5_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic6_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Oslo_10.png){width="90%"}  |

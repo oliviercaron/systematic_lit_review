@@ -54,7 +54,10 @@ reference-location: margin
 library(tidyverse)
 library(reactable)
 library(plotly)
+library(wesanderson)
+```
 
+```{r}
 #load data
 data_embeddings <- read.csv("data_for_embeddings.csv")
 annotations_stanza <- read.csv("annotated_stanza.csv")
@@ -130,6 +133,8 @@ toppropn_trankit %>%
 
 ## NLP techniques in Marketing
 
+### Generic techniques
+
 We want to provide a list of recurrent techniques in marketing. The tables above clearly show that some of them are often used. Let's focus first on them in no particular order.
 
 -   LIWC
@@ -142,8 +147,11 @@ We want to provide a list of recurrent techniques in marketing. The tables above
 
 -   PassivePy
 
+
 ```{r}
-#| label: nlp-techniques
+
+#i want to get just one number if multiple words of the vector are found in the string
+
 
 #detect and count the words above in the "combined_text" column of data_embeddings
 data_embeddings$combined_text <- tolower(data_embeddings$combined_text)
@@ -175,6 +183,42 @@ cumulative_data <- sum_data %>%
   ) %>%
   filter(year > 2012)
 
+patterns <- c("linguistic inquiry and word count", "linguistic inquiry", "linguistic inquiry word count", "liwc")
+
+# Create a new column "liwc_alt" with initial empty strings
+data_embeddings$liwc_alt <- ""
+
+# Find the column index for "liwc_alt"
+ncol <- which(colnames(data_embeddings) == "liwc_alt")
+
+# Loop through each row and pattern to count occurrences and populate "liwc_alt"
+for (i in 1:nrow(data_embeddings)) {
+  counts <- sapply(patterns, function(pattern) {
+    str_count(data_embeddings$combined_text[i], pattern)
+  })
+  data_embeddings$liwc_alt[i] <- sum(counts)
+}
+
+liwc_df <- data_embeddings %>% select(combined_text, liwc, liwc_alt)
+reactable(liwc_df, searchable = TRUE, 
+          defaultPageSize = 3,  # Set the maximum number of rows to display
+          columns = list(
+            combined_text = colDef(width = 850),
+            liwc = colDef(width = 50),
+            liwc_alt = colDef(width = 50)
+          ))
+
+```
+
+
+It seems that when researchers talk about LIWC, they always include "liwc" but not always "linguistic inquiry and word count" or other variations. We can therefore concentrate on the unique detection of "liwc", "bert" and other acronyms in the text.
+
+We use the `wesanderson` package to get a nice palette of colors. We pick the `Royal2` palette.
+```{r}
+#| label: plotly-techniques
+
+Royal2 <- wesanderson::wes_palette("Royal2")
+
 fig <- ggplot(cumulative_data, aes(x = year)) +
   geom_line(aes(y = cum_liwc, linetype = "LIWC", color = "LIWC")) +
   geom_line(aes(y = cum_leximancer, linetype = "Leximancer", color = "Leximancer")) +
@@ -183,13 +227,7 @@ fig <- ggplot(cumulative_data, aes(x = year)) +
   geom_line(aes(y = cum_passivepy, linetype = "PassivePy", color = "PassivePy")) +
   scale_color_manual(
     name = "Techniques",
-    values = c(
-      "LIWC" = "#F8766D",
-      "Leximancer" = "#00BFC4",
-      "BERT" = "#7CAE00",
-      "ChatGPT" = "#C77CFF",
-      "PassivePy" = "#619CFF"
-    )
+    values = Royal2
   ) +
   scale_linetype_manual(
     name = "Techniques",
@@ -205,7 +243,7 @@ fig <- ggplot(cumulative_data, aes(x = year)) +
   labs(
     title = "Evolution of NLP techniques in marketing",
     subtitle = "Cumulative sum of the number of articles mentioning each technique",
-    x = "Year",
+    x = "",
     y = "Cumulative number of occurrences"
   ) +
   scale_x_continuous(breaks = seq(2010, 2023, by = 1), labels = seq(2010, 2023, by = 1)) +  # Set breaks and labels
@@ -213,5 +251,5 @@ fig <- ggplot(cumulative_data, aes(x = year)) +
   theme(legend.position = "bottom")  # Move the legend to the bottom for better visibility
 
 ggplotly(fig)
-
 ```
+It seems like Leximancer is coming to an end, while BERT and ChatGPT are on the rise. PassivePy is also gaining traction but we can't really conclude anything about it yet since the article has been published in 2022 @(sepehri2022passivepy). One interesthing to notice is that BERT 
