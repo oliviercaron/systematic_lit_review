@@ -60,8 +60,7 @@ library(plotly)
 library(text2vec)
 library(parallel)
 library(reactable)
-num_cores <- detectCores(logical = TRUE)
-num_cores
+num_cores <- detectCores(logical = TRUE) - 1
 cat('Number of logical cores to use when training Word2vec model: ', num_cores, '\n')
 ```
 
