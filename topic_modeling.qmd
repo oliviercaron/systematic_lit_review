@@ -174,7 +174,7 @@ The aim of this function is to swiftly create various BERTopic experiments while
 Some explanations:
 
 | Parameter name   | Description                                                                                                                                                                                                                |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|----------------|--------------------------------------------------------|
 | docs             | The documents we want to analyze (list).                                                                                                                                                                                   |
 | embeddings_model | Specifies the embeddings model we want to load and use.                                                                                                                                                                    |
 | min_topic_size   | It is used to specify what the minimum size of a topic can be. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#min_topic_size "min_topic_size"). |
@@ -366,6 +366,8 @@ print(table_with_centered_title)
 
 ## Topics Results
 
+We can find multiple ways to get information about topics in the [documentation](https://maartengr.github.io/BERTopic/api/bertopic.html).
+
 ### Representative documents of topics
 
 ```{python}
@@ -389,8 +391,26 @@ topic_info_df = topic_models[embeddings_model_name].get_topic_info()
 selected_columns = topic_info_df[["Topic", "Name"]]
 
 topic_info_df
+```
 
+### Extract topics' name + associated words
 
+```{python}
+#| label: extract-topics-name
+
+topics_names = topic_model.get_topics()
+topics_names
+
+df_topics = []
+for topic, words in topics_names.items():
+    words_string = ' | '.join([word[0] for word in words])
+    df_topics.append((topic, words_string))
+
+df_topics = pd.DataFrame(df_topics, columns=['topic', 'words']) #now we have the topics' name and associated words
+result_df = df.merge(df_topics, on="topic", how="left")
+
+#The file we will use for networks by coloring nodes with the topic number
+result_df.to_csv("data_final.csv", index=False, encoding="utf-8")
 ```
 
 ### Distribution of topics
@@ -398,6 +418,7 @@ topic_info_df
 ```{python}
 #| label: distribution-topics
 
+#todo 05/10/2023 : change everything and simply use get_topic_freq() function from BERTopic
 df["topic_name"] = df["topic"].map(selected_columns.set_index("Topic")["Name"])
 
 # Calculate the count and percentage of each topic
@@ -427,6 +448,7 @@ if 'figdistrib' not in globals():
 ```{python}
 #| label: distribution-topics-nooutliers
 
+#todo 05/10/2023 : change everything and simply use get_topic_freq() function from BERTopic
 # Creates dataframe from Series
 topic_counts_no_outliers = df["topic_name"].value_counts().reset_index()
 
@@ -450,6 +472,12 @@ if 'figdistrib2' not in globals():
     figdistrib2.update_layout(title_x=0.5, title_xanchor="center")
 
 #figdistrib.show()
+```
+
+### Rename the topics with LLM
+
+```{python}
+
 ```
 
 ### Visualize how each token contributes to a specific topic.
@@ -496,6 +524,8 @@ with open('images/topics_contribution.html', 'w') as html_file:
 ```
 ### Wordclouds of BERTopics
 
+We can find the details of the functions
+
 ```{python}
 #| label: wordcloud-function
 #| message: false
@@ -508,6 +538,7 @@ def create_wordcloud_text(model, topic):
 
 
 text = create_wordcloud_text(topic_model, 0)
+
 ```
 
 ```{python}
@@ -586,7 +617,7 @@ print("\nAll word clouds have been generated in the 'wordclouds' folder.")
 More to see here: [Grid wordclouds](https://oliviercaron.github.io/systematic_lit_review/gridwordclouds.html)
 
 |                          Topic 0                           |                          Topic 1                           |                          Topic 2                           |                          Topic 3                           |
-|:----------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|:----------------------------------------------------------:|
+|:----------------:|:----------------:|:----------------:|:----------------:|
 | ![](wordclouds/wordcloud_topic0_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic1_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic2_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic3_Oslo_10.png){width="90%"}  |
 |                        **Topic 4**                         |                        **Topic 5**                         |                        **Topic 6**                         |                        **Topic 7**                         |
 | ![](wordclouds/wordcloud_topic4_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic5_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic6_Oslo_10.png){width="90%"}  | ![](wordclouds/wordcloud_topic7_Oslo_10.png){width="90%"}  |

@@ -1,0 +1,309 @@
+---
+title: "Systematic literature review"
+bibliography: references.bib
+title-block-banner: true
+subtitle: "A focus on authors, articles, references with networks"
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 5
+format:
+  html:
+    theme:
+      light: yeti
+      dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1000px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+---
+
+## Purpose
+
+```{r}
+#| label: introduction
+
+cowsay::say("After researching the articles and references by making graphs to
+better visualize the structure of the research. We want to focus
+here on the authors, trying to understand how communities evolve over time.")
+```
+
+## Libraries and preparing data
+
+```{python}
+#| label: load-libraries-python
+#| echo: false
+
+#Libraries
+import pandas as pd
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+from itertools import combinations
+
+#Data
+data = pd.read_csv("data_final.csv")
+list_articles = pd.read_csv("nlp_full_data_final_18-08-2023.csv", sep=';', decimal=',')
+list_articles = list_articles[list_articles['marketing'] == 1] #only marketing articles
+
+# Merge the "topic" and "topic_name" columns from the "data" dataframe into "list_articles"
+list_articles = list_articles.merge(data[['entry_number', 'topic', 'topic_name']], on='entry_number', how='left')
+
+list_references = pd.read_csv("nlp_references_final_18-08-2023.csv", sep=';', decimal=',')
+```
+
+### Check name of authors
+
+We need to check if there are more than one unique `authorname` per `authid`. If so, we need to change the different names of author to the same name in order to have the exact same node per author later in the network. 
+
+```{r}
+#| label: load-libraries-r
+
+library(tidyverse)
+library(reactable)
+
+list_articles <- read_csv2("nlp_full_data_final_18-08-2023.csv")
+
+test <- list_articles %>%
+  group_by(authid) %>%
+  select(authid, authname, entry_number) %>%
+  mutate(n = n())
+
+result <- test %>%
+  group_by(authid) %>%
+  filter(n_distinct(authname) > 1) %>%
+  distinct(authid, .keep_all = TRUE)
+
+result %>% reactable()
+
+number_duplicates <- nrow(result)
+
+cat("There are ", number_duplicates, " authors registered with different names.")
+```
+
+### Correct the duplicate names
+
+Let's correct that by using one property of the distinct function: the `.keep_all = TRUE` parameter. It keeps the first occurrence of each group, which is the first row encountered for each unique combination of `authid` and `authname`. It will be faster than manually changing the name of each author.
+
+```{r}
+#| label: change-data-authors
+
+# Merge list_articles with result on the authid column
+merged_df <- left_join(list_articles, result, by = "authid")
+
+# Replace authname values in list_articles with those from result
+list_articles$authname <- ifelse(!is.na(merged_df$authname.y), merged_df$authname.y, list_articles$authname)
+
+# Write the updated dataframe to a CSV file
+write_csv2(list_articles, "nlp_full_data_final_unique_author_names.csv")
+
+```
+It is now done. We can check again if there are more than one unique `authorname` per `authid`.
+
+### Verification of duplicate names
+
+```{r}
+#| label: check-unique-name-authors
+
+test <- list_articles %>%
+  group_by(authid) %>%
+  select(authid, authname, entry_number) %>%
+  mutate(n = n())
+
+result <- test %>%
+  group_by(authid) %>%
+  filter(n_distinct(authname) > 1) %>%
+  distinct(authid, .keep_all = TRUE) %>%
+  relocate(entry_number)
+
+result %>% reactable()
+```
+
+It's alright, we can now continue on constructing the network.
+
+## Construct the dataframe for the network
+
+
+```{python}
+#| label: network-authors
+
+# Define the year ranges
+year_ranges = [(None, 2013), (2013, 2017), (2018, 2021), (2022, 2023)]
+
+# Initialize a list to store the results for each year period
+result_dfs = []
+
+# Iterate through the year ranges
+for start_year, end_year in year_ranges:
+    if start_year is None:
+        # Filter articles before 2013
+        filtered_articles = list_articles[list_articles['year'] < end_year]
+    else:
+        # Filter articles within the specified year range
+        filtered_articles = list_articles[(list_articles['year'] >= start_year) & (list_articles['year'] <= end_year)]
+
+    # Create a list to store author pairs and their details for the current year period
+    author_pairs = []
+
+    # Group the filtered dataframe by article number and collect unique author IDs for each article
+    grouped = filtered_articles.groupby('entry_number')[['authid', 'authname']].agg(list).reset_index()
+
+    # Iterate through the grouped dataframe and find author pairs for each article
+    for _, row in grouped.iterrows():
+        entry_number = row['entry_number']
+        authors = row['authid']
+        authnames = row['authname']
+
+        if len(authors) == 1:
+            # Handle single authors by creating a self-relation
+            author_pairs.append((entry_number, authors[0], authors[0], authnames[0], authnames[0]))
+        elif len(authors) > 1:
+            # Create pairs of authors who have co-authored the article
+            author_combinations = list(combinations(range(len(authors)), 2))
+            for i, j in author_combinations:
+                author_pairs.append((entry_number, authors[i], authors[j], authnames[i], authnames[j]))
+
+    # Create the DataFrame with the additional 'entry_number' column for the current year period
+    result_df = pd.DataFrame(author_pairs, columns=['entry_number', 'authid1', 'authid2', 'authname1', 'authname2'])
+
+    # Append the result DataFrame to the list of results
+    result_dfs.append(result_df)
+
+# Now, result_dfs contains DataFrames for each year period
+# result_dfs[0] corresponds to articles before 2013
+# result_dfs[1] corresponds to articles from 2013 to 2017
+# result_dfs[2] corresponds to articles from 2018 to 2021
+# result_dfs[3] corresponds to articles from 2022 to 2023
+
+authors_before_2013 = result_dfs[0]
+authors_2013_2017 = result_dfs[1]
+authors_2018_2021 = result_dfs[2]
+authors_2022_2023 = result_dfs[3]
+
+```
+
+
+```{python}
+#| label: function-calculate-edge-weights
+
+#Sort the cases with a->b and b->a and sum them up => it creates weighted edges
+def get_collaboration_df(df):
+    collaboration_df = df[["authname1","authname2"]]
+    collaboration_df = pd.DataFrame(np.sort(collaboration_df.values, axis=1), columns=collaboration_df.columns)
+
+    collaboration_df['value'] = 1
+    collaboration_df = collaboration_df.groupby(["authname1","authname2"], sort=False, as_index=False).sum()
+    return collaboration_df
+  
+
+# Example usage:
+# Apply the function to one of your result DataFrames (e.g., result_dfs[0])
+network_data_2022_2023 = get_collaboration_df(authors_2022_2023)
+network_data_2022_2023.to_csv("network_data_2022_2023.csv")
+```
+
+
+
+## Create the network
+
+```{python}
+#| label: network-creation
+
+G = nx.from_pandas_edgelist(network_data_2022_2023, 'authname1', 'authname2', edge_attr='value', create_using=nx.Graph())
+```
+
+
+```{python}
+#| label: network-visualization
+
+pos = nx.kamada_kawai_layout(G)
+
+nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos = pos)
+```
+
+
+```{python}
+#| label: network-visualization-pyvis
+from pyvis.network import Network
+net = Network(notebook=True, width=1000, height=1000, bgcolor="white", font_color="black")
+
+net.from_nx(G)
+#net.show("network_2022_2023.html")
+net.save_graph("network_2022_2023.html")
+```
+
+```{python}
+#| label: circular-layout
+
+# Create a Network instance
+net = Network(notebook=True, width=1000, height=1000, bgcolor="white", font_color="black")
+
+# Set the layout to 'circular' in Pyvis
+net.barnes_hut(gravity=-8000, central_gravity=0.3, spring_length=100)
+
+# Load your network graph into Pyvis
+net.from_nx(G)
+
+# Save the visualization to an HTML file
+net.save_graph("network_2022_2023_circular.html")
+
+
+```
+
+```{=html}
+<iframe width="1400" height="800" src="network_2022_2023.html" title="Quarto Documentation" frameborder="0></iframe>
+```
+
+```{r}
+#| label: space
+
+
+```
+
+## BLABLABLA
+BLALBLABLA
+BLALBLA
+JUST some space for the other network test
+
+```{=html}
+<iframe width="1400" height="800" src="network_2022_2023_circular.html" title="Quarto Documentation" frameborder="0></iframe>
+```
+
+
+
+
+
+
+
+
+
+
+
+

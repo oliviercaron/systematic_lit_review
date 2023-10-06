@@ -307,4 +307,12 @@ topref20_gt <- topref20 %>%
 gtsave(topref20_gt,"top20ref.html")
 ```
 
-It appears that most of the references in the systematic review articles come from the field of marketing, with the exception of Blei's article on the LDA algorithm. This suggests that the field of marketing has largely incorporated advances in computer science research. Discoveries in computer science provide marketing researchers with the tools to go further by looking at the textual data of brands, consumers and individuals on social networks. In a way, this situation seems natural: computer science publications are sometimes complicated to handle. Marketing researchers are therefore start to use the tools by imitating their colleagues who are early adopters.
+It appears that most of the references in the systematic review articles come from the field of marketing, with the exception of Blei's article on the LDA algorithm. This suggests that marketing research has incorporated advances in computer science research and has produced enough marketing literature to be reflective.
+
+Discoveries in computer science provide marketing researchers with the tools to go further by looking at the textual data of brands, consumers and individuals on social networks. In a way, this situation seems natural: computer science publications are sometimes complicated to handle. Marketing researchers are therefore steered towards the use the tools by imitating their colleagues who are early adopters. Maybe this adoption is also due to a desire to keep up with the latest trends?
+
+## 
+
+```{python}
+
+```
