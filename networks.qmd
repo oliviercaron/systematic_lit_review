@@ -239,6 +239,7 @@ network_data_2022_2023.to_csv("network_data_2022_2023.csv")
 G = nx.from_pandas_edgelist(network_data_2022_2023, 'authname1', 'authname2', edge_attr='value', create_using=nx.Graph())
 ```
 
+### Network basic visualization
 
 ```{python}
 #| label: network-visualization
@@ -248,52 +249,43 @@ pos = nx.kamada_kawai_layout(G)
 nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos = pos)
 ```
 
+### Network visualization with pyvis
 
 ```{python}
 #| label: network-visualization-pyvis
 from pyvis.network import Network
-net = Network(notebook=True, width=1000, height=1000, bgcolor="white", font_color="black")
-
+net = Network(notebook=True, width=1400, height=1000, bgcolor="black", font_color="white")
+net.show_buttons(filter_=['physics'])
 net.from_nx(G)
+
 #net.show("network_2022_2023.html")
-net.save_graph("network_2022_2023.html")
+net.save_graph("networks/network_2022_2023.html")
 ```
+
+
+### Network visualization with pyvis and circular layout
 
 ```{python}
 #| label: circular-layout
 
 # Create a Network instance
-net = Network(notebook=True, width=1000, height=1000, bgcolor="white", font_color="black")
+#net = Network(notebook=True, cdn_resources='in_line', width=1400, height=1000, bgcolor="black", font_color="white")
 
 # Set the layout to 'circular' in Pyvis
-net.barnes_hut(gravity=-8000, central_gravity=0.3, spring_length=100)
+#net.barnes_hut(gravity=-8000, central_gravity=0.3, spring_length=100)
 
 # Load your network graph into Pyvis
-net.from_nx(G)
+#net.from_nx(G)
+
 
 # Save the visualization to an HTML file
-net.save_graph("network_2022_2023_circular.html")
+net.save_graph("networks/network_2022_2023_circular.html")
 
 
 ```
 
 ```{=html}
-<iframe width="1400" height="800" src="network_2022_2023.html" title="Quarto Documentation" frameborder="0></iframe>
-```
-
-```{r}
-#| label: space
-
-
-```
-
-## BLABLABLA
-BLALBLABLA
-BLALBLA
-JUST some space for the other network test
-
-```{=html}
-<iframe width="1400" height="800" src="network_2022_2023_circular.html" title="Quarto Documentation" frameborder="0></iframe>
+<iframe width="1400" height="1000" src="network_2022_2023.html" title="Quarto Documentation" frameborder="0></iframe>
 ```
 
 
