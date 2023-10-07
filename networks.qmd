@@ -246,7 +246,7 @@ G = nx.from_pandas_edgelist(network_data_2022_2023, 'authname1', 'authname2', ed
 
 pos = nx.kamada_kawai_layout(G)
 
-nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos = pos)
+nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos=pos)
 ```
 
 ### Network visualization with pyvis
@@ -254,7 +254,7 @@ nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos =
 ```{python}
 #| label: network-visualization-pyvis
 from pyvis.network import Network
-net = Network(notebook=True, width=1400, height=1000, bgcolor="black", font_color="white")
+net = Network(notebook=True, width=1400, height=1000, bgcolor="white", font_color="black")
 net.show_buttons(filter_=['physics'])
 net.from_nx(G)
 
@@ -285,7 +285,7 @@ net.save_graph("networks/network_2022_2023_circular.html")
 ```
 
 ```{=html}
-<iframe width="1400" height="1000" src="network_2022_2023.html" title="Quarto Documentation" frameborder="0></iframe>
+<iframe width="1400" height="1000" src="network_2022_2023.html" title="Quarto Documentation" frameborder=0 class="column-body-outset"></iframe>
 ```
 
 
