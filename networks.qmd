@@ -237,6 +237,8 @@ network_data_2022_2023.to_csv("network_data_2022_2023.csv")
 #| label: network-creation
 
 G = nx.from_pandas_edgelist(network_data_2022_2023, 'authname1', 'authname2', edge_attr='value', create_using=nx.Graph())
+
+
 ```
 
 ### Network basic visualization
@@ -254,14 +256,27 @@ nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos=p
 ```{python}
 #| label: network-visualization-pyvis
 from pyvis.network import Network
-net = Network(notebook=True, width=1400, height=1000, bgcolor="white", font_color="black")
-net.show_buttons(filter_=['physics'])
-net.from_nx(G)
 
-#net.show("network_2022_2023.html")
-net.save_graph("networks/network_2022_2023.html")
+net = Network(notebook=True,cdn_resources='remote', width=1600, height=1600, bgcolor="white", font_color="black")
+net.show_buttons(filter_=['physics'])
+
+
+#Setting up node size attribute after edge weight
+
+
+
+
+nx.set_node_attributes(G, nx.degree_centrality(G), 'size')
+
+
+net.from_nx(G)
+net.show("networks/network_2022_2023.html")
+#net.save_graph("networks/network_2022_2023.html")
 ```
 
+```{=html}
+<iframe width="1000" height="1000" src="networks/network_2022_2023.html" title="Quarto Documentation" frameborder=0 class="column-body-outset"></iframe>
+```
 
 ### Network visualization with pyvis and circular layout
 
@@ -279,13 +294,9 @@ net.save_graph("networks/network_2022_2023.html")
 
 
 # Save the visualization to an HTML file
-net.save_graph("networks/network_2022_2023_circular.html")
+#net.save_graph("networks/network_2022_2023_circular.html")
 
 
-```
-
-```{=html}
-<iframe width="1400" height="1000" src="network_2022_2023.html" title="Quarto Documentation" frameborder=0 class="column-body-outset"></iframe>
 ```
 
 
