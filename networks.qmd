@@ -81,7 +81,7 @@ list_references = pd.read_csv("nlp_references_final_18-08-2023.csv", sep=';', de
 
 ### Check name of authors
 
-We need to check if there are more than one unique `authorname` per `authid`. If so, we need to change the different names of author to the same name in order to have the exact same node per author later in the network. 
+We need to check if there are more than one unique `authorname` per `authid`. If so, we need to change the different names of author to the same name in order to have the exact same node per author later in the network.
 
 ```{r}
 #| label: load-libraries-r
@@ -125,6 +125,7 @@ list_articles$authname <- ifelse(!is.na(merged_df$authname.y), merged_df$authnam
 write_csv2(list_articles, "nlp_full_data_final_unique_author_names.csv")
 
 ```
+
 It is now done. We can check again if there are more than one unique `authorname` per `authid`.
 
 ### Verification of duplicate names
@@ -149,7 +150,6 @@ result %>% reactable()
 It's alright, we can now continue on constructing the network.
 
 ## Construct the dataframe for the network
-
 
 ```{python}
 #| label: network-authors
@@ -209,11 +209,10 @@ authors_2022_2023 = result_dfs[3]
 
 ```
 
-
 ```{python}
 #| label: function-calculate-edge-weights
 
-#Sort the cases with a->b and b->a and sum them up => it creates weighted edges
+# Sort the cases with a->b and b->a and sum them up => it creates weighted edges
 def get_collaboration_df(df):
     collaboration_df = df[["authname1","authname2"]]
     collaboration_df = pd.DataFrame(np.sort(collaboration_df.values, axis=1), columns=collaboration_df.columns)
@@ -228,8 +227,6 @@ def get_collaboration_df(df):
 network_data_2022_2023 = get_collaboration_df(authors_2022_2023)
 network_data_2022_2023.to_csv("network_data_2022_2023.csv")
 ```
-
-
 
 ## Create the network
 
@@ -257,56 +254,119 @@ nx.draw(G, with_labels=True, node_color='skyblue', edge_cmap=plt.cm.Blues, pos=p
 #| label: network-visualization-pyvis
 from pyvis.network import Network
 
-net = Network(notebook=True,cdn_resources='remote', width=1600, height=1600, bgcolor="white", font_color="black")
-net.show_buttons(filter_=['physics'])
+
+net = Network(notebook=True, cdn_resources='remote', width=1500, height=900, bgcolor="white", font_color="black")
+#net.show_buttons(filter_=['physics'])
+net.set_options("""
+const options = {
+  "physics": {
+    "forceAtlas2Based": {
+      "gravitationalConstant": -13,
+      "centralGravity": 0.015,
+      "springLength": 50
+    },
+    "minVelocity": 0.75,
+    "solver": "forceAtlas2Based"
+  }
+}
+""")
+
+node_degree = dict(G.degree)
+
+## Some values for nodes
+# Multiply node sizes by two
+node_degree_doubled = {node: 2 * degree for node, degree in node_degree.items()}
+node_degree_centrality = nx.degree_centrality(G)
+node_degree_betweenness = nx.betweenness_centrality(G)
+node_degree_closeness = nx.closeness_centrality(G)
 
 
-#Setting up node size attribute after edge weight
+# Set the node attributes with the doubled sizes
+nx.set_node_attributes(G, node_degree_doubled, 'size')
+nx.set_node_attributes(G, node_degree_centrality, 'centrality')
+nx.set_node_attributes(G, node_degree_betweenness, 'betweenness')
+nx.set_node_attributes(G, node_degree_closeness, 'closeness')
 
+#listnodes = net.nodes
+#net.nodes.__getitem__(1)
 
-
-
-nx.set_node_attributes(G, nx.degree_centrality(G), 'size')
-
+#listnodes = net.nodes
 
 net.from_nx(G)
+
+net.show
 net.show("networks/network_2022_2023.html")
-#net.save_graph("networks/network_2022_2023.html")
+
+```
+```{=html}
+<iframe width="1500" height="900" src="networks/network_2022_2023.html" title="Quarto Documentation" frameborder=0 class="column-page"></iframe>
+```
+
+
+#### Detect communities with Louvain's algorithm
+
+```{python}
+#using community_louvain from networkx
+
+import community as community_louvain
+
+# Compute the best partition
+communities = community_louvain.best_partition(G)
+communities
+
+nx.set_node_attributes(G, communities, 'group')
+
+```
+
+```{python}
+com_net = Network(notebook=True, cdn_resources='remote', width=1500, height=900, bgcolor="white", font_color="black")
+com_net.set_options("""
+const options = {
+  "physics": {
+    "forceAtlas2Based": {
+      "gravitationalConstant": -13,
+      "centralGravity": 0.015,
+      "springLength": 50
+    },
+    "minVelocity": 0.75,
+    "solver": "forceAtlas2Based"
+  }
+}
+""")
+
+com_net.from_nx(G)
+com_net.show("networks/network_2022_2023_louvain.html")
+```
+```{=html}
+<iframe width="1500" height="900" src="networks/network_2022_2023_louvain.html" title="Quarto Documentation" frameborder=0 class="column-page"></iframe>
+```
+
+
+### Network visualization with ipysigma
+
+```{python}
+#| label: ipysigma
+
+
+from ipysigma import Sigma
+# Using Sigma from ipysigma
+Sigma.write_html(G,
+                 node_metrics={"community": "louvain"},
+                 node_color="community",
+                 path="networks/2022_2023_sigma.html",
+                 fullscreen=True,
+                 start_layout=3,
+                 default_edge_type="curve",
+                 node_border_color_from="node",
+                 node_label_size=G.degree,
+                 label_font="Gallica"
+                 )
+                 
 ```
 
 ```{=html}
-<iframe width="1000" height="1000" src="networks/network_2022_2023.html" title="Quarto Documentation" frameborder=0 class="column-body-outset"></iframe>
+<iframe width="1400" height="800" src="networks/2022_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
-### Network visualization with pyvis and circular layout
-
-```{python}
-#| label: circular-layout
-
-# Create a Network instance
-#net = Network(notebook=True, cdn_resources='in_line', width=1400, height=1000, bgcolor="black", font_color="white")
-
-# Set the layout to 'circular' in Pyvis
-#net.barnes_hut(gravity=-8000, central_gravity=0.3, spring_length=100)
-
-# Load your network graph into Pyvis
-#net.from_nx(G)
-
-
-# Save the visualization to an HTML file
-#net.save_graph("networks/network_2022_2023_circular.html")
-
-
-```
-
-
-
-
-
-
-
-
-
 
 
 
