@@ -66,6 +66,8 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+
+from ipysigma import Sigma
 from itertools import combinations
 
 #Data
@@ -121,7 +123,13 @@ merged_df <- left_join(list_articles, result, by = "authid")
 # Replace authname values in list_articles with those from result
 list_articles$authname <- ifelse(!is.na(merged_df$authname.y), merged_df$authname.y, list_articles$authname)
 
-# Write the updated dataframe to a CSV file
+# Keep only marketing articles
+list_articles <- list_articles %>% filter(marketing == 1)
+
+
+cat("There are", n_distinct(list_articles$entry_number), "articles and", n_distinct(list_articles$authname), "authors overall in the data.")
+
+# Write the updated dataframe to a CSV file 
 write_csv2(list_articles, "nlp_full_data_final_unique_author_names.csv")
 
 ```
@@ -243,13 +251,9 @@ network_data_before_2013.to_csv("networks/csv/network_data_before_2013.csv")
 ```{python}
 #| label: affiliation-data-nodes
 
-
 def sort_dict(dict):
     sorted_dict = {k: v for k, v in sorted(dict.items(), key=lambda item: item[0])}
     return sorted_dict
-  
-import pandas as pd
-import numpy as np
 
 # Supposons que vous ayez un DataFrame list_articles avec des colonnes 'authname' et 'citedby_count'
 # 'authname' contient les noms des auteurs, et 'citedby_count' contient le nombre de citations
@@ -322,6 +326,116 @@ citations_before_2013 = sort_dict(get_author_info_by_period(list_articles, "befo
 citations_2013_2017 = sort_dict(get_author_info_by_period(list_articles, "2013-2017")['citations'])
 citations_2018_2021 = sort_dict(get_author_info_by_period(list_articles, "2018-2021")['citations'])
 citations_2022_2023 = sort_dict(get_author_info_by_period(list_articles, "2022-2023")['citations'])
+
+```
+
+```{python}
+#| label: get_author_info_by_period
+
+
+def sort_dict(dict):
+    sorted_dict = {k: v for k, v in sorted(dict.items(), key=lambda item: item[0])}
+    return sorted_dict
+  
+def get_author_info_by_period(list_articles, period):
+    # Filter the DataFrame based on the specified period
+    if period == "before-2013":
+        filtered_df = list_articles[list_articles['year'] < 2013]
+    elif period == "2013-2017":
+        filtered_df = list_articles[(list_articles['year'] >= 2013) & (list_articles['year'] <= 2017)]
+    elif period == "2018-2021":
+        filtered_df = list_articles[(list_articles['year'] >= 2018) & (list_articles['year'] <= 2021)]
+    elif period == "2022-2023":
+        filtered_df = list_articles[(list_articles['year'] >= 2022) & (list_articles['year'] <= 2023)]
+    else:
+        raise ValueError("Invalid period parameter. Please choose one of: 'before-2013', '2013-2017', '2018-2021', '2022-2023")
+    
+    # Create a dictionary to store affiliations and countries for each author
+    info_author = {'affiliation': {}, 'country': {}, 'article': {}, 'journal': {}}
+
+    # Iterate through the filtered DataFrame to collect affiliations and countries for each author
+    for index, row in filtered_df.iterrows():
+        author_name = row['authname']
+        affiliation = row['affilname']
+        country = row['affiliation_country']
+        article = row['dc:title']
+        journal = row['prism:publicationName']
+        
+        # Check if the affiliation is not NaN (i.e., a valid affiliation)
+        if isinstance(affiliation, str) and affiliation.strip() != "":
+            # Check if the author already has an affiliation, and if the new one is not already included, then add it with "&"
+            if author_name in info_author['affiliation']:
+                if affiliation not in info_author['affiliation'][author_name]:
+                    info_author['affiliation'][author_name] += " | " + affiliation
+            else:
+                info_author['affiliation'][author_name] = affiliation
+        
+        # Check if the country is not NaN (i.e., a valid country)
+        if isinstance(country, str) and country.strip() != "":
+            # Check if the author already has a country, and if the new one is not already included, then add it with "&"
+            if author_name in info_author['country']:
+                if country not in info_author['country'][author_name]:
+                    info_author['country'][author_name] += " | " + country
+            else:
+                info_author['country'][author_name] = country
+                
+        # Check if the article title is not NaN (i.e., a valid article title)
+        if isinstance(article, str) and article.strip() != "":
+            # Check if an author has multiple articles, if so add the new article with "&"
+            if author_name in info_author['article']:
+                if article not in info_author['article'][author_name]:
+                    info_author['article'][author_name] += " | " + article
+            else:
+                info_author['article'][author_name] = article
+                
+        # Check if the journal name (or conference name) is not NaN (i.e., a valid journal)
+        if isinstance(journal, str) and journal.strip() != "":
+            # Check if the author has published in multiple journals, if so add the new journal with "&"
+            if author_name in info_author['journal']:
+                if journal not in info_author['journal'][author_name]:
+                    info_author['journal'][author_name] += " | " + journal
+            else:
+                info_author['journal'][author_name] = journal
+
+    # Create a dictionary that associates each author with their ln(total number of citations+1)+1
+    # We do +1 twice because if the result is 0, then the log is undefined.
+    # We add another +1 to avoid having 0 values in the network.
+    citedby_dict = filtered_df.groupby('authname')['citedby_count'].sum() .to_dict()
+    #citedby_dict = filtered_df.groupby('authname')['citedby_count'].sum().apply(lambda x: np.log(x + 1) + 1).to_dict()
+
+    # Add the 'citedby_count' dictionary to the 'info_author' dictionary under the key 'citations'
+    info_author['citations'] = citedby_dict
+
+    # Return the info_author dictionary containing both affiliation, country, and citations information
+    return info_author
+
+
+  
+# How to use:
+# Specify the period of interest: ("before-2013", "2013-2017", "2018-2021", or "2022-2023")
+# The function returns a dictionary with four keys: 'affiliation', 'country', 'article', 'journal', and 'citations'
+# The dictionaries are then used as attributes for the nodes in the network (see below)
+
+affilauthor_before_2013 = sort_dict(get_author_info_by_period(list_articles, "before-2013")['affiliation'])
+affilauthor_2013_2017 = sort_dict(get_author_info_by_period(list_articles, "2013-2017")['affiliation'])
+affilauthor_2018_2021 = sort_dict(get_author_info_by_period(list_articles, "2018-2021")['affiliation'])
+affilauthor_2022_2023 = sort_dict(get_author_info_by_period(list_articles, "2022-2023")['affiliation'])
+countryauthor_before_2013 = sort_dict(get_author_info_by_period(list_articles, "before-2013")['country'])
+countryauthor_2013_2017 = sort_dict(get_author_info_by_period(list_articles, "2013-2017")['country'])
+countryauthor_2018_2021 = sort_dict(get_author_info_by_period(list_articles, "2018-2021")['country'])
+countryauthor_2022_2023 = sort_dict(get_author_info_by_period(list_articles, "2022-2023")['country'])
+citations_before_2013 = sort_dict(get_author_info_by_period(list_articles, "before-2013")['citations'])
+citations_2013_2017 = sort_dict(get_author_info_by_period(list_articles, "2013-2017")['citations'])
+citations_2018_2021 = sort_dict(get_author_info_by_period(list_articles, "2018-2021")['citations'])
+citations_2022_2023 = sort_dict(get_author_info_by_period(list_articles, "2022-2023")['citations'])
+article_before_2013 = sort_dict(get_author_info_by_period(list_articles, "before-2013")['article'])
+article_2013_2017 = sort_dict(get_author_info_by_period(list_articles, "2013-2017")['article'])
+article_2018_2021 = sort_dict(get_author_info_by_period(list_articles, "2018-2021")['article'])
+article_2022_2023 = sort_dict(get_author_info_by_period(list_articles, "2022-2023")['article'])
+journal_before_2013 = sort_dict(get_author_info_by_period(list_articles, "before-2013")['journal'])
+journal_2013_2017 = sort_dict(get_author_info_by_period(list_articles, "2013-2017")['journal'])
+journal_2018_2021 = sort_dict(get_author_info_by_period(list_articles, "2018-2021")['journal'])
+journal_2022_2023 = sort_dict(get_author_info_by_period(list_articles, "2022-2023")['journal'])
 
 ```
 
@@ -402,6 +516,8 @@ nx.set_node_attributes(G, node_degree_closeness, 'closeness')
 nx.set_node_attributes(G, affilauthor_2022_2023, 'affiliation')
 nx.set_node_attributes(G, countryauthor_2022_2023, 'country')
 nx.set_node_attributes(G, citations_2022_2023, 'citations')
+nx.set_node_attributes(G, article_2022_2023, 'title')
+nx.set_node_attributes(G, journal_2022_2023, 'journal')
 
 #listnodes = net.nodes
 #net.nodes.__getitem__(1)
@@ -463,7 +579,9 @@ com_net.show("networks/network_2022_2023_louvain.html")
 ```
 ### Network visualization with ipysigma (@plique2022ipysigma)
 
-#### A function to graph them all 
+#### A function to graph them all
+
+![](images/graph_ring.png){fig-align="center" width="200"}
 
 ```{python}
 #| label: function-ipysigma-network
@@ -510,18 +628,34 @@ def sigma_graph(dataframe, year_period):
         "2018-2021": citations_2018_2021,
         "2022-2023": citations_2022_2023
     }
+    
+    article_mapping = {
+        "before-2013": article_before_2013,
+        "2013-2017": article_2013_2017,
+        "2018-2021": article_2018_2021,
+        "2022-2023": article_2022_2023
+    }
+    
+    journal_mapping = {
+        "before-2013": journal_before_2013,
+        "2013-2017": journal_2013_2017,
+        "2018-2021": journal_2018_2021,
+        "2022-2023": journal_2022_2023
+    }
 
     # Set node attributes based on the selected 'year_period'
     nx.set_node_attributes(G, affilauthor_mapping[year_period], 'affiliation')
     nx.set_node_attributes(G, countryauthor_mapping[year_period], 'country')
     nx.set_node_attributes(G, citations_mapping[year_period], 'citations')
+    nx.set_node_attributes(G, article_mapping[year_period], 'articles')
+    nx.set_node_attributes(G, journal_mapping[year_period], 'journals')
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
         node_metrics={"community": {"name": "louvain", "resolution": 1.5}},  # Specify node metrics
         edge_size="value",  # Set edge size
         node_color="community",  # Set node colors
-        path=f"networks/{year_period}_sigma.html",  # Specify the output file path
+        path=f"networks/authors/{year_period}_sigma.html",  # Specify the output file path
         fullscreen=True,  # Display in fullscreen mode
         start_layout=1,  # Start the layout algorithm automatically and lasts 1 second
         max_categorical_colors=10,  # Max categorical colors for communities
@@ -555,7 +689,7 @@ G_2022_2023 = sigma_graph(network_data_2022_2023, '2022-2023')
 ```
 
 ```{=html}
-<iframe width="1500" height="900" src="networks/2022_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+<iframe width="1500" height="900" src="networks/authors/2022-2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 #### Co-authorship network for the 2018-2021 period
 
@@ -564,6 +698,10 @@ G_2022_2023 = sigma_graph(network_data_2022_2023, '2022-2023')
 
 G_2018_2021 = sigma_graph(network_data_2018_2021, '2018-2021')
 
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/authors/2018-2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
 #### Co-authorship network for the 2013-2017 period
@@ -576,6 +714,10 @@ G_2013_2017 = sigma_graph(network_data_2013_2017, '2013-2017')
 
 ```
 
+```{=html}
+<iframe width="1500" height="900" src="networks/authors/2013-2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+
 #### Co-authorship network before 2013
 
 ```{python}
@@ -584,6 +726,10 @@ G_2013_2017 = sigma_graph(network_data_2013_2017, '2013-2017')
 G_before_2013 = sigma_graph(network_data_before_2013, 'before-2013')
 
 
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/authors/before-2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
 ## Co-citations networks
@@ -599,35 +745,10 @@ We'll start by loading the data of references and preparing it for the analysis.
 ```{python}
 #| label: co-citation-data-preparation
 
-
-
-
-
+# Load the data of references
 
 
 
 
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
