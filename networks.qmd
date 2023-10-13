@@ -581,7 +581,7 @@ com_net.show("networks/network_2022_2023_louvain.html")
 
 #### A function to graph them all
 
-![](images/graph_ring.png){fig-align="center" width="200"}
+![](images/graph_ring.png){fig-align="center" width="388"}
 
 ```{python}
 #| label: function-ipysigma-network
@@ -703,7 +703,6 @@ G_2018_2021 = sigma_graph(network_data_2018_2021, '2018-2021')
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2018-2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 #### Co-authorship network for the 2013-2017 period
 
 ```{python}
@@ -717,7 +716,6 @@ G_2013_2017 = sigma_graph(network_data_2013_2017, '2013-2017')
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2013-2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 #### Co-authorship network before 2013
 
 ```{python}
@@ -731,12 +729,11 @@ G_before_2013 = sigma_graph(network_data_before_2013, 'before-2013')
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/before-2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ## Co-citations networks
 
-Let's now dive into the exploration of co-citation networks. We'll be employing the same approach that we used for analyzing co-authorship networks across different time periods.
+Let's now dive into the exploration of citation networks. We'll be employing the same approach that we used for analyzing co-authorship networks across different time periods.
 
-In this new investigation, our primary aim remains the acquisition of valuable insights into the ever-evolving landscape of research in marketing using text-mining (NLP) methods. This pursuit is motivated by the convergence of two critical factors: the advent of novel tools and techniques that facilitate the analysis of substantial data volumes and the proliferation of data from various sectors. With these considerations at the forefront, our central objective is to reveal the complex mechanisms that underlie the diffusion of research in marketing employing NLP methodologies. While our prior work focused on uncovering emerging research topics, our current emphasis shifts towards comprehending which papers have garnered the most attention. We seek to determine whether it's predominantly computer science papers that have inspired marketing scholars with fresh insights into data analysis or if marketing papers have also played a role in advocating the development of new theories.
+In this new investigation, our primary aim remains the acquisition of valuable insights into the ever-evolving landscape of research in marketing using NLP methods. This research is motivated by the convergence of two critical factors: the advent of novel tools and techniques that facilitate the analysis of large data volumes and the proliferation and the availability of open and private data from various sectors. While our prior work focused on uncovering emerging research topics, our current emphasis shifts towards comprehending which papers have garnered the most attention. We seek to determine whether it's predominantly computer science papers that have inspired marketing scholars with fresh insights into data analysis or if marketing papers have also played a role in advocating the development of new theories.
 
 ### Data preparation
 
