@@ -14,9 +14,14 @@ An automatic systematic literature review of marketing publications using NLP me
 
 
 ### Tips not to forget
-
-For solving cairo issues when ploting networks, this worked well for Windows:
+#### Cairo
+For solving Cairo issues when ploting networks, this worked well for Windows:
 
 pip install pipwin
 
 pipwin install cairocffi
+
+#### Quarto
+To get python data from R : py$data with 'library(reticulate)'
+
+To get R data from python : r.data
