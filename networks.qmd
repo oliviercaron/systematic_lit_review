@@ -24,7 +24,7 @@ format:
   html:
     theme:
       light: yeti
-      dark: darkly
+      #dark: darkly
     code-fold: true
     code-summary: "Display code"
     code-tools: true #enables to display/hide all blocks of code
@@ -246,7 +246,9 @@ network_data_before_2013 = get_collaboration_df(authors_before_2013)
 network_data_before_2013.to_csv("networks/csv/network_data_before_2013.csv")
 ```
 
-### Get affiliation name, country and number of citations for each author
+### Get information about authors
+
+```{python}
 
 ```{python}
 #| label: affiliation-data-nodes
@@ -526,12 +528,12 @@ nx.set_node_attributes(G, journal_2022_2023, 'journal')
 
 net.from_nx(G)
 
-net.show("networks/network_2022_2023.html")
+net.show("networks/authors/network_2022_2023_pyvis.html")
 
 ```
 
 ```{=html}
-<iframe width="1500" height="900" src="networks/network_2022_2023.html" title="Quarto Documentation" frameborder=0 class="column-page"></iframe>
+<iframe width="1500" height="900" src="networks/authors/network_2022_2023_pyvis.html" title="Quarto Documentation" frameborder=0 class="column-page"></iframe>
 ```
 ### Detect communities with Louvain's algorithm
 
@@ -571,17 +573,19 @@ const options = {
 """)
 
 com_net.from_nx(G)
-com_net.show("networks/network_2022_2023_louvain.html")
+com_net.show("networks/authors/network_2022_2023_louvain_pyvis.html")
 ```
 
 ```{=html}
-<iframe width="1500" height="900" src="networks/network_2022_2023_louvain.html" title="network_2022_2023_louvain" frameborder=0 class="column-page"></iframe>
+<iframe width="1500" height="900" src="networks/authors/network_2022_2023_louvain_pyvis.html" title="network_2022_2023_louvain" frameborder=0 class="column-page"></iframe>
 ```
-### Network visualization with ipysigma (@plique2022ipysigma)
+### Network visualization with ipysigma [@plique:hal-03903518v1]
 
 #### A function to graph them all
 
-![](images/graph_ring.png){fig-align="center" width="388"}
+::: column-margin
+![](images/graph_ring.png){fig-align="center" width="289"}
+:::
 
 ```{python}
 #| label: function-ipysigma-network
@@ -601,11 +605,13 @@ def sigma_graph(dataframe, year_period):
     node_degree_centrality = nx.degree_centrality(G)
     node_degree_betweenness = nx.betweenness_centrality(G)
     node_degree_closeness = nx.closeness_centrality(G)
+    node_degree_eigenvector = nx.closeness_centrality(G)
     
     # Set node attributes for various metrics
-    nx.set_node_attributes(G, node_degree_centrality, 'centrality')
-    nx.set_node_attributes(G, node_degree_betweenness, 'betweenness')
-    nx.set_node_attributes(G, node_degree_closeness, 'closeness')
+    nx.set_node_attributes(G, node_degree_centrality, 'Centrality')
+    nx.set_node_attributes(G, node_degree_betweenness, 'Betweenness')
+    nx.set_node_attributes(G, node_degree_closeness, 'Closeness')
+    nx.set_node_attributes(G, node_degree_eigenvector, 'Eigenvector centrality')
 
     # Mapping of variables based on the provided 'year_period'
     affilauthor_mapping = {
@@ -644,30 +650,31 @@ def sigma_graph(dataframe, year_period):
     }
 
     # Set node attributes based on the selected 'year_period'
-    nx.set_node_attributes(G, affilauthor_mapping[year_period], 'affiliation')
-    nx.set_node_attributes(G, countryauthor_mapping[year_period], 'country')
-    nx.set_node_attributes(G, citations_mapping[year_period], 'citations')
-    nx.set_node_attributes(G, article_mapping[year_period], 'articles')
-    nx.set_node_attributes(G, journal_mapping[year_period], 'journals')
+    # They appear in the graph in the same order they are added
+    nx.set_node_attributes(G, affilauthor_mapping[year_period], 'Affiliation:')
+    nx.set_node_attributes(G, countryauthor_mapping[year_period], 'Country')
+    nx.set_node_attributes(G, article_mapping[year_period], 'Articles')
+    nx.set_node_attributes(G, journal_mapping[year_period], 'Journals')
+    nx.set_node_attributes(G, citations_mapping[year_period], 'Citations')
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
-        node_metrics={"community": {"name": "louvain", "resolution": 1.5}},  # Specify node metrics
+        node_metrics={"community": {"name": "louvain", "resolution": 1.5}},  # Specify node metrics. increase resolution to have 
         edge_size="value",  # Set edge size
         node_color="community",  # Set node colors
         path=f"networks/authors/{year_period}_sigma.html",  # Specify the output file path
         fullscreen=True,  # Display in fullscreen mode
-        start_layout=1,  # Start the layout algorithm automatically and lasts 1 second
+        start_layout=3,  # Start the layout algorithm automatically and lasts 3 seconds
         max_categorical_colors=10,  # Max categorical colors for communities
         label_density=2,  # Increase this to have more labels appear, it is also possible to display all labels
         node_size_range=(3, 20),  # Set node size range
         default_edge_type="curve",  # Set default edge type
         label_font="Sans Serif",  # Set label font
-        node_label_size="citations",  # Set node label size
+        node_label_size="Citations",  # Set node label size
         #node_border_color="black",  # Set node border color
         #edge_color="source",  # Set edge color from 'source' attribute
         node_border_color_from='node',  # Set node border color from 'node' attribute
-        node_size="citations",  # Set node size based on 'citations' attribute
+        node_size="Citations",  # Set node size based on 'citations' attribute
         node_label_size_range=(12, 25)
         # node_label_color="community"  # Set node label color based on 'community' attribute
     )
