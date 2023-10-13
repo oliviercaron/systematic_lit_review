@@ -16,6 +16,7 @@ An automatic systematic literature review of marketing publications using NLP me
 ### Tips not to forget
 #### Cairo
 For solving Cairo issues when ploting networks, this worked well for Windows:
+
 pip install pipwin
 
 pipwin install cairocffi
