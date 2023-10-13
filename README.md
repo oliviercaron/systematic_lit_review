@@ -22,4 +22,5 @@ pipwin install cairocffi
 
 #### Quarto
 To get python data from R : py$data
+
 To get R data from python : r.data
