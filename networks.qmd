@@ -453,6 +453,7 @@ node_degree_doubled = {node: 2 * degree for node, degree in node_degree.items()}
 node_degree_centrality = nx.degree_centrality(G)
 node_degree_betweenness = nx.betweenness_centrality(G)
 node_degree_closeness = nx.closeness_centrality(G)
+node_degree_constraint = nx.constraint(G)
 
 
 # Set the node attributes with the doubled sizes
@@ -460,6 +461,7 @@ nx.set_node_attributes(G, node_degree_doubled, 'size')
 nx.set_node_attributes(G, node_degree_centrality, 'centrality')
 nx.set_node_attributes(G, node_degree_betweenness, 'betweenness')
 nx.set_node_attributes(G, node_degree_closeness, 'closeness')
+nx.set_node_attributes(G, node_degree_constraint, 'constraint')
 nx.set_node_attributes(G, affilauthor_2022_2023, 'affiliation')
 nx.set_node_attributes(G, countryauthor_2022_2023, 'country')
 nx.set_node_attributes(G, citations_2022_2023, 'citations')
@@ -551,12 +553,17 @@ def sigma_graph(dataframe, year_period):
     node_degree_betweenness = nx.betweenness_centrality(G)
     node_degree_closeness = nx.closeness_centrality(G)
     node_degree_eigenvector = nx.closeness_centrality(G)
+    node_degree_constraint_weighted = nx.constraint(G, weight="value")
+    node_degree_constraint_unweighted = nx.constraint(G)
     
     # Set node attributes for various metrics
     nx.set_node_attributes(G, node_degree_centrality, 'centrality')
     nx.set_node_attributes(G, node_degree_betweenness, 'betweenness')
     nx.set_node_attributes(G, node_degree_closeness, 'closeness')
     nx.set_node_attributes(G, node_degree_eigenvector, 'eigenvector centrality')
+    nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
+    nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
+    
 
     # Mapping of variables based on the provided 'year_period'
     affilauthor_mapping = {
@@ -601,6 +608,8 @@ def sigma_graph(dataframe, year_period):
     nx.set_node_attributes(G, article_mapping[year_period], 'articles')
     nx.set_node_attributes(G, journal_mapping[year_period], 'journals')
     nx.set_node_attributes(G, citations_mapping[year_period], 'citations')
+    nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
+    nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
@@ -633,23 +642,30 @@ def sigma_graph(dataframe, year_period):
 
 ```{python}
 #| label: network-visualization-ipysigma-2022-2023
+
+import random
 import community as community_louvain
+
+# Fix the seed for reproducibility
+random.seed(42)
 
 G_2022_2023 = sigma_graph(network_data_2022_2023, '2022-2023')
 
-#detect how many coommuunities are there in the graph
+#detect how many commmunities there are in the graph
 communities = community_louvain.best_partition(G_2022_2023)
-print(len(set(communities.values())))
+print("There are {} communities in the 2022-2023 network".format(len(set(communities.values()))))
+#print("The density of the graph is {}".format(round(nx.density(G_2022_2023), 6)))
 
-
-print(nx.density(G_2022_2023))
-
-                 
+test_value = nx.constraint(G_2022_2023, nodes=None, weight="value")
+test_novalue = nx.constraint(G_2022_2023, nodes=None, weight=None)
 ```
+
+
 
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2022-2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
+
 #### Co-authorship network for the 2018-2021 period
 
 ```{python}
@@ -657,21 +673,17 @@ print(nx.density(G_2022_2023))
 
 G_2018_2021 = sigma_graph(network_data_2018_2021, '2018-2021')
 
-# density of the graph
-print(nx.density(G_2018_2021))
+#print("The density of the graph is {}".format(nx.density(G_2018_2021))
 
 communities = community_louvain.best_partition(G_2018_2021)
-print(len(set(communities.values())))
-
-```
-
-```{=html}
+print("There are {} communities in the 2018-2021 network".format(len(set(communities.values()))))
 
 ```
 
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2018-2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
+
 #### Co-authorship network for the 2013-2017 period
 
 ```{python}
@@ -679,16 +691,10 @@ print(len(set(communities.values())))
 
 G_2013_2017 = sigma_graph(network_data_2013_2017, '2013-2017')
 
-# density of the graph
-print(nx.density(G_2013_2017))
+#print("The density of the graph is {}".format(nx.density(G_2013_2017))
 
 communities = community_louvain.best_partition(G_2013_2017)
-print(len(set(communities.values())))
-
-```
-
-```{=html}
-
+print("There are {} communities in the 2013-2017 network".format(len(set(communities.values()))))
 ```
 
 ```{=html}
@@ -701,13 +707,10 @@ print(len(set(communities.values())))
 
 G_before_2013 = sigma_graph(network_data_before_2013, 'before-2013')
 
-# density of the graph
-print(nx.density(G_before_2013))
-
 communities = community_louvain.best_partition(G_before_2013)
-print(len(set(communities.values())))
-
+print("There are {} communities in the before-2013 network".format(len(set(communities.values()))))
 ```
+
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/before-2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
@@ -799,7 +802,7 @@ fig
 
 
 
-## Citations networks analysis
+## Citations networks
 
 Let's now dive into the exploration of citation networks. We'll be employing the same approach that we used for analyzing co-authorship networks across different time periods.
 
@@ -823,11 +826,106 @@ We'll start by loading the data of references and preparing it for the analysis.
 # Load the data of references
 list_references <- read_csv2('nlp_references_final_18-08-2023.csv')
 
-references_df <- list_references %>%
+list_references <- list_references %>%
   select(1:32) %>%
   mutate(citing_art = str_sub(citing_art, 11)) %>%
-  mutate(scopus_eid = str_sub(`scopus-eid`, 8))
+  rename(scopus_id = `scopus-id`) %>% 
+  relocate(scopus_id, .after = citing_art) %>%
+  mutate(year = as.character(str_sub(`prism:coverDate`, 1, 4))) %>%
+  select(-`prism:coverDate`)
 
-skim(references_df)
+
+skim(list_references)
+```
+#### Detect inconsistencies
+
+There are some problems with the data that we need to address before proceeding with the analysis.
+Some `scopus_id` identifiers (the id of the reference that appears in our marketing NLP corpus articles) have multiple different values of title (even only minor differences), sourcetitle, etc. although they should be equal. We want to plot the networks with information about the nodes. One unique node should have one unique value for each variable.
+
+```{python}
+#| label: citations-detect-inconsistencies
+
+list_references = r.list_references
+
+# Group by 'citing_art' and count the unique number of 'title' for each 'citing_art'
+title_counts = list_references.groupby('scopus_id')['title'].nunique()
+
+# Find the 'citing_art' that have more than one associated title
+inconsistent_scopus_id = title_counts[title_counts > 1].index.tolist()
+
+print(inconsistent_scopus_id)  # Print the 'citing_art' associated with multiple titles
+
+```
+#### List of all inconsistencies
+
+
+```{r}
+#| label: citations-show-inconsistencies
+
+library(reticulate)
+
+list_inconsistencies <- list_references %>%
+  filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
+  select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`)
+
+
+reactable(
+  list_inconsistencies,
+  groupBy = "scopus_id",
+  defaultColDef = colDef(minWidth = 100, maxWidth = 200),  # Adjust these values as needed
+  columns = list(
+    title = colDef(minWidth = 250)  # Adjust this value based on the length of your titles
+  )
+)
+```
+
+
+#### Correct inconsistencies
+
+We correct inconsistencies in the data. Some identifiers like scopus_id or citing_article have multiple different values of title (even only minor differences), sourcetitle, etc. For consistency, we keep the value that appears the most.
+
+```{python}
+#| label: citations-correct-inconsistencies
+
+def standardize_values(df, groupby_column, value_column):
+    """
+    Standardize the values of the specified column based on its mode within each group.
+
+    Parameters:
+    - df: DataFrame
+    - groupby_column: The column by which we group data.
+    - value_column: The column whose values we want to standardize based on the mode within each group.
+
+    Returns:
+    - DataFrame with standardized values.
+    """
+    
+    # Find the most common value for each group
+    most_common_value = df.groupby(groupby_column)[value_column].apply(lambda x: x.mode().iloc[0]).to_dict()
+    
+    # Map the most common values to the dataframe based on the group
+    df[value_column] = df[groupby_column].map(most_common_value)
+    
+    return df
+
+# Usage example:
+df = standardize_values(list_references, 'scopus_id', 'title')
+df = standardize_values(list_references, 'scopus_id', 'sourcetitle')
+df = standardize_values(list_references, 'scopus_id', 'author-list.author.ce:indexed-name')
+
+```
+
+
+
+```{python}
+def get_citations_df(df, start_year, end_year):
+    # Filtrer les données en fonction de la colonne 'year'
+    df_filtered = df[df['year'].between(start_year, end_year)]
+    
+    # Extraire les colonnes nécessaires pour le réseau de citations
+    citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author-list.author.ce:indexed-name', 'year']]
+    
+    return citations_df
+
 ```
 
