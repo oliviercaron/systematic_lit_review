@@ -862,8 +862,6 @@ print(inconsistent_scopus_id)  # Print the 'citing_art' associated with multiple
 ```{r}
 #| label: citations-show-inconsistencies
 
-library(reticulate)
-
 list_inconsistencies <- list_references %>%
   filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
   select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`)
