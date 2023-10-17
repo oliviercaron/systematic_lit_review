@@ -2,3 +2,4 @@
 annotated_udpipe.csv
 annotated_stanza.csv
 cache/
+scopus_retrieve_data.qmd

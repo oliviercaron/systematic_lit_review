@@ -67,6 +67,9 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import plotly.express as px
+import re
+import inspect
+
 
 
 from ipysigma import Sigma
@@ -847,15 +850,13 @@ Some `scopus_id` identifiers (the id of the reference that appears in our market
 
 list_references = r.list_references
 
-# Group by 'citing_art' and count the unique number of 'title' for each 'citing_art'
+# Group by 'scopus_id' and count the unique number of 'title' for each 'scopus_id'
 title_counts = list_references.groupby('scopus_id')['title'].nunique()
 
-# Find the 'citing_art' that have more than one associated title
+# Find the 'scopus_id' that have more than one associated title
 inconsistent_scopus_id = title_counts[title_counts > 1].index.tolist()
-
-print(inconsistent_scopus_id)  # Print the 'citing_art' associated with multiple titles
-
 ```
+
 #### List of all inconsistencies
 
 
@@ -869,6 +870,7 @@ list_inconsistencies <- list_references %>%
 
 reactable(
   list_inconsistencies,
+  striped = TRUE,
   groupBy = "scopus_id",
   defaultColDef = colDef(minWidth = 100, maxWidth = 200),  # Adjust these values as needed
   columns = list(
@@ -880,50 +882,316 @@ reactable(
 
 #### Correct inconsistencies
 
-We correct inconsistencies in the data. Some identifiers like scopus_id or citing_article have multiple different values of title (even only minor differences), sourcetitle, etc. For consistency, we keep the value that appears the most.
+We correct inconsistencies in the data.
+Some `scopus_id` identifiers have multiple different values of title, sourcetitle, authorname, etc. (even only minor differences). 
+For data consistency and future plot of networks, we need to have only one unique value for each variable of `scopus_id`.
 
 ```{python}
 #| label: citations-correct-inconsistencies
 
 def standardize_values(df, groupby_column, value_column):
     """
-    Standardize the values of the specified column based on its mode within each group.
+    Standardize the values of the specified column based on the most frequent non-empty value and fewest characters 
+    within each group.
 
     Parameters:
     - df: DataFrame
     - groupby_column: The column by which we group data.
-    - value_column: The column whose values we want to standardize based on the mode within each group.
+    - value_column: The column whose values we want to standardize based on the rules.
 
     Returns:
     - DataFrame with standardized values.
     """
     
-    # Find the most common value for each group
-    most_common_value = df.groupby(groupby_column)[value_column].apply(lambda x: x.mode().iloc[0]).to_dict()
-    
+    def custom_mode(series):
+        # Remove NA values and other representations of NA
+        series = series.dropna()
+        series = series[~series.isin(['', 'NA'])]
+        
+        # If all values were NA or empty
+        if series.empty:
+            return np.nan  # Using numpy's nan for consistency
+
+        # Get value counts
+        counts = series.value_counts()
+
+        # If there's a single most common value, return it
+        if len(counts) == 1 or counts.iloc[0] != counts.iloc[1]:
+            return counts.idxmax()
+
+        # If multiple values have the same max count, apply further rules
+        top_values = counts[counts == counts.iloc[0]].index.tolist()
+
+        # Sort by fewest characters
+        sorted_by_chars = sorted(top_values, key=lambda x: len(x))
+
+        # If there's a single value with the fewest characters, return it
+        if len(sorted_by_chars) == 1 or len(sorted_by_chars[0]) != len(sorted_by_chars[1]):
+            return sorted_by_chars[0]
+
+        # If the column is not the author's name, apply the uppercase letter rule.
+        if value_column != "author_name":  # adjust "author_name" to the correct column name if necessary
+            return sorted(sorted_by_chars, key=lambda x: sum(1 for c in x if c.isupper()), reverse=True)[0]
+        else:
+            return sorted_by_chars[0]
+
+    # Find the most common value for each group based on the custom mode
+    most_common_value = df.groupby(groupby_column)[value_column].apply(custom_mode).to_dict()
+
     # Map the most common values to the dataframe based on the group
     df[value_column] = df[groupby_column].map(most_common_value)
-    
+
     return df
 
+
 # Usage example:
-df = standardize_values(list_references, 'scopus_id', 'title')
-df = standardize_values(list_references, 'scopus_id', 'sourcetitle')
-df = standardize_values(list_references, 'scopus_id', 'author-list.author.ce:indexed-name')
+list_references_standardized = standardize_values(list_references, 'scopus_id', 'title')
+list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'sourcetitle')
+list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'author-list.author.ce:indexed-name')
 
 ```
+
+#### Check inconsistencies
+
+We check that the inconsistencies have been corrected.
+
+```{r}
+#| label: citations-check-inconsistencies
+
+check_inconsistencies <- py$list_references_standardized %>%
+  filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
+  select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`)
+
+
+reactable(
+  check_inconsistencies,
+  groupBy = "scopus_id",
+  defaultColDef = colDef(minWidth = 100, maxWidth = 200),  # Adjust these values as needed
+  columns = list(
+    title = colDef(minWidth = 250)  # Adjust this value based on the length of your titles
+  )
+)
+
+```
+
+
+#### Get missing data (to be done later if necessary)
+
+We have a lot of missing data when it comes to the year of publication of the articles, the title, the sourcetitle the authors, DOI.
+It could be helpful to retrieve these data so we can see them when we click on the nodes
+
+```{r}
+#| label: citations-get-missing-data
+
+#first, let's construct a df where "year" is missing::
+missing_years <- py$list_references_standardized %>%
+  filter(year == "NA") %>%
+  select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`, `ce:doi`)
+
+
+```
+
+
+## Construct the dataframes
+
+### Construct the dataframe for the network of references
+
+```{python}
+#| label: citations-construct-dataframes
+
+def get_citations_df(df, start_year, end_year):
+    # Replace 'NA' with numpy.nan
+    df['year'].replace('NA', np.nan, inplace=True)
+    
+    # Drop rows where 'year' is NaN
+    df = df.dropna(subset=['year'])
+    
+    # Convert the 'year' column to integer
+    df['year'] = df['year'].astype(int)
+    
+    # Filter the data based on the 'year' column
+    df_filtered = df[df['year'].between(start_year, end_year)]
+    
+    # Extract necessary columns for the citation network
+    citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author-list.author.ce:indexed-name', 'year']]
+    
+    return citations_df
+  
+citations_df_2022_2023 = get_citations_df(list_references_standardized, 2022, 2023)
+citations_df_2018_2021 = get_citations_df(list_references_standardized, 2018, 2021)
+citations_df_2013_2017 = get_citations_df(list_references_standardized, 2013, 2017)
+citations_df_before_2013 = get_citations_df(list_references_standardized, 0, 2012)
+citations_df_overall = get_citations_df(list_references_standardized, 0, 2023)
+```
+
+### Add information about references to the dataframes
+
+```{python}
+#| label: citations-add-information
+
+def get_info_references_dict(df, column):
+    """
+    Create a dictionary with keys from "scopus_id" and values from the specified column.
+
+    :param df: Input DataFrame.
+    :param column: Column name to be used as values in the resulting dictionary.
+    :return: Dictionary with keys from "scopus_id" and values from the specified column.
+    """
+    if "scopus_id" not in df.columns or column not in df.columns:
+        raise ValueError("The required columns are not present in the DataFrame.")
+
+    return sort_dict(df.set_index("scopus_id")[column].to_dict())
+  
+#dict_sourcetitle_2022_2023 = get_info_references_dict(citations_df_2022_2023, "sourcetitle")
+
+# List of columns you want to use
+columns_to_extract = ['title', 'sourcetitle', 'citedby-count', 'author-
+
+list.author.ce:indexed-name']
+
+# Dictionary of dataframes with their respective names
+dfs = {
+    "2022_2023": citations_df_2022_2023,
+    "2018_2021": citations_df_2018_2021,
+    "2013_2017": citations_df_2013_2017,
+    "before_2013": citations_df_before_2013,
+    "overall": citations_df_overall
+}
+
+# Initialize the output dictionary
+dict_references = {}
+
+# Populate the output dictionary
+for period, df in dfs.items():
+    dict_references[period] = {}
+    for column in columns_to_extract:
+        # This check is important in case all columns are not present across all dataframes
+        if column in df.columns:  
+            dict_references[period][column] = get_info_references_dict(df, column)
+
+#print(dict_references)  # This will print the nested dictionary
+
+
+```
+
+## Construct the networks with ipysigma
+
+```{python}
+#| label: citations-construct-networks
+
+def sigma_graph_references(dataframe, period_label):
+        
+    # Create a graph from the given dataframe
+    G = nx.from_pandas_edgelist(dataframe, 'citing_art', 'scopus_id', create_using=nx.DiGraph())
+
+    # Set edge colors for visualization
+    for u, v in G.edges:
+        G[u][v]["color"] = "#7D7C7C"
+
+    # Calculate the degree of each node
+    node_degree = dict(G.degree)
+
+    # Compute multiple centrality metrics for nodes
+    node_degree_centrality = nx.degree_centrality(G)
+    node_degree_betweenness = nx.betweenness_centrality(G)
+    node_degree_closeness = nx.closeness_centrality(G)
+    node_degree_eigenvector = nx.closeness_centrality(G)
+    #node_degree_constraint_weighted = nx.constraint(G, weight="value")
+    node_degree_constraint_unweighted = nx.constraint(G)
+    
+    # Set node attributes for various metrics
+    nx.set_node_attributes(G, node_degree_centrality, 'centrality')
+    nx.set_node_attributes(G, node_degree_betweenness, 'betweenness')
+    nx.set_node_attributes(G, node_degree_closeness, 'closeness')
+    nx.set_node_attributes(G, node_degree_eigenvector, 'eigenvector centrality')
+    #nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
+    nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
+    
+    # Set node attributes based on the selected 'year_period'
+    # They appear in the graph in the same order they are added
+    #nx.set_node_attributes(G, affilauthor_mapping[year_period], 'affiliation')
+    #nx.set_node_attributes(G, countryauthor_mapping[year_period], 'country')
+    #nx.set_node_attributes(G, article_mapping[year_period], 'articles')
+    #nx.set_node_attributes(G, journal_mapping[year_period], 'journals')
+    #nx.set_node_attributes(G, citations_mapping[year_period], 'citations')
+    #nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
+    #nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
+
+    # Construct the sigma graph and customize visualization
+    Sigma.write_html(G,
+        node_metrics={"community": {"name": "louvain", "resolution": 1}},  # Specify node metrics. increase resolution to have more communities
+        #edge_size="value",  # Set edge size
+        node_color="community",  # Set node colors
+        path=f"networks/references/{period_label}_sigma.html",  # Specify the output file path
+        fullscreen=True,  # Display in fullscreen mode
+        start_layout=3,  # Start the layout algorithm automatically and lasts 3 seconds
+        max_categorical_colors=10,  # Max categorical colors for communities
+        label_density=2,  # Increase this to have more labels appear, it is also possible to display all labels
+        node_size_range=(3, 30),  # Set node size range
+        default_edge_type="curve",  # Set default edge type
+        label_font="Helvetica Neue",  # Set label font
+        node_label_size=G.degree,  # Set node label size
+        #node_border_color="black",  # Set node border color
+        #edge_color="source",  # Set edge color from 'source' attribute
+        node_border_color_from='node',  # Set node border color from 'node' attribute
+        node_size=G.degree,  # Set node size based on 'citations' attribute
+        node_label_size_range=(12, 25)
+        # node_label_color="community"  # Set node label color based on 'community' attribute
+    )
+
+    return G
+
+
+```
+
 
 
 
 ```{python}
-def get_citations_df(df, start_year, end_year):
-    # Filtrer les données en fonction de la colonne 'year'
-    df_filtered = df[df['year'].between(start_year, end_year)]
-    
-    # Extraire les colonnes nécessaires pour le réseau de citations
-    citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author-list.author.ce:indexed-name', 'year']]
-    
-    return citations_df
+#| label: citations-construct-network-2022-2023
+
+G_2022_2023_references = sigma_graph_references(citations_df_2022_2023, "2022_2023")
+```
+
+```{python}
+#| label: citations-construct-network-2018-2021
+
+G_2018_2021_references = sigma_graph_references(citations_df_2018_2021, "2018_2021")
+```
+
+
+```{python}
+#| label: citations-construct-network-2013-2017
+
+G_2013_2017_references = sigma_graph_references(citations_df_2013_2017, "2013_2017")
 
 ```
+
+```{python}
+#| label: citations-construct-network-before-2013
+
+G_before_2013_references = sigma_graph_references(citations_df_before_2013, "before_2013")
+```
+
+```{python}
+#| label: citations-construct-network-overall
+
+G_overall_references = sigma_graph_references(citations_df_overall, "overall")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
