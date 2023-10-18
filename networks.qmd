@@ -70,8 +70,6 @@ import plotly.express as px
 import re
 import inspect
 
-
-
 from ipysigma import Sigma
 from itertools import combinations
 
@@ -81,6 +79,7 @@ list_articles = pd.read_csv("nlp_full_data_final_18-08-2023.csv", sep=';', decim
 list_articles = list_articles[list_articles['marketing'] == 1] #only marketing articles
 
 # Merge the "topic" and "topic_name" columns from the "data" dataframe into "list_articles"
+# We do that to have the topic of each article in the list_articles dataframe
 list_articles = list_articles.merge(data[['entry_number', 'topic', 'topic_name']], on='entry_number', how='left')
 
 list_references = pd.read_csv("nlp_references_final_18-08-2023.csv", sep=';', decimal=',')
@@ -99,6 +98,7 @@ library(reactable)
 library(gt)
 library(skimr)
 library(plotly)
+library(reticulate)
 
 
 
@@ -616,32 +616,32 @@ def sigma_graph(dataframe, year_period):
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
-        node_metrics={"community": {"name": "louvain", "resolution": 1}},  # Specify node metrics. increase resolution to have more communities
-        edge_size="value",  # Set edge size
-        node_color="community",  # Set node colors
-        path=f"networks/authors/{year_period}_sigma.html",  # Specify the output file path
-        fullscreen=True,  # Display in fullscreen mode
-        start_layout=3,  # Start the layout algorithm automatically and lasts 3 seconds
-        max_categorical_colors=10,  # Max categorical colors for communities
-        label_density=2,  # Increase this to have more labels appear, it is also possible to display all labels
-        node_size_range=(3, 20),  # Set node size range
-        default_edge_type="curve",  # Set default edge type
-        label_font="Helvetica Neue",  # Set label font
-        node_label_size="citations",  # Set node label size
-        #node_border_color="black",  # Set node border color
-        #edge_color="source",  # Set edge color from 'source' attribute
-        node_border_color_from='node',  # Set node border color from 'node' attribute
-        node_size="citations",  # Set node size based on 'citations' attribute
-        node_label_size_range=(12, 25)
-        # node_label_color="community"  # Set node label color based on 'community' attribute
-    )
+                 default_edge_type       = "curve",                                                # Default edge type
+                 edge_size               = "value",                                                # Set edge size
+                 fullscreen              = True,                                                   # Display in fullscreen
+                 label_density           = 2,                                                      # Label density
+                 label_font              = "Helvetica Neue",                                        # Label font
+                 max_categorical_colors  = 10,                                                     # Max categorical colors
+                 node_border_color_from  = 'node',                                                 # Node border color from node attribute
+                 node_color              = "community",                                            # Set node colors
+                 node_label_size         = "citations",                                            # Node label size
+                 node_label_size_range   = (12, 25),                                               # Node label size range
+                 node_metrics            = {"community": {"name": "louvain", "resolution": 1}},    # Specify node metrics
+                 node_size               = "citations",                                            # Node size
+                 node_size_range         = (3, 20),                                                # Node size range
+                 path                    = f"networks/authors/{year_period}_sigma.html",           # Output file path
+                 start_layout            = 3                                                       # Start layout algorithm
+                 #node_border_color      = "black",                                                # Node border color
+                 #edge_color             = "source",                                               # Edge color
+                 # node_label_color      = "community"                                             # Node label color
+                 )
 
     return G
 
 
 ```
 
-#### Co-authorship network for the 2022-2023 period
+#### Co-authorship network for the 2022-2023 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2022-2023_sigma.html))
 
 ```{python}
 #| label: network-visualization-ipysigma-2022-2023
@@ -663,13 +663,10 @@ test_value = nx.constraint(G_2022_2023, nodes=None, weight="value")
 test_novalue = nx.constraint(G_2022_2023, nodes=None, weight=None)
 ```
 
-
-
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2022-2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
-#### Co-authorship network for the 2018-2021 period
+#### Co-authorship network for the 2018-2021 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2018-2021_sigma.html))
 
 ```{python}
 #| label: network-visualization-ipysigma-2018-2021
@@ -687,7 +684,7 @@ print("There are {} communities in the 2018-2021 network".format(len(set(communi
 <iframe width="1500" height="900" src="networks/authors/2018-2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
-#### Co-authorship network for the 2013-2017 period
+#### Co-authorship network for the 2013-2017 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2013-2017_sigma.html))
 
 ```{python}
 #| label: network-visualization-ipysigma-2013-2017
@@ -703,7 +700,8 @@ print("There are {} communities in the 2013-2017 network".format(len(set(communi
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2013-2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-#### Co-authorship network before 2013
+
+#### Co-authorship network before 2013 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/before-2013_sigma.html))
 
 ```{python}
 #| label: network-visualization-ipysigma-before-2013
@@ -740,23 +738,23 @@ where $n$ is the number of nodes and $m$ is the number of edges in the graph.
 
 From an interpretation standpoint, we can appreciate the density in the graphs bellow as follows:
 
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| $d$                  | **Interpretation**                                                                                                                                         |
-+:====================:+:===========================================================================================================================================================+
-| Close to $0$         | -   The collaborative relationships among authors are sparse:                                                                                              |
-|                      |                                                                                                                                                            |
-|                      | -   Authors have limited connections with each other outside of their community.                                                                           |
-|                      |                                                                                                                                                            |
-|                      | -   Scientific papers are primarily the work of individual authors or small isolated groups.                                                               |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Close to $1$         | -   Authors frequently collaborate with one another, leading to a web of interconnected scientific collaborations.                                         |
-|                      |                                                                                                                                                            |
-|                      | -   Scientific papers often involve contributions from multiple authors, reflecting a high level of teamwork and interdisciplinary research.               |
-|                      |                                                                                                                                                            |
-|                      | -   Collaborations are a significant aspect of the research process in this marketing field, and authors actively seek out opportunities to work together. |
-|                      |                                                                                                                                                            |
-|                      | -   The network of collaborations is well-established and robust, facilitating the exchange of ideas and the advancement of scientific knowledge.          |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
++--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| $d$          | **Interpretation**                                                                                                                                         |
++:============:+:===========================================================================================================================================================+
+| Close to $0$ | -   The collaborative relationships among authors are sparse:                                                                                              |
+|              |                                                                                                                                                            |
+|              | -   Authors have limited connections with each other outside of their community.                                                                           |
+|              |                                                                                                                                                            |
+|              | -   Scientific papers are primarily the work of individual authors or small isolated groups.                                                               |
++--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Close to $1$ | -   Authors frequently collaborate with one another, leading to a web of interconnected scientific collaborations.                                         |
+|              |                                                                                                                                                            |
+|              | -   Scientific papers often involve contributions from multiple authors, reflecting a high level of teamwork and interdisciplinary research.               |
+|              |                                                                                                                                                            |
+|              | -   Collaborations are a significant aspect of the research process in this marketing field, and authors actively seek out opportunities to work together. |
+|              |                                                                                                                                                            |
+|              | -   The network of collaborations is well-established and robust, facilitating the exchange of ideas and the advancement of scientific knowledge.          |
++--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 #### Evolution of the graphs' density
 
@@ -771,10 +769,8 @@ density_df = pd.DataFrame({
 })
 ```
 
-
 ```{r}
 #| label: evolution-graphs-density-r
-library(reticulate)
 library(Hmisc)
 
 # Load the 'density_df' dataframe from Python using reticulate
@@ -802,8 +798,6 @@ fig <- fig %>% layout(template = "plotly_white")
 
 fig
 ```
-
-
 
 ## Citations networks
 
@@ -842,10 +836,10 @@ list_references <- list_references %>%
 
 skim(list_references)
 ```
+
 #### Detect inconsistencies
 
-There are some problems with the data that we need to address before proceeding with the analysis.
-Some `scopus_id` identifiers (the id of the reference that appears in our marketing NLP corpus articles) have multiple different values of title (even only minor differences), sourcetitle, etc. although they should be equal. We want to plot the networks with information about the nodes. One unique node should have one unique value for each variable.
+There are some problems with the data that we need to address before proceeding with the analysis. Some `scopus_id` identifiers (the id of the reference that appears in our marketing NLP corpus articles) have multiple different values of title (even only minor differences), sourcetitle, etc. although they should be equal. We want to plot the networks with information about the nodes. One unique node should have one unique value for each variable.
 
 ```{python}
 #| label: citations-detect-inconsistencies
@@ -861,7 +855,6 @@ inconsistent_scopus_id = title_counts[title_counts > 1].index.tolist()
 
 #### List of all inconsistencies
 
-
 ```{r}
 #| label: citations-show-inconsistencies
 
@@ -874,6 +867,7 @@ reactable(
   list_inconsistencies,
   striped = TRUE,
   groupBy = "scopus_id",
+  defaultPageSize = 5,
   defaultColDef = colDef(minWidth = 100, maxWidth = 200),  # Adjust these values as needed
   columns = list(
     title = colDef(minWidth = 250)  # Adjust this value based on the length of your titles
@@ -881,12 +875,9 @@ reactable(
 )
 ```
 
-
 #### Correct inconsistencies
 
-We correct inconsistencies in the data.
-Some `scopus_id` identifiers have multiple different values of title, sourcetitle, authorname, etc. (even only minor differences). 
-For data consistency and future plot of networks, we need to have only one unique value for each variable of `scopus_id`.
+We correct inconsistencies in the data. Some `scopus_id` identifiers have multiple different values of title, sourcetitle, authorname, etc. (even only minor differences). For data consistency and future plot of networks, we need to have only one unique value for each variable of `scopus_id`.
 
 ```{python}
 #| label: citations-correct-inconsistencies
@@ -967,20 +958,20 @@ check_inconsistencies <- py$list_references_standardized %>%
 
 reactable(
   check_inconsistencies,
+  striped = TRUE,
+  defaultPageSize = 5,
   groupBy = "scopus_id",
-  defaultColDef = colDef(minWidth = 100, maxWidth = 200),  # Adjust these values as needed
+  defaultColDef = colDef(minWidth = 100, maxWidth = 200), 
   columns = list(
-    title = colDef(minWidth = 250)  # Adjust this value based on the length of your titles
+    title = colDef(minWidth = 250)
   )
 )
 
 ```
 
-
 #### Get missing data (to be done later if necessary)
 
-We have a lot of missing data when it comes to the year of publication of the articles, the title, the sourcetitle the authors, DOI.
-It could be helpful to retrieve these data so we can see them when we click on the nodes
+We have a lot of missing data when it comes to the year of publication of the articles, the title, the sourcetitle the authors, DOI. It could be helpful to retrieve these data so we can see them when we click on the nodes
 
 ```{r}
 #| label: citations-get-missing-data
@@ -993,7 +984,6 @@ missing_years <- py$list_references_standardized %>%
 
 ```
 
-
 ## Construct the dataframes
 
 ### Construct the dataframe for the network of references
@@ -1002,23 +992,24 @@ missing_years <- py$list_references_standardized %>%
 #| label: citations-construct-dataframes
 
 def get_citations_df(df, start_year, end_year):
-    # Replace 'NA' with numpy.nan
-    df['year'].replace('NA', np.nan, inplace=True)
+    # Replace 'NA' with numpy.nan and reassign the DataFrame
+    df = df.replace({'year': 'NA'}, np.nan)
     
     # Drop rows where 'year' is NaN
     df = df.dropna(subset=['year'])
     
-    # Convert the 'year' column to integer
+    # Convert the 'year' column to integer using .loc
     df['year'] = df['year'].astype(int)
     
-    # Filter the data based on the 'year' column
-    df_filtered = df[df['year'].between(start_year, end_year)]
+    # Filter the data based on the 'year' column and create a distinct copy
+    df_filtered = df[df['year'].between(start_year, end_year)].copy()
     
     # Extract necessary columns for the citation network
     citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author', 'year']]
     
     return citations_df
-  
+
+# Using the function to get a->b standardized data for the citations networks below
 citations_df_2022_2023 = get_citations_df(list_references_standardized, 2022, 2023)
 citations_df_2018_2021 = get_citations_df(list_references_standardized, 2018, 2021)
 citations_df_2013_2017 = get_citations_df(list_references_standardized, 2013, 2017)
@@ -1026,28 +1017,27 @@ citations_df_before_2013 = get_citations_df(list_references_standardized, 0, 201
 citations_df_overall = get_citations_df(list_references_standardized, 0, 2023)
 ```
 
-### Add information about references to the dataframes
+### Add information about references and citing articles to the dataframes
 
 ```{python}
 #| label: citations-add-information
 
-def get_info_references_dict(df, column):
+def get_info_references_dict(df, key, column):
     """
-    Create a dictionary with keys from "scopus_id" and values from the specified column.
+    Create a dictionary with keys from the specified key_column and values from the specified value_column.
 
     :param df: Input DataFrame.
-    :param column: Column name to be used as values in the resulting dictionary.
-    :return: Dictionary with keys from "scopus_id" and values from the specified column.
+    :param key_column: Column name to be used as keys in the resulting dictionary.
+    :param value_column: Column name to be used as values in the resulting dictionary.
+    :return: Dictionary with keys from key_column and values from value_column.
     """
-    if "scopus_id" not in df.columns or column not in df.columns:
+    if key not in df.columns or column not in df.columns:
         raise ValueError("The required columns are not present in the DataFrame.")
-
-    return sort_dict(df.set_index("scopus_id")[column].to_dict())
+    return sort_dict(df.set_index(key)[column].to_dict())
   
-#dict_sourcetitle_2022_2023 = get_info_references_dict(citations_df_2022_2023, "sourcetitle")
 
-# List of columns you want to use
-columns_to_extract = ['title', 'sourcetitle', 'citedby-count', 'author']
+# List of columns to use in the networks later as attributes. We can add more columns if we want to.
+columns_to_extract = ['title', 'sourcetitle', 'citedby-count', 'author', 'year']
 
 # Dictionary of dataframes with their respective names
 dfs = {
@@ -1058,19 +1048,56 @@ dfs = {
     "overall": citations_df_overall
 }
 
+# We also need to get the info of the citing articles, otherwise we won't get any info when we click 
+# on the nodes and we will have the number of the node as node label instead of the author name
+# Create the 'citing_art' column by stripping the first 10 characters from 'dc_identifier'
+data['citing_art'] = data['dc_identifier'].str[10:]
+
+
+# Map old column names to new column names
+column_mapping = {
+    'title': 'dc_title',
+    'sourcetitle': 'prism_publicationName',
+    'author': 'dc_creator',
+    'year': 'year',
+    'citedby-count': 'citedby_count'
+}
+
+# Reverse mapping for merging
+reverse_column_mapping = {v: k for k, v in column_mapping.items()}
+
+# Rename columns in data DataFrame for merging
+data.rename(columns=reverse_column_mapping, inplace=True)
+
 # Initialize the output dictionary
 dict_references = {}
 
-# Populate the output dictionary
+# Retrieve the information for each period and each column
 for period, df in dfs.items():
     dict_references[period] = {}
     for column in columns_to_extract:
         # This check is important in case all columns are not present across all dataframes
-        if column in df.columns:  
-            dict_references[period][column] = get_info_references_dict(df, column)
+        if column in df.columns:
+            dict_references[period][column] = get_info_references_dict(df, 'scopus_id', column)
+
+    # Get the citing_art dictionary from 'data' DataFrame
+    for column in columns_to_extract:
+        if column in data.columns:
+            citing_art_dict = get_info_references_dict(data, 'citing_art', column)
+            
+            # Add to dict_references only if key is not already present 
+            # It means that the article in our data has been cited by others and is then already present in the references dataframe
+            for key, value in citing_art_dict.items():
+                if key not in dict_references[period].get(column, {}):
+                    dict_references[period].setdefault(column, {})[key] = value
 
 #print(dict_references)  # This will print the nested dictionary
 
+# Just to check if the key is in the dictionary
+#if "85149566147" in dict_references['2022_2023']['author']:
+    #print("The key '85149566147' exists.")
+#else:
+    #print("The key '85149566147' does not exist.")
 
 ```
 
@@ -1114,48 +1141,48 @@ def sigma_graph_references(dataframe, period_label):
     nx.set_node_attributes(G, node_degree_closeness, 'closeness')
     nx.set_node_attributes(G, node_degree_eigenvector, 'eigenvector centrality')
     #nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
-    nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
+    nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt constraint unweighted')
     
     # Set node attributes based on the selected 'year_period'
     
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
-        node_metrics={"community": {"name": "louvain", "resolution": 1}},  # Specify node metrics. increase resolution to have more communities
-        #edge_size="value",  # Set edge size
-        node_color="community",  # Set node colors
-        path=f"networks/references/{period_label}_sigma.html",  # Specify the output file path
-        fullscreen=True,  # Display in fullscreen mode
-        start_layout=5,  # Start the layout algorithm automatically and lasts 3 seconds
-        max_categorical_colors=30,  # Max categorical colors for communities
-        label_density=2,  # Increase this to have more labels appear, it is also possible to display all labels
-        node_size_range=(3, 30),  # Set node size range
-        default_edge_type="curve",  # Set default edge type
-        label_font="Helvetica Neue",  # Set label font
-        node_label_size=G.in_degree,  # Set node label size
-        #node_border_color="black",  # Set node border color
-        #edge_color="source",  # Set edge color from 'source' attribute
-        node_border_color_from='node',  # Set node border color from 'node' attribute
-        node_size=G.in_degree,  # Set node size based on 'citations' attribute
-        node_label_size_range=(12, 25),  # Set node label size range
-        node_label="author"  # Set node label from 'author' attribute
-        # node_label_color="community"  # Set node label color based on 'community' attribute
-    )
+                 default_edge_type      = "arrow",                                                # Set default edge type
+                 fullscreen             = True,                                                   # Display in fullscreen mode
+                 label_density          = 2,                                                      # Increase this to have more labels appear
+                 label_font             = "Helvetica Neue",                                       # Set label font
+                 max_categorical_colors = 30,                                                     # Max categorical colors for communities
+                 node_border_color_from = 'node',                                                 # Set node border color from 'node' attribute
+                 node_color             = "community",                                            # Set node colors
+                 node_label             = "author",                                               # Set node label from 'author' attribute
+                 node_label_size        = G.in_degree,                                            # Set node label size
+                 node_label_size_range  = (12, 36),                                               # Set node label size range
+                 node_metrics           = {"community": {"name": "louvain", "resolution": 1}},    # Specify node metrics
+                 node_size              = G.in_degree,                                            # Set node size based on the in_degree attribute
+                 node_size_range        = (3, 30),                                                # Set node size range
+                 path                   = f"networks/references/{period_label}_sigma.html",       # Specify the output file path
+                 start_layout           = 5                                                       # Start the layout algorithm automatically and lasts 5 seconds
+                 #node_border_color     = "black",                                                # Set node border color
+                 #edge_color            = "source",                                               # Set edge color from 'source' attribute
+                 )
 
     return G
 
 
 ```
 
-
-
-### Citations network for 2022-2023
-
+### Citations network for 2022-2023 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2022_2023_sigma.html))
 
 ```{python}
 #| label: citations-construct-network-2022-2023
 
 G_2022_2023_references = sigma_graph_references(citations_df_2022_2023, "2022_2023")
+
+#burt_constraint_unweighted = nx.get_node_attributes(G_2022_2023_references, 'burt constraint unweighted')
+#df_burt_constraint = pd.DataFrame(list(burt_constraint_unweighted.items()), columns=['Node', 'Burt_Constraint_Unweighted'])
+#df_sorted = df_burt_constraint.sort_values(by='Burt_Constraint_Unweighted')
+#print(df_sorted)
 
 ```
 
@@ -1163,8 +1190,7 @@ G_2022_2023_references = sigma_graph_references(citations_df_2022_2023, "2022_20
 <iframe width="1500" height="900" src="networks/references/2022_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
-### Citations network for 2018-2021
-
+### Citations network for 2018-2021 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2018_2021_sigma.html))
 
 ```{python}
 #| label: citations-construct-network-2018-2021
@@ -1177,8 +1203,7 @@ G_2018_2021_references = sigma_graph_references(citations_df_2018_2021, "2018_20
 <iframe width="1500" height="900" src="networks/references/2018_2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
-### Citations network for 2013-2017
-
+### Citations network for 2013-2017 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2013_2017_sigma.html))
 
 ```{python}
 #| label: citations-construct-network-2013-2017
@@ -1192,8 +1217,7 @@ G_2013_2017_references = sigma_graph_references(citations_df_2013_2017, "2013_20
 <iframe width="1500" height="900" src="networks/references/2013_2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
-### Citations network for before 2013
-
+### Citations network for before 2013 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/before_2013_sigma.html))
 
 ```{python}
 #| label: citations-construct-network-before-2013
@@ -1206,8 +1230,7 @@ G_before_2013_references = sigma_graph_references(citations_df_before_2013, "bef
 <iframe width="1500" height="900" src="networks/references/before_2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 
-### Citations network for overall
-
+### Citations network for overall ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/overall_sigma.html))
 
 ```{python}
 #| label: citations-construct-network-overall
@@ -1216,21 +1239,58 @@ G_overall_references = sigma_graph_references(citations_df_overall, "overall")
 
 ```
 
-
 ```{=html}
 <iframe width="1500" height="900" src="networks/references/overall_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
-
 ```
 
+## Graph density of references
 
+```{python}
+#| label: citations-graph-density
+#| output: false
 
+# Create a dataframe with the density of each graph
+density_df_references = pd.DataFrame({
+    'period': ['before-2013', '2013-2017', '2018-2021', '2022-2023', 'overall'],
+    'density': [
+        nx.density(G_before_2013_references), 
+        nx.density(G_2013_2017_references), 
+        nx.density(G_2018_2021_references), 
+        nx.density(G_2022_2023_references),
+        nx.density(G_overall_references)
+    ]
+})
 
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+sns.barplot(x='period', y='density', data=density_df_references)
+plt.title('Density of Networks by Period')
+plt.show()
+```
+```{r}
+#| label: citations-graph-density-comparison
 
+density_plot <- ggplot() +
+  geom_line(data = py$density_df, aes(x = period, y = density, colour = "Collaboration Density", group=1), size = 1) +
+  geom_line(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = density, colour = "References Density", group=1), size = 1) +
+  scale_y_continuous(name = "Collaboration Density", sec.axis = sec_axis(~ . / 10, name = "References Density")) +
+  scale_x_discrete(limits = c("before-2013", "2013-2017", "2018-2021", "2022-2023")) +
+  xlab("Period") +
+  ggtitle("Comparison of Network Density Over Time") +
+  theme_minimal()
 
+ggplotly(density_plot)
 
+density_plot <- ggplot() +
+  geom_bar(data = py$density_df, aes(x = period, y = density, fill = "Collaboration Density"), stat="identity", position="dodge") +
+  geom_bar(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = density, fill = "References Density"), stat="identity", position="dodge") +
+  scale_y_continuous(name = "Collaboration Density", sec.axis = sec_axis(~ . / 10, name = "References Density")) +
+  scale_x_discrete(limits = c("before-2013", "2013-2017", "2018-2021", "2022-2023")) +
+  xlab("Period") +
+  ggtitle("Comparison of Network Density Over Time") +
+  theme_minimal()
 
+ggplotly(density_plot)
 
-
-
-
+```
