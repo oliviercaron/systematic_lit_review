@@ -832,9 +832,11 @@ list_references <- read_csv2('nlp_references_final_18-08-2023.csv')
 list_references <- list_references %>%
   select(1:32) %>%
   mutate(citing_art = str_sub(citing_art, 11)) %>%
+  rename("author" = `author-list.author.ce:indexed-name`) %>%
   rename(scopus_id = `scopus-id`) %>% 
   relocate(scopus_id, .after = citing_art) %>%
   mutate(year = as.character(str_sub(`prism:coverDate`, 1, 4))) %>%
+  #mutate(author_year = paste0(author,", ", year)) %>% If we ever need to use this variable in the networks
   select(-`prism:coverDate`)
 
 
@@ -865,7 +867,7 @@ inconsistent_scopus_id = title_counts[title_counts > 1].index.tolist()
 
 list_inconsistencies <- list_references %>%
   filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
-  select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`)
+  select(scopus_id, citing_art, title, sourcetitle, year, author)
 
 
 reactable(
@@ -947,7 +949,7 @@ def standardize_values(df, groupby_column, value_column):
 # Usage example:
 list_references_standardized = standardize_values(list_references, 'scopus_id', 'title')
 list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'sourcetitle')
-list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'author-list.author.ce:indexed-name')
+list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'author')
 
 ```
 
@@ -960,7 +962,7 @@ We check that the inconsistencies have been corrected.
 
 check_inconsistencies <- py$list_references_standardized %>%
   filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
-  select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`)
+  select(scopus_id, citing_art, title, sourcetitle, year, author)
 
 
 reactable(
@@ -986,7 +988,7 @@ It could be helpful to retrieve these data so we can see them when we click on t
 #first, let's construct a df where "year" is missing::
 missing_years <- py$list_references_standardized %>%
   filter(year == "NA") %>%
-  select(scopus_id, citing_art, title, sourcetitle, year, `author-list.author.ce:indexed-name`, `ce:doi`)
+  select(scopus_id, citing_art, title, sourcetitle, year, author, `ce:doi`)
 
 
 ```
@@ -1013,7 +1015,7 @@ def get_citations_df(df, start_year, end_year):
     df_filtered = df[df['year'].between(start_year, end_year)]
     
     # Extract necessary columns for the citation network
-    citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author-list.author.ce:indexed-name', 'year']]
+    citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author', 'year']]
     
     return citations_df
   
@@ -1045,9 +1047,7 @@ def get_info_references_dict(df, column):
 #dict_sourcetitle_2022_2023 = get_info_references_dict(citations_df_2022_2023, "sourcetitle")
 
 # List of columns you want to use
-columns_to_extract = ['title', 'sourcetitle', 'citedby-count', 'author-
-
-list.author.ce:indexed-name']
+columns_to_extract = ['title', 'sourcetitle', 'citedby-count', 'author']
 
 # Dictionary of dataframes with their respective names
 dfs = {
@@ -1076,6 +1076,8 @@ for period, df in dfs.items():
 
 ## Construct the networks with ipysigma
 
+### Another function to graph them all
+
 ```{python}
 #| label: citations-construct-networks
 
@@ -1083,6 +1085,13 @@ def sigma_graph_references(dataframe, period_label):
         
     # Create a graph from the given dataframe
     G = nx.from_pandas_edgelist(dataframe, 'citing_art', 'scopus_id', create_using=nx.DiGraph())
+    
+    # Fetch attributes for the given period from the global dict_references
+    attributes_dict = dict_references.get(period_label, {})
+
+    # Set the attributes from dict_references to the nodes of the graph
+    for attribute, attribute_dict in attributes_dict.items():
+        nx.set_node_attributes(G, attribute_dict, name=attribute)
 
     # Set edge colors for visualization
     for u, v in G.edges:
@@ -1108,14 +1117,7 @@ def sigma_graph_references(dataframe, period_label):
     nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
     
     # Set node attributes based on the selected 'year_period'
-    # They appear in the graph in the same order they are added
-    #nx.set_node_attributes(G, affilauthor_mapping[year_period], 'affiliation')
-    #nx.set_node_attributes(G, countryauthor_mapping[year_period], 'country')
-    #nx.set_node_attributes(G, article_mapping[year_period], 'articles')
-    #nx.set_node_attributes(G, journal_mapping[year_period], 'journals')
-    #nx.set_node_attributes(G, citations_mapping[year_period], 'citations')
-    #nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
-    #nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt\'s constraint unweighted')
+    
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
@@ -1124,18 +1126,19 @@ def sigma_graph_references(dataframe, period_label):
         node_color="community",  # Set node colors
         path=f"networks/references/{period_label}_sigma.html",  # Specify the output file path
         fullscreen=True,  # Display in fullscreen mode
-        start_layout=3,  # Start the layout algorithm automatically and lasts 3 seconds
-        max_categorical_colors=10,  # Max categorical colors for communities
+        start_layout=5,  # Start the layout algorithm automatically and lasts 3 seconds
+        max_categorical_colors=30,  # Max categorical colors for communities
         label_density=2,  # Increase this to have more labels appear, it is also possible to display all labels
         node_size_range=(3, 30),  # Set node size range
         default_edge_type="curve",  # Set default edge type
         label_font="Helvetica Neue",  # Set label font
-        node_label_size=G.degree,  # Set node label size
+        node_label_size=G.in_degree,  # Set node label size
         #node_border_color="black",  # Set node border color
         #edge_color="source",  # Set edge color from 'source' attribute
         node_border_color_from='node',  # Set node border color from 'node' attribute
-        node_size=G.degree,  # Set node size based on 'citations' attribute
-        node_label_size_range=(12, 25)
+        node_size=G.in_degree,  # Set node size based on 'citations' attribute
+        node_label_size_range=(12, 25),  # Set node label size range
+        node_label="author"  # Set node label from 'author' attribute
         # node_label_color="community"  # Set node label color based on 'community' attribute
     )
 
@@ -1146,18 +1149,35 @@ def sigma_graph_references(dataframe, period_label):
 
 
 
+### Citations network for 2022-2023
+
 
 ```{python}
 #| label: citations-construct-network-2022-2023
 
 G_2022_2023_references = sigma_graph_references(citations_df_2022_2023, "2022_2023")
+
 ```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/2022_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+
+### Citations network for 2018-2021
+
 
 ```{python}
 #| label: citations-construct-network-2018-2021
 
 G_2018_2021_references = sigma_graph_references(citations_df_2018_2021, "2018_2021")
+
 ```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/2018_2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+
+### Citations network for 2013-2017
 
 
 ```{python}
@@ -1165,13 +1185,29 @@ G_2018_2021_references = sigma_graph_references(citations_df_2018_2021, "2018_20
 
 G_2013_2017_references = sigma_graph_references(citations_df_2013_2017, "2013_2017")
 
+
 ```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/2013_2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+
+### Citations network for before 2013
+
 
 ```{python}
 #| label: citations-construct-network-before-2013
 
 G_before_2013_references = sigma_graph_references(citations_df_before_2013, "before_2013")
+
 ```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/before_2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+
+### Citations network for overall
+
 
 ```{python}
 #| label: citations-construct-network-overall
@@ -1181,7 +1217,10 @@ G_overall_references = sigma_graph_references(citations_df_overall, "overall")
 ```
 
 
+```{=html}
+<iframe width="1500" height="900" src="networks/references/overall_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 
+```
 
 
 
