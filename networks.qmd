@@ -72,9 +72,11 @@ import inspect
 
 from ipysigma import Sigma
 from itertools import combinations
+from datetime import datetime
 
 #Data
 data = pd.read_csv("data_final.csv")
+data.rename(columns={'citedby-count': 'citedby_count'}, inplace=True)
 list_articles = pd.read_csv("nlp_full_data_final_18-08-2023.csv", sep=';', decimal=',')
 list_articles = list_articles[list_articles['marketing'] == 1] #only marketing articles
 
@@ -99,6 +101,7 @@ library(gt)
 library(skimr)
 library(plotly)
 library(reticulate)
+library(patchwork)
 
 
 
@@ -683,7 +686,6 @@ print("There are {} communities in the 2018-2021 network".format(len(set(communi
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2018-2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 #### Co-authorship network for the 2013-2017 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2013-2017_sigma.html))
 
 ```{python}
@@ -700,7 +702,6 @@ print("There are {} communities in the 2013-2017 network".format(len(set(communi
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2013-2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 #### Co-authorship network before 2013 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/before-2013_sigma.html))
 
 ```{python}
@@ -715,7 +716,6 @@ print("There are {} communities in the before-2013 network".format(len(set(commu
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/before-2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ### An interesting metric: the graph density
 
 The graph density is the ratio of the number of edges to the maximum number of possible edges. It is a measure of the proportion of edges present in a graph. A graph with a high density has a large number of edges compared to the number of nodes. A graph with a low density has a small number of edges compared to the number of nodes.
@@ -761,11 +761,41 @@ From an interpretation standpoint, we can appreciate the density in the graphs b
 ```{python}
 #| label: evolution-graphs-density
 #| output: false
-
+def average_degree(G):
+    # Calculate the sum of degrees of all nodes
+    total_degree = sum(dict(G.degree()).values())
+    
+    # Divide by the number of nodes to get the average degree
+    avg_degree = total_degree / G.number_of_nodes()
+    
+    return avg_degree
+  
+def linear_density(G):
+    if len(G.nodes()) == 0:  # Pour éviter une division par zéro
+        return 0
+    return len(G.edges()) / len(G.nodes())
+  
 # Create a dataframe with the density of each graph
 density_df = pd.DataFrame({
     'period': ['before-2013', '2013-2017', '2018-2021', '2022-2023'],
-    'density': [nx.density(G_before_2013), nx.density(G_2013_2017), nx.density(G_2018_2021), nx.density(G_2022_2023)]
+    'density': [
+      nx.density(G_before_2013),
+      nx.density(G_2013_2017),
+      nx.density(G_2018_2021),
+      nx.density(G_2022_2023)
+      ],
+    'average_degree': [
+        average_degree(G_before_2013),
+        average_degree(G_2013_2017),
+        average_degree(G_2018_2021),
+        average_degree(G_2022_2023)
+    ],
+    'linear_density': [
+        linear_density(G_before_2013),
+        linear_density(G_2013_2017),
+        linear_density(G_2018_2021),
+        linear_density(G_2022_2023)
+    ]
 })
 ```
 
@@ -811,7 +841,7 @@ This research is motivated by the convergence of two critical factors:
 
 2.  The proliferation and the availability of open and private data from various sectors.
 
-While our prior work focused on uncovering emerging research topics, our current emphasis shifts towards comprehending which papers have garnered the most attention. We seek to determine whether it is predominantly computer science papers that have inspired marketing scholars with new perspectives into data analysis or if marketing papers have also played a role in advocating the development of new theories.
+While our prior work focused on uncovering emerging research topics, our current focus is about comprehending which papers have garnered the most attention. We seek to determine whether it is predominantly computer science papers that have inspired marketing scholars with new perspectives into data analysis or if marketing papers have also played a role in advocating the development of new theories.
 
 ### Data preparation and summary
 
@@ -823,14 +853,33 @@ We'll start by loading the data of references and preparing it for the analysis.
 # Load the data of references
 list_references <- read_csv2('nlp_references_final_18-08-2023.csv')
 
+# Get the current year
+current_year <- as.integer(format(Sys.Date(), "%Y"))
+
+
+# Perform the following operations on the list_references DataFrame:
+# 1. Select the first 32 columns
+# 2. Extract the relevant part of the 'citing_art' column
+# 3. Rename columns for easier reference
+# 4. Reorder the 'scopus_id' column
+# 5. Extract the year from the 'prism:coverDate' column
+# 6. Calculate the 'citations_per_year' column
+# 7. Round the 'citations_per_year' column to two decimal places
+# 8. Remove the original 'prism:coverDate' column
+
 list_references <- list_references %>%
   select(1:32) %>%
-  mutate(citing_art = str_sub(citing_art, 11)) %>%
-  rename("author" = `author-list.author.ce:indexed-name`) %>%
-  rename(scopus_id = `scopus-id`) %>% 
+  mutate(citing_art = substr(citing_art, 11, nchar(citing_art))) %>%
+  rename(author = `author-list.author.ce:indexed-name`,
+         scopus_id = `scopus-id`,
+         citedby_count = `citedby-count`) %>%
   relocate(scopus_id, .after = citing_art) %>%
-  mutate(year = as.character(str_sub(`prism:coverDate`, 1, 4))) %>%
-  #mutate(author_year = paste0(author,", ", year)) %>% If we ever need to use this variable in the networks
+  mutate(year = as.integer(substr(`prism:coverDate`, 1, 4))) %>%
+  mutate(citations_per_year = ifelse(!is.na(citedby_count) & !is.na(year), 
+                                     citedby_count / (current_year - year + 1), 
+                                     NA)) %>%
+  mutate(citations_per_year = round(citations_per_year, 2)) %>%
+  mutate(year = as.character(year)) %>%
   select(-`prism:coverDate`)
 
 
@@ -839,7 +888,11 @@ skim(list_references)
 
 #### Detect inconsistencies
 
-There are some problems with the data that we need to address before proceeding with the analysis. Some `scopus_id` identifiers (the id of the reference that appears in our marketing NLP corpus articles) have multiple different values of title (even only minor differences), sourcetitle, etc. although they should be equal. We want to plot the networks with information about the nodes. One unique node should have one unique value for each variable.
+There are some problems with the data that we need to address before proceeding with the analysis.
+
+Some `scopus_id` identifiers (the id of the reference that appears in our marketing NLP corpus articles) have multiple different values of title (even only minor differences), sourcetitle, etc. although they should be equal.
+
+We want to plot the networks with information about the nodes but we need to have only one unique value for each variable of `scopus_id`.
 
 ```{python}
 #| label: citations-detect-inconsistencies
@@ -877,7 +930,13 @@ reactable(
 
 #### Correct inconsistencies
 
-We correct inconsistencies in the data. Some `scopus_id` identifiers have multiple different values of title, sourcetitle, authorname, etc. (even only minor differences). For data consistency and future plot of networks, we need to have only one unique value for each variable of `scopus_id`.
+To correct the inconsistencies, we'll use the `standardize_values()` function. Specifically:
+
+1.  **Grouping by Unique Identifiers**: We first organize data by a unique identifier like `scopus_id`. This collates all relevant entries for a particular article or reference.
+
+2.  **Standardizing Titles and Source Names**: Next, within each group, we harmonize key values such as article titles, source names, and author names to remove variations.
+
+3.  **Standardization Priorities**: To choose the 'standard' value within each group, we apply a set of rules that favor the most commonly occurring value, using additional tie-breaker criteria as needed (number of characters, capitalized letters).
 
 ```{python}
 #| label: citations-correct-inconsistencies
@@ -971,12 +1030,13 @@ reactable(
 
 #### Get missing data (to be done later if necessary)
 
-We have a lot of missing data when it comes to the year of publication of the articles, the title, the sourcetitle the authors, DOI. It could be helpful to retrieve these data so we can see them when we click on the nodes
+We have a lot of missing data when it comes to the year of publication of the articles, the title, the sourcetitle the authors, DOI.
+It could be helpful to retrieve these data so we can see them when we click on the nodes.
 
 ```{r}
-#| label: citations-get-missing-data
+#| label: citations-get-missing-data-todo
 
-#first, let's construct a df where "year" is missing::
+# First, let's construct a df where "year" is missing::
 missing_years <- py$list_references_standardized %>%
   filter(year == "NA") %>%
   select(scopus_id, citing_art, title, sourcetitle, year, author, `ce:doi`)
@@ -991,21 +1051,34 @@ missing_years <- py$list_references_standardized %>%
 ```{python}
 #| label: citations-construct-dataframes
 
-def get_citations_df(df, start_year, end_year):
+def get_citations_df(df, start_year=None, end_year=None):
+    """
+    Filter and extract necessary columns for citation network from a DataFrame based on a range of years.
+    
+    Parameters:
+    - df: DataFrame containing the data
+    - start_year: Optional, the starting year for filtering
+    - end_year: Optional, the ending year for filtering
+    
+    Returns:
+    - DataFrame with filtered data
+    """
+    
     # Replace 'NA' with numpy.nan and reassign the DataFrame
     df = df.replace({'year': 'NA'}, np.nan)
     
     # Drop rows where 'year' is NaN
     df = df.dropna(subset=['year'])
     
-    # Convert the 'year' column to integer using .loc
+    # Convert the 'year' column to integer using .astype
     df['year'] = df['year'].astype(int)
     
-    # Filter the data based on the 'year' column and create a distinct copy
-    df_filtered = df[df['year'].between(start_year, end_year)].copy()
+    # Filter the data based on the 'year' column only if start_year and end_year are provided
+    if start_year is not None and end_year is not None:
+        df = df[df['year'].between(start_year, end_year)]
     
     # Extract necessary columns for the citation network
-    citations_df = df_filtered[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby-count', 'author', 'year']]
+    citations_df = df[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby_count', 'citations_per_year' , 'author', 'year']]
     
     return citations_df
 
@@ -1014,10 +1087,21 @@ citations_df_2022_2023 = get_citations_df(list_references_standardized, 2022, 20
 citations_df_2018_2021 = get_citations_df(list_references_standardized, 2018, 2021)
 citations_df_2013_2017 = get_citations_df(list_references_standardized, 2013, 2017)
 citations_df_before_2013 = get_citations_df(list_references_standardized, 0, 2012)
-citations_df_overall = get_citations_df(list_references_standardized, 0, 2023)
+citations_df_overall = get_citations_df(list_references_standardized)  #No filter on years: 
+
 ```
 
 ### Add information about references and citing articles to the dataframes
+
+Ipysigma allows us to view different information when clicking on the nodes. This enhances the interactive experience by providing context-relevant details for each node in the network.
+
+To achieve this functionality, we have two primary options:
+
+-   The first is to create a loop that assigns the relevant information, such as author name, year, title, and source title, to each individual node.
+
+-   The second option is to construct a dictionary where each node serves as a key and the corresponding information serves as the value.
+
+We opted for the latter approach. This dictionary is then passed as attributes to the nodes using NetworkX's **`set_node_attributes`** property.
 
 ```{python}
 #| label: citations-add-information
@@ -1036,8 +1120,28 @@ def get_info_references_dict(df, key, column):
     return sort_dict(df.set_index(key)[column].to_dict())
   
 
+# We also need to get the info of the citing articles, otherwise we won't get any info when we click 
+# on the nodes and we will have the number of the node as node label instead of the author name
+# Create the 'citing_art' column by stripping the first 10 characters from 'dc_identifier'
+data['citing_art'] = data['dc_identifier'].str[10:]
+
+# Getting the current year
+current_year = datetime.now().year
+
+# English Comment: Function to calculate citations per year, handles NaN values, division by zero, and the current year.
+def calculate_citations_per_year(row):
+    if pd.isna(row['year']):
+        return np.nan
+    elif (current_year - row['year']) == 0:
+        return 0  # Handle division by zero by returning 0
+    else:
+        return round(row['citedby_count'] / (current_year - row['year']), 2)
+
+# Creating the new column 'citations_per_year'
+data['citations_per_year'] = data.apply(calculate_citations_per_year, axis=1)
+
 # List of columns to use in the networks later as attributes. We can add more columns if we want to.
-columns_to_extract = ['title', 'sourcetitle', 'citedby-count', 'author', 'year']
+columns_to_extract = ['title', 'sourcetitle', 'citedby_count', 'author', 'year', 'citations_per_year']
 
 # Dictionary of dataframes with their respective names
 dfs = {
@@ -1048,11 +1152,6 @@ dfs = {
     "overall": citations_df_overall
 }
 
-# We also need to get the info of the citing articles, otherwise we won't get any info when we click 
-# on the nodes and we will have the number of the node as node label instead of the author name
-# Create the 'citing_art' column by stripping the first 10 characters from 'dc_identifier'
-data['citing_art'] = data['dc_identifier'].str[10:]
-
 
 # Map old column names to new column names
 column_mapping = {
@@ -1060,7 +1159,8 @@ column_mapping = {
     'sourcetitle': 'prism_publicationName',
     'author': 'dc_creator',
     'year': 'year',
-    'citedby-count': 'citedby_count'
+    'citations': 'citedby_count',
+    'citations_per_year': 'citations_per_year'
 }
 
 # Reverse mapping for merging
@@ -1068,6 +1168,7 @@ reverse_column_mapping = {v: k for k, v in column_mapping.items()}
 
 # Rename columns in data DataFrame for merging
 data.rename(columns=reverse_column_mapping, inplace=True)
+
 
 # Initialize the output dictionary
 dict_references = {}
@@ -1091,7 +1192,8 @@ for period, df in dfs.items():
                 if key not in dict_references[period].get(column, {}):
                     dict_references[period].setdefault(column, {})[key] = value
 
-#print(dict_references)  # This will print the nested dictionary
+
+#print(dict_references) 
 
 # Just to check if the key is in the dictionary
 #if "85149566147" in dict_references['2022_2023']['author']:
@@ -1162,7 +1264,7 @@ def sigma_graph_references(dataframe, period_label):
                  node_size              = G.in_degree,                                            # Set node size based on the in_degree attribute
                  node_size_range        = (3, 30),                                                # Set node size range
                  path                   = f"networks/references/{period_label}_sigma.html",       # Specify the output file path
-                 start_layout           = 5                                                       # Start the layout algorithm automatically and lasts 5 seconds
+                 start_layout           = 10                                                       # Start the layout algorithm automatically and lasts 5 seconds
                  #node_border_color     = "black",                                                # Set node border color
                  #edge_color            = "source",                                               # Set edge color from 'source' attribute
                  )
@@ -1189,7 +1291,6 @@ G_2022_2023_references = sigma_graph_references(citations_df_2022_2023, "2022_20
 ```{=html}
 <iframe width="1500" height="900" src="networks/references/2022_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ### Citations network for 2018-2021 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2018_2021_sigma.html))
 
 ```{python}
@@ -1202,7 +1303,6 @@ G_2018_2021_references = sigma_graph_references(citations_df_2018_2021, "2018_20
 ```{=html}
 <iframe width="1500" height="900" src="networks/references/2018_2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ### Citations network for 2013-2017 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2013_2017_sigma.html))
 
 ```{python}
@@ -1216,7 +1316,6 @@ G_2013_2017_references = sigma_graph_references(citations_df_2013_2017, "2013_20
 ```{=html}
 <iframe width="1500" height="900" src="networks/references/2013_2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ### Citations network for before 2013 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/before_2013_sigma.html))
 
 ```{python}
@@ -1229,7 +1328,6 @@ G_before_2013_references = sigma_graph_references(citations_df_before_2013, "bef
 ```{=html}
 <iframe width="1500" height="900" src="networks/references/before_2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ### Citations network for overall ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/overall_sigma.html))
 
 ```{python}
@@ -1242,12 +1340,12 @@ G_overall_references = sigma_graph_references(citations_df_overall, "overall")
 ```{=html}
 <iframe width="1500" height="900" src="networks/references/overall_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 ## Graph density of references
 
 ```{python}
 #| label: citations-graph-density
 #| output: false
+
 
 # Create a dataframe with the density of each graph
 density_df_references = pd.DataFrame({
@@ -1258,39 +1356,62 @@ density_df_references = pd.DataFrame({
         nx.density(G_2018_2021_references), 
         nx.density(G_2022_2023_references),
         nx.density(G_overall_references)
+    ],
+    'average_degree': [
+        average_degree(G_before_2013_references),
+        average_degree(G_2013_2017_references),
+        average_degree(G_2018_2021_references),
+        average_degree(G_2022_2023_references),
+        average_degree(G_overall_references)
+    ],
+    'linear_density': [
+    linear_density(G_before_2013_references),
+    linear_density(G_2013_2017_references),
+    linear_density(G_2018_2021_references),
+    linear_density(G_2022_2023_references),
+    linear_density(G_overall_references)
     ]
 })
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-sns.barplot(x='period', y='density', data=density_df_references)
-plt.title('Density of Networks by Period')
-plt.show()
 ```
+
 ```{r}
 #| label: citations-graph-density-comparison
+#| fig.cap: Comparison of network densities and average degree of nodes over time
 
+# Density plot
 density_plot <- ggplot() +
-  geom_line(data = py$density_df, aes(x = period, y = density, colour = "Collaboration Density", group=1), size = 1) +
-  geom_line(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = density, colour = "References Density", group=1), size = 1) +
-  scale_y_continuous(name = "Collaboration Density", sec.axis = sec_axis(~ . / 10, name = "References Density")) +
+  geom_line(data = py$density_df, aes(x = period, y = density, colour = "Collaboration Density", group=1, text = paste("Period:", period, "<br>Density:", density)), linewidth=1) +
+  geom_line(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = density, colour = "References Density", group=1, text = paste("Period:", period, "<br>Density:", density)), linewidth=1) +
+  scale_y_continuous(name = "Graphs Density") +
   scale_x_discrete(limits = c("before-2013", "2013-2017", "2018-2021", "2022-2023")) +
   xlab("Period") +
   ggtitle("Comparison of Network Density Over Time") +
   theme_minimal()
 
-ggplotly(density_plot)
-
-density_plot <- ggplot() +
-  geom_bar(data = py$density_df, aes(x = period, y = density, fill = "Collaboration Density"), stat="identity", position="dodge") +
-  geom_bar(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = density, fill = "References Density"), stat="identity", position="dodge") +
-  scale_y_continuous(name = "Collaboration Density", sec.axis = sec_axis(~ . / 10, name = "References Density")) +
+# Linear density plot (m/n)
+linear_density_plot <- ggplot() +
+  geom_line(data = py$density_df, aes(x = period, y = linear_density, colour = "Collaboration Linear Density", group=1, text = paste("Period:", period, "<br>Linear Density:", linear_density)), linewidth=1) + # Adjusted for the new column "linear_density"
+  geom_line(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = linear_density, colour = "References Linear Density", group=1, text = paste("Period:", period, "<br>Linear Density:", linear_density)), linewidth=1) + # Adjusted for the new column "linear_density"
+  scale_y_continuous(name = "Graphs Linear Density") +
   scale_x_discrete(limits = c("before-2013", "2013-2017", "2018-2021", "2022-2023")) +
   xlab("Period") +
-  ggtitle("Comparison of Network Density Over Time") +
+  ggtitle("Comparison of Network Linear Density Over Time") +
   theme_minimal()
 
-ggplotly(density_plot)
+# Create average degree plot
+avg_degree_plot <- ggplot() +
+  geom_line(data = py$density_df, aes(x = period, y = average_degree, colour = "Collaboration Average Degree", group=1, text = paste("Period:", period, "<br>Average Degree:", average_degree)), linewidth=1) + # Corrected here
+  geom_line(data = py$density_df_references %>% filter(period != "overall"), aes(x = period, y = average_degree, colour = "References Average Degree", group=1, text = paste("Period:", period, "<br>Average Degree:", average_degree)), linewidth=1) +
+  scale_y_continuous(name = "Nodes Average Degree") +
+  scale_x_discrete(limits = c("before-2013", "2013-2017", "2018-2021", "2022-2023")) +
+  xlab("Period") +
+  ggtitle("Comparison of Network Average Degree Over Time") +
+  theme_minimal()
+
+# Combine density and average degree plots
+density_plot / linear_density_plot / avg_degree_plot
+
+ggsave("images/citations-graph-density-comparison.png", width=27, height=18, units="cm", dpi=300)
 
 ```
