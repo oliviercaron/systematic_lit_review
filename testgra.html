@@ -72,7 +72,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="testgra_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -137,17 +137,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> itertools <span class="im">import</span> combinations</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ipysigma <span class="im">import</span> Sigma</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> missingno <span class="im">as</span> msno</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#import modin.pandas as pd</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> itertools <span class="im">import</span> combinations</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ipysigma <span class="im">import</span> Sigma</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> missingno <span class="im">as</span> msno</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>list_articles <span class="op">=</span>  pd.read_csv(<span class="st">"nlp_full_data_final_unique_author_names.csv"</span>, sep<span class="op">=</span><span class="st">';'</span>, decimal<span class="op">=</span><span class="st">','</span>)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>msno.matrix(list_articles, labels<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">10</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">10</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>list_articles <span class="op">=</span>  pd.read_csv(<span class="st">"nlp_full_data_final_unique_author_names.csv"</span>, sep<span class="op">=</span><span class="st">';'</span>, decimal<span class="op">=</span><span class="st">','</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>msno.matrix(list_articles, labels<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">10</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">10</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display column-page">
 <p><img src="testgra_files/figure-html/libraries-data-1.png" class="img-fluid" width="1920"></p>
@@ -257,35 +258,51 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>        nx.set_node_attributes(G, author_info[col], col)</span>
 <span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>        </span>
 <span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a>    nx.set_node_attributes(G, author_info[<span class="st">'citations'</span>], <span class="st">'citations'</span>)</span>
-<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the html graph with Sigma from ipysigma</span></span>
-<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>    Sigma.write_html(G,</span>
-<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>                 default_edge_type       <span class="op">=</span> <span class="st">"curve"</span>,                                                     <span class="co"># Default edge type</span></span>
-<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>                 clickable_edges         <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Clickable edges</span></span>
-<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>                 edge_size               <span class="op">=</span> <span class="st">"value"</span>,                                                     <span class="co"># Set edge size</span></span>
-<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>                 fullscreen              <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Display in fullscreen</span></span>
-<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>                 label_density           <span class="op">=</span> <span class="dv">2</span>,                                                           <span class="co"># Label density</span></span>
-<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a>                 label_font              <span class="op">=</span> <span class="st">"Helvetica Neue"</span>,                                            <span class="co"># Label font</span></span>
-<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a>                 max_categorical_colors  <span class="op">=</span> <span class="dv">10</span>,                                                          <span class="co"># Max categorical colors</span></span>
-<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>                 node_border_color_from  <span class="op">=</span> <span class="st">'node'</span>,                                                      <span class="co"># Node border color from node attribute</span></span>
-<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a>                 node_color              <span class="op">=</span> <span class="st">"community"</span>,                                                 <span class="co"># Set node colors</span></span>
-<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>                 node_label_size         <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node label size</span></span>
-<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>                 node_label_size_range   <span class="op">=</span> (<span class="dv">12</span>, <span class="dv">36</span>),                                                    <span class="co"># Node label size range</span></span>
-<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>                 node_metrics            <span class="op">=</span> {<span class="st">"community"</span>: {<span class="st">"name"</span>: <span class="st">"louvain"</span>, <span class="st">"resolution"</span>: <span class="dv">1</span>}},         <span class="co"># Specify node metrics</span></span>
-<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>                 node_size               <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node size</span></span>
-<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a>                 node_size_range         <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">30</span>),                                                     <span class="co"># Node size range</span></span>
-<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>                 path                    <span class="op">=</span> <span class="ss">f"networks/authors/</span><span class="sc">{</span>start_year<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>end_year<span class="sc">}</span><span class="ss">_sigma_test.html"</span>, <span class="co"># Output file path</span></span>
-<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a>                 start_layout            <span class="op">=</span> <span class="dv">3</span>,                                                            <span class="co"># Start layout algorithm</span></span>
-<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#node_border_color      = "black",                                                     # Node border color</span></span>
-<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#edge_color             = "#7D7C7C"                                                    # Edge color</span></span>
-<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>                 <span class="co"># node_label_color      = "community"                                                  # Node label color</span></span>
-<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>                 )</span>
-<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> G</span>
-<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage</span></span>
-<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a>G_2015_2019 <span class="op">=</span> create_graph(list_articles, <span class="dv">2013</span>, <span class="dv">2017</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Loop through each node in the graph to collect its attributes</span></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> []</span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> node <span class="kw">in</span> G.nodes():</span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Initialize a dictionary to store attributes of the current node</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>        node_info <span class="op">=</span> {<span class="st">'Node'</span>: node}</span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Add other attributes</span></span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> col <span class="kw">in</span> columns_to_collect:</span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a>            node_info[col] <span class="op">=</span> G.nodes[node].get(col, <span class="va">None</span>)  <span class="co"># Use None if the attribute is not set</span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Append the dictionary to the list of rows</span></span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a>        rows.append(node_info)</span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a DataFrame from the list of rows</span></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> pd.DataFrame(rows)</span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the html graph with Sigma from ipysigma</span></span>
+<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a>    Sigma.write_html(G,</span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>                 default_edge_type       <span class="op">=</span> <span class="st">"curve"</span>,                                                     <span class="co"># Default edge type</span></span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>                 clickable_edges         <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Clickable edges</span></span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>                 edge_size               <span class="op">=</span> <span class="st">"value"</span>,                                                     <span class="co"># Set edge size</span></span>
+<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>                 fullscreen              <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Display in fullscreen</span></span>
+<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>                 label_density           <span class="op">=</span> <span class="dv">2</span>,                                                           <span class="co"># Label density</span></span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>                 label_font              <span class="op">=</span> <span class="st">"Helvetica Neue"</span>,                                            <span class="co"># Label font</span></span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a>                 max_categorical_colors  <span class="op">=</span> <span class="dv">10</span>,                                                          <span class="co"># Max categorical colors</span></span>
+<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a>                 node_border_color_from  <span class="op">=</span> <span class="st">'node'</span>,                                                      <span class="co"># Node border color from node attribute</span></span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a>                 node_color              <span class="op">=</span> <span class="st">"community"</span>,                                                 <span class="co"># Set node colors</span></span>
+<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a>                 node_label_size         <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node label size</span></span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a>                 node_label_size_range   <span class="op">=</span> (<span class="dv">12</span>, <span class="dv">36</span>),                                                    <span class="co"># Node label size range</span></span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a>                 node_metrics            <span class="op">=</span> {<span class="st">"community"</span>: {<span class="st">"name"</span>: <span class="st">"louvain"</span>, <span class="st">"resolution"</span>: <span class="dv">1</span>}},         <span class="co"># Specify node metrics</span></span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a>                 node_size               <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node size</span></span>
+<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a>                 node_size_range         <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">30</span>),                                                     <span class="co"># Node size range</span></span>
+<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a>                 path                    <span class="op">=</span> <span class="ss">f"networks/authors/</span><span class="sc">{</span>start_year<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>end_year<span class="sc">}</span><span class="ss">_sigma_test.html"</span>, <span class="co"># Output file path</span></span>
+<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a>                 start_layout            <span class="op">=</span> <span class="dv">3</span>,                                                            <span class="co"># Start layout algorithm</span></span>
+<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#node_border_color      = "black",                                                     # Node border color</span></span>
+<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#edge_color             = "#7D7C7C"                                                    # Edge color</span></span>
+<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a>                 <span class="co"># node_label_color      = "community"                                                  # Node label color</span></span>
+<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a>                 )</span>
+<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> G, df</span>
+<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage</span></span>
+<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a>G_2015_2019, df_2015_2019 <span class="op">=</span> create_graph(list_articles, <span class="dv">2013</span>, <span class="dv">2017</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <!-- -->
@@ -620,7 +637,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="an">editor:</span><span class="co"> visual</span></span>
 <span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="an">fig-align:</span><span class="co"> "center"</span></span>
 <span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="an">highlight-style:</span><span class="co"> ayu</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="an">css:</span><span class="co"> styles.css</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="an">css:</span><span class="co"> style.css</span></span>
 <span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="an">reference-location:</span><span class="co"> margin</span></span>
 <span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
@@ -634,152 +651,170 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> itertools <span class="im">import</span> combinations</span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ipysigma <span class="im">import</span> Sigma</span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> missingno <span class="im">as</span> msno</span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="co">#import modin.pandas as pd</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> itertools <span class="im">import</span> combinations</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ipysigma <span class="im">import</span> Sigma</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> missingno <span class="im">as</span> msno</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>list_articles <span class="op">=</span>  pd.read_csv(<span class="st">"nlp_full_data_final_unique_author_names.csv"</span>, sep<span class="op">=</span><span class="st">';'</span>, decimal<span class="op">=</span><span class="st">','</span>)</span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>msno.matrix(list_articles, labels<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">10</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">10</span>))</span>
-<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
-<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_author_info(filtered_articles, columns):</span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize a dictionary to store information for each column</span></span>
-<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    author_info <span class="op">=</span> {col: {} <span class="cf">for</span> col <span class="kw">in</span> columns}</span>
-<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>    author_info[<span class="st">"citations"</span>] <span class="op">=</span> {}  <span class="co"># Initialize a dictionary for citations</span></span>
-<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through each row in the DataFrame</span></span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _, row <span class="kw">in</span> filtered_articles.iterrows():</span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extract the author name from the row</span></span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>        author_name <span class="op">=</span> row[<span class="st">'authname'</span>]</span>
-<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Sum up the citations</span></span>
-<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> pd.notna(row[<span class="st">'citedby_count'</span>]):</span>
-<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>            author_info[<span class="st">"citations"</span>][author_name] <span class="op">=</span> author_info[<span class="st">"citations"</span>].get(author_name, <span class="dv">0</span>) <span class="op">+</span> row[<span class="st">'citedby_count'</span>]</span>
-<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Iterate through each column name to gather other information</span></span>
-<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> col <span class="kw">in</span> columns:</span>
-<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>            value <span class="op">=</span> row[col]</span>
-<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Check if the value is a string and not empty</span></span>
-<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> pd.notna(value):</span>
-<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>                value <span class="op">=</span> <span class="bu">str</span>(value).strip()</span>
-<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> author_name <span class="kw">in</span> author_info[col]:</span>
-<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> value <span class="kw">not</span> <span class="kw">in</span> author_info[col][author_name]:</span>
-<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a>                        author_info[col][author_name] <span class="op">+=</span> <span class="st">" | "</span> <span class="op">+</span> value</span>
-<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span>:</span>
-<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>                    author_info[col][author_name] <span class="op">=</span> value</span>
-<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> author_info</span>
-<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_graph(dataframe, start_year, end_year):</span>
-<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Read the data</span></span>
-<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>    list_articles <span class="op">=</span> dataframe</span>
-<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Filter articles based on the specified year range</span></span>
-<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>    filtered_articles <span class="op">=</span> list_articles[(list_articles[<span class="st">'year'</span>] <span class="op">&gt;=</span> start_year) <span class="op">&amp;</span> (list_articles[<span class="st">'year'</span>] <span class="op">&lt;=</span> end_year)]</span>
-<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a list to store author pairs and their details</span></span>
-<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>    author_pairs <span class="op">=</span> []</span>
-<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Group the filtered dataframe by article number and collect unique author IDs for each article</span></span>
-<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a>    grouped <span class="op">=</span> filtered_articles.groupby(<span class="st">'entry_number'</span>)[[<span class="st">'authid'</span>, <span class="st">'authname'</span>]].agg(<span class="bu">list</span>).reset_index()</span>
-<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Find author pairs for each article</span></span>
-<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _, row <span class="kw">in</span> grouped.iterrows():</span>
-<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>        entry_number <span class="op">=</span> row[<span class="st">'entry_number'</span>]</span>
-<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a>        authors <span class="op">=</span> row[<span class="st">'authid'</span>]</span>
-<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>        authnames <span class="op">=</span> row[<span class="st">'authname'</span>]</span>
-<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(authors) <span class="op">==</span> <span class="dv">1</span>:</span>
-<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a>            author_pairs.append((entry_number, authors[<span class="dv">0</span>], authors[<span class="dv">0</span>], authnames[<span class="dv">0</span>], authnames[<span class="dv">0</span>]))</span>
-<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="bu">len</span>(authors) <span class="op">&gt;</span> <span class="dv">1</span>:</span>
-<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>            author_combinations <span class="op">=</span> <span class="bu">list</span>(combinations(<span class="bu">range</span>(<span class="bu">len</span>(authors)), <span class="dv">2</span>))</span>
-<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> i, j <span class="kw">in</span> author_combinations:</span>
-<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a>                author_pairs.append((entry_number, authors[i], authors[j], authnames[i], authnames[j]))</span>
-<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a DataFrame for author pairs</span></span>
-<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>    result_df <span class="op">=</span> pd.DataFrame(author_pairs, columns<span class="op">=</span>[<span class="st">'entry_number'</span>, <span class="st">'authid1'</span>, <span class="st">'authid2'</span>, <span class="st">'authname1'</span>, <span class="st">'authname2'</span>])</span>
-<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a DataFrame for collaborations and sort it</span></span>
-<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>    collaboration_df <span class="op">=</span> result_df[[<span class="st">"authname1"</span>, <span class="st">"authname2"</span>]]</span>
-<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>    collaboration_df <span class="op">=</span> pd.DataFrame(np.sort(collaboration_df.values, axis<span class="op">=</span><span class="dv">1</span>), columns<span class="op">=</span>collaboration_df.columns)</span>
-<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>    collaboration_df[<span class="st">'value'</span>] <span class="op">=</span> <span class="dv">1</span></span>
-<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>    collaboration_df <span class="op">=</span> collaboration_df.groupby([<span class="st">"authname1"</span>,<span class="st">"authname2"</span>], sort<span class="op">=</span><span class="va">False</span>, as_index<span class="op">=</span><span class="va">False</span>).<span class="bu">sum</span>()</span>
-<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize the graph</span></span>
-<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>    G <span class="op">=</span> nx.from_pandas_edgelist(collaboration_df, <span class="st">'authname1'</span>, <span class="st">'authname2'</span>, edge_attr<span class="op">=</span><span class="st">'value'</span>, create_using<span class="op">=</span>nx.Graph())</span>
-<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set edge colors for visualization</span></span>
-<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u, v <span class="kw">in</span> G.edges:</span>
-<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>        G[u][v][<span class="st">"color"</span>] <span class="op">=</span> <span class="st">"#7D7C7C"</span></span>
-<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add weighted edges to the graph</span></span>
-<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> index, row <span class="kw">in</span> collaboration_df.iterrows():</span>
-<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>        G.add_edge(row[<span class="st">'authname1'</span>], row[<span class="st">'authname2'</span>], weight<span class="op">=</span>row[<span class="st">'value'</span>])</span>
-<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute and set multiple node attributes </span></span>
-<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a>    metrics <span class="op">=</span> {</span>
-<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>        <span class="st">'centrality'</span>: nx.degree_centrality,</span>
-<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>        <span class="st">'betweenness'</span>: nx.betweenness_centrality,</span>
-<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a>        <span class="st">'closeness'</span>: nx.closeness_centrality,</span>
-<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a>        <span class="st">'eigenvector_centrality'</span>: nx.eigenvector_centrality,</span>
-<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>        <span class="st">'burt_constraint_weighted'</span>: partial(nx.constraint, weight<span class="op">=</span><span class="st">"value"</span>),</span>
-<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a>        <span class="st">'burt_constraint_unweighted'</span>: nx.constraint</span>
-<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-162"><a href="#cb3-162" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-163"><a href="#cb3-163" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attr, func <span class="kw">in</span> metrics.items():</span>
-<span id="cb3-164"><a href="#cb3-164" aria-hidden="true" tabindex="-1"></a>        nx.set_node_attributes(G, func(G), attr)</span>
-<span id="cb3-165"><a href="#cb3-165" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb3-166"><a href="#cb3-166" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the list of columns for which to collect information</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>list_articles <span class="op">=</span>  pd.read_csv(<span class="st">"nlp_full_data_final_unique_author_names.csv"</span>, sep<span class="op">=</span><span class="st">';'</span>, decimal<span class="op">=</span><span class="st">','</span>)</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>msno.matrix(list_articles, labels<span class="op">=</span><span class="va">True</span>, fontsize<span class="op">=</span><span class="dv">10</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">10</span>))</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_author_info(filtered_articles, columns):</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize a dictionary to store information for each column</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>    author_info <span class="op">=</span> {col: {} <span class="cf">for</span> col <span class="kw">in</span> columns}</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>    author_info[<span class="st">"citations"</span>] <span class="op">=</span> {}  <span class="co"># Initialize a dictionary for citations</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through each row in the DataFrame</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _, row <span class="kw">in</span> filtered_articles.iterrows():</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extract the author name from the row</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>        author_name <span class="op">=</span> row[<span class="st">'authname'</span>]</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Sum up the citations</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> pd.notna(row[<span class="st">'citedby_count'</span>]):</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>            author_info[<span class="st">"citations"</span>][author_name] <span class="op">=</span> author_info[<span class="st">"citations"</span>].get(author_name, <span class="dv">0</span>) <span class="op">+</span> row[<span class="st">'citedby_count'</span>]</span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Iterate through each column name to gather other information</span></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> col <span class="kw">in</span> columns:</span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>            value <span class="op">=</span> row[col]</span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Check if the value is a string and not empty</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> pd.notna(value):</span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a>                value <span class="op">=</span> <span class="bu">str</span>(value).strip()</span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> author_name <span class="kw">in</span> author_info[col]:</span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> value <span class="kw">not</span> <span class="kw">in</span> author_info[col][author_name]:</span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>                        author_info[col][author_name] <span class="op">+=</span> <span class="st">" | "</span> <span class="op">+</span> value</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span>:</span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>                    author_info[col][author_name] <span class="op">=</span> value</span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> author_info</span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_graph(dataframe, start_year, end_year):</span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Read the data</span></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>    list_articles <span class="op">=</span> dataframe</span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Filter articles based on the specified year range</span></span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>    filtered_articles <span class="op">=</span> list_articles[(list_articles[<span class="st">'year'</span>] <span class="op">&gt;=</span> start_year) <span class="op">&amp;</span> (list_articles[<span class="st">'year'</span>] <span class="op">&lt;=</span> end_year)]</span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a list to store author pairs and their details</span></span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>    author_pairs <span class="op">=</span> []</span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Group the filtered dataframe by article number and collect unique author IDs for each article</span></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>    grouped <span class="op">=</span> filtered_articles.groupby(<span class="st">'entry_number'</span>)[[<span class="st">'authid'</span>, <span class="st">'authname'</span>]].agg(<span class="bu">list</span>).reset_index()</span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Find author pairs for each article</span></span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _, row <span class="kw">in</span> grouped.iterrows():</span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a>        entry_number <span class="op">=</span> row[<span class="st">'entry_number'</span>]</span>
+<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>        authors <span class="op">=</span> row[<span class="st">'authid'</span>]</span>
+<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a>        authnames <span class="op">=</span> row[<span class="st">'authname'</span>]</span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(authors) <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a>            author_pairs.append((entry_number, authors[<span class="dv">0</span>], authors[<span class="dv">0</span>], authnames[<span class="dv">0</span>], authnames[<span class="dv">0</span>]))</span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="bu">len</span>(authors) <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a>            author_combinations <span class="op">=</span> <span class="bu">list</span>(combinations(<span class="bu">range</span>(<span class="bu">len</span>(authors)), <span class="dv">2</span>))</span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> i, j <span class="kw">in</span> author_combinations:</span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>                author_pairs.append((entry_number, authors[i], authors[j], authnames[i], authnames[j]))</span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a DataFrame for author pairs</span></span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a>    result_df <span class="op">=</span> pd.DataFrame(author_pairs, columns<span class="op">=</span>[<span class="st">'entry_number'</span>, <span class="st">'authid1'</span>, <span class="st">'authid2'</span>, <span class="st">'authname1'</span>, <span class="st">'authname2'</span>])</span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a DataFrame for collaborations and sort it</span></span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>    collaboration_df <span class="op">=</span> result_df[[<span class="st">"authname1"</span>, <span class="st">"authname2"</span>]]</span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>    collaboration_df <span class="op">=</span> pd.DataFrame(np.sort(collaboration_df.values, axis<span class="op">=</span><span class="dv">1</span>), columns<span class="op">=</span>collaboration_df.columns)</span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>    collaboration_df[<span class="st">'value'</span>] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a>    collaboration_df <span class="op">=</span> collaboration_df.groupby([<span class="st">"authname1"</span>,<span class="st">"authname2"</span>], sort<span class="op">=</span><span class="va">False</span>, as_index<span class="op">=</span><span class="va">False</span>).<span class="bu">sum</span>()</span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize the graph</span></span>
+<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a>    G <span class="op">=</span> nx.from_pandas_edgelist(collaboration_df, <span class="st">'authname1'</span>, <span class="st">'authname2'</span>, edge_attr<span class="op">=</span><span class="st">'value'</span>, create_using<span class="op">=</span>nx.Graph())</span>
+<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set edge colors for visualization</span></span>
+<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> u, v <span class="kw">in</span> G.edges:</span>
+<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a>        G[u][v][<span class="st">"color"</span>] <span class="op">=</span> <span class="st">"#7D7C7C"</span></span>
+<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add weighted edges to the graph</span></span>
+<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> index, row <span class="kw">in</span> collaboration_df.iterrows():</span>
+<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>        G.add_edge(row[<span class="st">'authname1'</span>], row[<span class="st">'authname2'</span>], weight<span class="op">=</span>row[<span class="st">'value'</span>])</span>
+<span id="cb3-153"><a href="#cb3-153" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb3-154"><a href="#cb3-154" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute and set multiple node attributes </span></span>
+<span id="cb3-155"><a href="#cb3-155" aria-hidden="true" tabindex="-1"></a>    metrics <span class="op">=</span> {</span>
+<span id="cb3-156"><a href="#cb3-156" aria-hidden="true" tabindex="-1"></a>        <span class="st">'centrality'</span>: nx.degree_centrality,</span>
+<span id="cb3-157"><a href="#cb3-157" aria-hidden="true" tabindex="-1"></a>        <span class="st">'betweenness'</span>: nx.betweenness_centrality,</span>
+<span id="cb3-158"><a href="#cb3-158" aria-hidden="true" tabindex="-1"></a>        <span class="st">'closeness'</span>: nx.closeness_centrality,</span>
+<span id="cb3-159"><a href="#cb3-159" aria-hidden="true" tabindex="-1"></a>        <span class="st">'eigenvector_centrality'</span>: nx.eigenvector_centrality,</span>
+<span id="cb3-160"><a href="#cb3-160" aria-hidden="true" tabindex="-1"></a>        <span class="st">'burt_constraint_weighted'</span>: partial(nx.constraint, weight<span class="op">=</span><span class="st">"value"</span>),</span>
+<span id="cb3-161"><a href="#cb3-161" aria-hidden="true" tabindex="-1"></a>        <span class="st">'burt_constraint_unweighted'</span>: nx.constraint</span>
+<span id="cb3-162"><a href="#cb3-162" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-163"><a href="#cb3-163" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-164"><a href="#cb3-164" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attr, func <span class="kw">in</span> metrics.items():</span>
+<span id="cb3-165"><a href="#cb3-165" aria-hidden="true" tabindex="-1"></a>        nx.set_node_attributes(G, func(G), attr)</span>
+<span id="cb3-166"><a href="#cb3-166" aria-hidden="true" tabindex="-1"></a>        </span>
 <span id="cb3-167"><a href="#cb3-167" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the list of columns for which to collect information</span></span>
-<span id="cb3-168"><a href="#cb3-168" aria-hidden="true" tabindex="-1"></a>    columns_to_collect <span class="op">=</span> [<span class="st">'affilname'</span>, <span class="st">'affiliation_country'</span>, <span class="st">'dc:title'</span>, <span class="st">'prism:publicationName'</span>, <span class="st">'subtypeDescription'</span>, <span class="st">'year'</span>, <span class="st">'citedby_count'</span>, <span class="st">'subjects_area'</span>, <span class="st">'authkeywords'</span>]</span>
-<span id="cb3-169"><a href="#cb3-169" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-170"><a href="#cb3-170" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-171"><a href="#cb3-171" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use the function to get the author information</span></span>
-<span id="cb3-172"><a href="#cb3-172" aria-hidden="true" tabindex="-1"></a>    author_info <span class="op">=</span> get_author_info(filtered_articles, columns_to_collect)</span>
-<span id="cb3-173"><a href="#cb3-173" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-174"><a href="#cb3-174" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add the collected information to the nodes in the graph</span></span>
-<span id="cb3-175"><a href="#cb3-175" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> col <span class="kw">in</span> columns_to_collect:</span>
-<span id="cb3-176"><a href="#cb3-176" aria-hidden="true" tabindex="-1"></a>        nx.set_node_attributes(G, author_info[col], col)</span>
-<span id="cb3-177"><a href="#cb3-177" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb3-178"><a href="#cb3-178" aria-hidden="true" tabindex="-1"></a>    nx.set_node_attributes(G, author_info[<span class="st">'citations'</span>], <span class="st">'citations'</span>)</span>
-<span id="cb3-179"><a href="#cb3-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-168"><a href="#cb3-168" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the list of columns for which to collect information</span></span>
+<span id="cb3-169"><a href="#cb3-169" aria-hidden="true" tabindex="-1"></a>    columns_to_collect <span class="op">=</span> [<span class="st">'affilname'</span>, <span class="st">'affiliation_country'</span>, <span class="st">'dc:title'</span>, <span class="st">'prism:publicationName'</span>, <span class="st">'subtypeDescription'</span>, <span class="st">'year'</span>, <span class="st">'citedby_count'</span>, <span class="st">'subjects_area'</span>, <span class="st">'authkeywords'</span>]</span>
+<span id="cb3-170"><a href="#cb3-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-171"><a href="#cb3-171" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-172"><a href="#cb3-172" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use the function to get the author information</span></span>
+<span id="cb3-173"><a href="#cb3-173" aria-hidden="true" tabindex="-1"></a>    author_info <span class="op">=</span> get_author_info(filtered_articles, columns_to_collect)</span>
+<span id="cb3-174"><a href="#cb3-174" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-175"><a href="#cb3-175" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add the collected information to the nodes in the graph</span></span>
+<span id="cb3-176"><a href="#cb3-176" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> col <span class="kw">in</span> columns_to_collect:</span>
+<span id="cb3-177"><a href="#cb3-177" aria-hidden="true" tabindex="-1"></a>        nx.set_node_attributes(G, author_info[col], col)</span>
+<span id="cb3-178"><a href="#cb3-178" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb3-179"><a href="#cb3-179" aria-hidden="true" tabindex="-1"></a>    nx.set_node_attributes(G, author_info[<span class="st">'citations'</span>], <span class="st">'citations'</span>)</span>
 <span id="cb3-180"><a href="#cb3-180" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-181"><a href="#cb3-181" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the html graph with Sigma from ipysigma</span></span>
-<span id="cb3-182"><a href="#cb3-182" aria-hidden="true" tabindex="-1"></a>    Sigma.write_html(G,</span>
-<span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a>                 default_edge_type       <span class="op">=</span> <span class="st">"curve"</span>,                                                     <span class="co"># Default edge type</span></span>
-<span id="cb3-184"><a href="#cb3-184" aria-hidden="true" tabindex="-1"></a>                 clickable_edges         <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Clickable edges</span></span>
-<span id="cb3-185"><a href="#cb3-185" aria-hidden="true" tabindex="-1"></a>                 edge_size               <span class="op">=</span> <span class="st">"value"</span>,                                                     <span class="co"># Set edge size</span></span>
-<span id="cb3-186"><a href="#cb3-186" aria-hidden="true" tabindex="-1"></a>                 fullscreen              <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Display in fullscreen</span></span>
-<span id="cb3-187"><a href="#cb3-187" aria-hidden="true" tabindex="-1"></a>                 label_density           <span class="op">=</span> <span class="dv">2</span>,                                                           <span class="co"># Label density</span></span>
-<span id="cb3-188"><a href="#cb3-188" aria-hidden="true" tabindex="-1"></a>                 label_font              <span class="op">=</span> <span class="st">"Helvetica Neue"</span>,                                            <span class="co"># Label font</span></span>
-<span id="cb3-189"><a href="#cb3-189" aria-hidden="true" tabindex="-1"></a>                 max_categorical_colors  <span class="op">=</span> <span class="dv">10</span>,                                                          <span class="co"># Max categorical colors</span></span>
-<span id="cb3-190"><a href="#cb3-190" aria-hidden="true" tabindex="-1"></a>                 node_border_color_from  <span class="op">=</span> <span class="st">'node'</span>,                                                      <span class="co"># Node border color from node attribute</span></span>
-<span id="cb3-191"><a href="#cb3-191" aria-hidden="true" tabindex="-1"></a>                 node_color              <span class="op">=</span> <span class="st">"community"</span>,                                                 <span class="co"># Set node colors</span></span>
-<span id="cb3-192"><a href="#cb3-192" aria-hidden="true" tabindex="-1"></a>                 node_label_size         <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node label size</span></span>
-<span id="cb3-193"><a href="#cb3-193" aria-hidden="true" tabindex="-1"></a>                 node_label_size_range   <span class="op">=</span> (<span class="dv">12</span>, <span class="dv">36</span>),                                                    <span class="co"># Node label size range</span></span>
-<span id="cb3-194"><a href="#cb3-194" aria-hidden="true" tabindex="-1"></a>                 node_metrics            <span class="op">=</span> {<span class="st">"community"</span>: {<span class="st">"name"</span>: <span class="st">"louvain"</span>, <span class="st">"resolution"</span>: <span class="dv">1</span>}},         <span class="co"># Specify node metrics</span></span>
-<span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>                 node_size               <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node size</span></span>
-<span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a>                 node_size_range         <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">30</span>),                                                     <span class="co"># Node size range</span></span>
-<span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a>                 path                    <span class="op">=</span> <span class="ss">f"networks/authors/</span><span class="sc">{</span>start_year<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>end_year<span class="sc">}</span><span class="ss">_sigma_test.html"</span>, <span class="co"># Output file path</span></span>
-<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>                 start_layout            <span class="op">=</span> <span class="dv">3</span>,                                                            <span class="co"># Start layout algorithm</span></span>
-<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#node_border_color      = "black",                                                     # Node border color</span></span>
-<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#edge_color             = "#7D7C7C"                                                    # Edge color</span></span>
-<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>                 <span class="co"># node_label_color      = "community"                                                  # Node label color</span></span>
-<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>                 )</span>
-<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> G</span>
-<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage</span></span>
-<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>G_2015_2019 <span class="op">=</span> create_graph(list_articles, <span class="dv">2013</span>, <span class="dv">2017</span>)</span>
-<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-181"><a href="#cb3-181" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Loop through each node in the graph to collect its attributes</span></span>
+<span id="cb3-182"><a href="#cb3-182" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> []</span>
+<span id="cb3-183"><a href="#cb3-183" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> node <span class="kw">in</span> G.nodes():</span>
+<span id="cb3-184"><a href="#cb3-184" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Initialize a dictionary to store attributes of the current node</span></span>
+<span id="cb3-185"><a href="#cb3-185" aria-hidden="true" tabindex="-1"></a>        node_info <span class="op">=</span> {<span class="st">'Node'</span>: node}</span>
+<span id="cb3-186"><a href="#cb3-186" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb3-187"><a href="#cb3-187" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Add other attributes</span></span>
+<span id="cb3-188"><a href="#cb3-188" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> col <span class="kw">in</span> columns_to_collect:</span>
+<span id="cb3-189"><a href="#cb3-189" aria-hidden="true" tabindex="-1"></a>            node_info[col] <span class="op">=</span> G.nodes[node].get(col, <span class="va">None</span>)  <span class="co"># Use None if the attribute is not set</span></span>
+<span id="cb3-190"><a href="#cb3-190" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb3-191"><a href="#cb3-191" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Append the dictionary to the list of rows</span></span>
+<span id="cb3-192"><a href="#cb3-192" aria-hidden="true" tabindex="-1"></a>        rows.append(node_info)</span>
+<span id="cb3-193"><a href="#cb3-193" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-194"><a href="#cb3-194" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a DataFrame from the list of rows</span></span>
+<span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> pd.DataFrame(rows)</span>
+<span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the html graph with Sigma from ipysigma</span></span>
+<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>    Sigma.write_html(G,</span>
+<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>                 default_edge_type       <span class="op">=</span> <span class="st">"curve"</span>,                                                     <span class="co"># Default edge type</span></span>
+<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>                 clickable_edges         <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Clickable edges</span></span>
+<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>                 edge_size               <span class="op">=</span> <span class="st">"value"</span>,                                                     <span class="co"># Set edge size</span></span>
+<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>                 fullscreen              <span class="op">=</span> <span class="va">True</span>,                                                        <span class="co"># Display in fullscreen</span></span>
+<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>                 label_density           <span class="op">=</span> <span class="dv">2</span>,                                                           <span class="co"># Label density</span></span>
+<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a>                 label_font              <span class="op">=</span> <span class="st">"Helvetica Neue"</span>,                                            <span class="co"># Label font</span></span>
+<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>                 max_categorical_colors  <span class="op">=</span> <span class="dv">10</span>,                                                          <span class="co"># Max categorical colors</span></span>
+<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>                 node_border_color_from  <span class="op">=</span> <span class="st">'node'</span>,                                                      <span class="co"># Node border color from node attribute</span></span>
+<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a>                 node_color              <span class="op">=</span> <span class="st">"community"</span>,                                                 <span class="co"># Set node colors</span></span>
+<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a>                 node_label_size         <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node label size</span></span>
+<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a>                 node_label_size_range   <span class="op">=</span> (<span class="dv">12</span>, <span class="dv">36</span>),                                                    <span class="co"># Node label size range</span></span>
+<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a>                 node_metrics            <span class="op">=</span> {<span class="st">"community"</span>: {<span class="st">"name"</span>: <span class="st">"louvain"</span>, <span class="st">"resolution"</span>: <span class="dv">1</span>}},         <span class="co"># Specify node metrics</span></span>
+<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a>                 node_size               <span class="op">=</span> <span class="st">"citations"</span>,                                                 <span class="co"># Node size</span></span>
+<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a>                 node_size_range         <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">30</span>),                                                     <span class="co"># Node size range</span></span>
+<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a>                 path                    <span class="op">=</span> <span class="ss">f"networks/authors/</span><span class="sc">{</span>start_year<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>end_year<span class="sc">}</span><span class="ss">_sigma_test.html"</span>, <span class="co"># Output file path</span></span>
+<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a>                 start_layout            <span class="op">=</span> <span class="dv">3</span>,                                                            <span class="co"># Start layout algorithm</span></span>
+<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#node_border_color      = "black",                                                     # Node border color</span></span>
+<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a>                 <span class="co">#edge_color             = "#7D7C7C"                                                    # Edge color</span></span>
+<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a>                 <span class="co"># node_label_color      = "community"                                                  # Node label color</span></span>
+<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a>                 )</span>
+<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> G, df</span>
+<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage</span></span>
+<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a>G_2015_2019, df_2015_2019 <span class="op">=</span> create_graph(list_articles, <span class="dv">2013</span>, <span class="dv">2017</span>)</span>
+<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a></span>
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

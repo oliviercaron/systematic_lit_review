@@ -41,7 +41,7 @@ execute:
 editor: visual
 fig-align: "center"
 highlight-style: ayu
-css: styles.css
+css: style.css
 reference-location: margin
 ---
 
@@ -56,6 +56,7 @@ reference-location: margin
 
 
 import pandas as pd
+#import modin.pandas as pd
 import numpy as np
 from itertools import combinations
 from functools import partial
@@ -172,7 +173,23 @@ def create_graph(dataframe, start_year, end_year):
         nx.set_node_attributes(G, author_info[col], col)
         
     nx.set_node_attributes(G, author_info['citations'], 'citations')
-
+    
+    # Loop through each node in the graph to collect its attributes
+    rows = []
+    for node in G.nodes():
+        # Initialize a dictionary to store attributes of the current node
+        node_info = {'Node': node}
+        
+        # Add other attributes
+        for col in columns_to_collect:
+            node_info[col] = G.nodes[node].get(col, None)  # Use None if the attribute is not set
+        
+        # Append the dictionary to the list of rows
+        rows.append(node_info)
+    
+    # Create a DataFrame from the list of rows
+    df = pd.DataFrame(rows)
+    
     
     # Create the html graph with Sigma from ipysigma
     Sigma.write_html(G,
@@ -197,9 +214,11 @@ def create_graph(dataframe, start_year, end_year):
                  # node_label_color      = "community"                                                  # Node label color
                  )
     
-    return G
+    return G, df
 
 # Example usage
-G_2015_2019 = create_graph(list_articles, 2013, 2017)
+G_2015_2019, df_2015_2019 = create_graph(list_articles, 2013, 2017)
 
 ```
+
+
