@@ -68,7 +68,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import plotly.express as px
 import re
-import inspect
 
 from ipysigma import Sigma, SigmaGrid
 from itertools import combinations

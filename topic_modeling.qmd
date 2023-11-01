@@ -174,7 +174,7 @@ The aim of this function is to swiftly create various BERTopic experiments while
 Some explanations:
 
 | Parameter name   | Description                                                                                                                                                                                                                |
-|----------------|--------------------------------------------------------|
+|------------------|------------------------------------------------------|
 | docs             | The documents we want to analyze (list).                                                                                                                                                                                   |
 | embeddings_model | Specifies the embeddings model we want to load and use.                                                                                                                                                                    |
 | min_topic_size   | It is used to specify what the minimum size of a topic can be. See [BERTopic documentation](https://maartengr.github.io/BERTopic/getting_started/parameter%20tuning/parametertuning.html#min_topic_size "min_topic_size"). |
