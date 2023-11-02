@@ -189,7 +189,7 @@ def create_graph(dataframe, start_year, end_year):
                  clickable_edges         = True,                                                        # Clickable edges
                  edge_size               = "value",                                                     # Set edge size
                  fullscreen              = True,                                                        # Display in fullscreen
-                 label_density           = 5,                                                           # Label density
+                 label_density           = 3,                                                           # Label density
                  label_font              = "Helvetica Neue",                                            # Label font
                  max_categorical_colors  = 10,                                                          # Max categorical colors
                  node_border_color_from  = 'node',                                                      # Node border color from node attribute
