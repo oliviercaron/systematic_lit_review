@@ -493,7 +493,7 @@ G_2021_2023, df_2021_2023 = sigma_graph(list_articles, 2021, 2023)
 
 #detect how many commmunities there are in the graph
 communities = community_louvain.best_partition(G_2021_2023)
-print("There are {} communities in the 2022-2023 network".format(len(set(communities.values()))))
+print("There are {} communities in the 2021-2023 network".format(len(set(communities.values()))))
 #print("The density of the graph is {}".format(round(nx.density(G_2022_2023), 6)))
 
 test_value = nx.constraint(G_2021_2023, nodes=None, weight="value")
@@ -501,7 +501,7 @@ test_novalue = nx.constraint(G_2021_2023, nodes=None, weight=None)
 ```
 
 ```{=html}
-<iframe width="1500" height="900" src="networks/authors/2022_2023_sigma_v2.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+<iframe width="1500" height="900" src="networks/authors/2021_2023_sigma_v2.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
 #### Co-authorship network for the 2018-2022 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2018_2022_sigma_v2.html))
 
@@ -521,7 +521,7 @@ print("There are {} communities in the 2018-2022 network".format(len(set(communi
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2018_2022_sigma_v2.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-#### Co-authorship network for the 2013-2017 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2015_2019_sigma_v2.html))
+#### Co-authorship network for the 2015-2019 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2015_2019_sigma_v2.html))
 
 ```{python}
 #| label: network-visualization-ipysigma-2015-2019
@@ -537,7 +537,7 @@ print("There are {} communities in the 2015-2019 network".format(len(set(communi
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2015_2019_sigma_v2.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-#### Co-authorship network before 2013 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2014_2019_sigma_v2.html))
+#### Co-authorship network for the 2014-2019 period ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/2014_2019_sigma_v2.html))
 
 ```{python}
 #| label: network-visualization-ipysigma-2014-2019
@@ -551,7 +551,6 @@ print("There are {} communities in the 2014-2019 network".format(len(set(communi
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/2014_2019_sigma_v2.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
 #### Co-authorship network until 2015 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/authors/0_2015_sigma_v2.html))
 
 ```{python}
@@ -566,8 +565,6 @@ print("There are {} communities in the 0-2015 network".format(len(set(communitie
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/0_2015_sigma_v2.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
-
 ### An interesting metric: the graph density
 
 The graph density is the ratio of the number of edges to the maximum number of possible edges. It is a measure of the proportion of edges present in a graph. A graph with a high density has a large number of edges compared to the number of nodes. A graph with a low density has a small number of edges compared to the number of nodes.
@@ -719,6 +716,9 @@ current_year <- as.integer(format(Sys.Date(), "%Y"))
 # 7. Round the 'citations_per_year' column to two decimal places
 # 8. Remove the original 'prism:coverDate' column
 
+#list_references %>%
+  #filter(is.na(year))
+
 list_references <- list_references %>%
   select(1:32) %>%
   mutate(citing_art = substr(citing_art, 11, nchar(citing_art))) %>%
@@ -734,7 +734,7 @@ list_references <- list_references %>%
   mutate(year = as.character(year)) %>%
   select(-`prism:coverDate`)
 
-write_csv2(list_references, 'list_ref_test_to_delete.csv')
+#write_csv2(list_references, 'list_ref_test_to_delete.csv')
 ```
 
 ```{r}
@@ -899,16 +899,26 @@ missing_years <- py$list_references_standardized %>%
 
 ```
 
-## Construct the dataframes
+## Construct the networks
 
-### Construct the dataframe for the network of references
+Ipysigma allows us to view different information when clicking on the nodes. This enhances the interactive experience by providing context-relevant details for each node in the network.
+
+To achieve this functionality, we have two primary options:
+
+-   The first is to create a loop that assigns the relevant information, such as author name, year, title, and source title, to each individual node. We have done this for the authors' networks.
+
+-   The second option is to construct a dictionary where each node serves as a key and the corresponding information serves as the value.
+
+We opted for the latter approach here. This dictionary is then passed as attributes to the nodes using NetworkX's **`set_node_attributes`** property.
+
+### Another function to graph them all
 
 ```{python}
 #| label: citations-construct-dataframes
 
 def get_citations_df(df, start_year=None, end_year=None):
     """
-    Filter and extract necessary columns for citation network from a DataFrame based on a range of years.
+    Filter and extract necessary columns for a citation network from a DataFrame based on a range of years.
     
     Parameters:
     - df: DataFrame containing the data
@@ -919,52 +929,26 @@ def get_citations_df(df, start_year=None, end_year=None):
     - DataFrame with filtered data
     """
     
-    # Replace 'NA' with numpy.nan and reassign the DataFrame
-    df = df.replace({'year': 'NA'}, np.nan)
-    
-    # Drop rows where 'year' is NaN
-    df = df.dropna(subset=['year'])
-    
-    # Convert the 'year' column to integer using .astype
-    df['year'] = df['year'].astype(int)
-    
-    # Filter the data based on the 'year' column only if start_year and end_year are provided
+    # Only apply filtering if both start_year and end_year are provided
     if start_year is not None and end_year is not None:
+        # Filter the data based on the 'year' column for the given range
         df = df[df['year'].between(start_year, end_year)]
-    
+        
     # Extract necessary columns for the citation network
-    citations_df = df[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby_count', 'citations_per_year' , 'author', 'year']]
+    # (Assuming these are the columns you need. Adjust if necessary.)
+    citations_df = df[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby_count', 'citations_per_year', 'author', 'year']]
     
+    # Rename the 'citedby_count' column to 'citations'
+    citations_df = citations_df.rename(columns={'citedby_count': 'citations'})
+
     return citations_df
 
-# Using the function to get a->b standardized data for the citations networks below
-citations_df_2022_2023 = get_citations_df(list_references_standardized, 2022, 2023)
-citations_df_2018_2021 = get_citations_df(list_references_standardized, 2018, 2021)
-citations_df_2013_2017 = get_citations_df(list_references_standardized, 2013, 2017)
-citations_df_before_2013 = get_citations_df(list_references_standardized, 0, 2012)
-citations_df_overall = get_citations_df(list_references_standardized)  #No filter on years: 
-
-```
-
-### Add information about references and citing articles to the dataframes
-
-Ipysigma allows us to view different information when clicking on the nodes. This enhances the interactive experience by providing context-relevant details for each node in the network.
-
-To achieve this functionality, we have two primary options:
-
--   The first is to create a loop that assigns the relevant information, such as author name, year, title, and source title, to each individual node.
-
--   The second option is to construct a dictionary where each node serves as a key and the corresponding information serves as the value.
-
-We opted for the latter approach. This dictionary is then passed as attributes to the nodes using NetworkX's **`set_node_attributes`** property.
-
-```{python}
-#| label: citations-add-information
-
+  
 def sort_dict(dict):
     sorted_dict = {k: v for k, v in sorted(dict.items(), key=lambda item: item[0])}
     return sorted_dict
-  
+
+
 def get_info_references_dict(df, key, column):
     """
     Create a dictionary with keys from the specified key_column and values from the specified value_column.
@@ -979,100 +963,40 @@ def get_info_references_dict(df, key, column):
     return sort_dict(df.set_index(key)[column].to_dict())
   
 
-# We also need to get the info of the citing articles, otherwise we won't get any info when we click 
-# on the nodes and we will have the number of the node as node label instead of the author name
-# Create the 'citing_art' column by stripping the first 10 characters from 'dc_identifier'
-data['citing_art'] = data['dc_identifier'].str[10:]
+  
+def sigma_graph_references(df, start_year=None, end_year=None):
+        
+    citations_df = get_citations_df(list_references_standardized, start_year, end_year)# Create a graph from the given dataframe
+    
+    # Initialize the output dictionary
+    dict_references = {}
+    
+    columns_to_extract = ['title', 'sourcetitle', 'author', 'year', 'citedby_count', 'citations_per_year']
+    
+    # Create the period label with start_year and end_year
+    period_label = "{}_{}".format(start_year, end_year) if start_year and end_year else "overall"
 
-# Getting the current year
-current_year = datetime.now().year
+    # Initialize the nested dictionary for this period
+    dict_references = {period_label: {}}
 
-# English Comment: Function to calculate citations per year, handles NaN values, division by zero, and the current year.
-def calculate_citations_per_year(row):
-    if pd.isna(row['year']):
-        return np.nan
-    elif (current_year - row['year']) == 0:
-        return 0  # Handle division by zero by returning 0
-    else:
-        return round(row['citedby_count'] / (current_year - row['year']), 2)
-
-# Creating the new column 'citations_per_year'
-data['citations_per_year'] = data.apply(calculate_citations_per_year, axis=1)
-
-# List of columns to use in the networks later as attributes. We can add more columns if we want to.
-columns_to_extract = ['title', 'sourcetitle', 'citedby_count', 'author', 'year', 'citations_per_year']
-
-# Dictionary of dataframes with their respective names
-dfs = {
-    "2022_2023": citations_df_2022_2023,
-    "2018_2021": citations_df_2018_2021,
-    "2013_2017": citations_df_2013_2017,
-    "before_2013": citations_df_before_2013,
-    "overall": citations_df_overall
-}
-
-
-# Map old column names to new column names
-column_mapping = {
-    'title': 'dc_title',
-    'sourcetitle': 'prism_publicationName',
-    'author': 'dc_creator',
-    'year': 'year',
-    'citations': 'citedby_count',
-    'citations_per_year': 'citations_per_year'
-}
-
-# Reverse mapping for merging
-reverse_column_mapping = {v: k for k, v in column_mapping.items()}
-
-# Rename columns in data DataFrame for merging
-data.rename(columns=reverse_column_mapping, inplace=True)
-
-
-# Initialize the output dictionary
-dict_references = {}
-
-# Retrieve the information for each period and each column
-for period, df in dfs.items():
-    dict_references[period] = {}
     for column in columns_to_extract:
-        # This check is important in case all columns are not present across all dataframes
+        # Check if the column exists in the DataFrame
         if column in df.columns:
-            dict_references[period][column] = get_info_references_dict(df, 'scopus_id', column)
+            # Populate the dictionary with the column data using the get_info_references_dict function
+            dict_references[period_label][column] = get_info_references_dict(df, 'scopus_id', column)
 
-    # Get the citing_art dictionary from 'data' DataFrame
+    # Get the citing_art dictionary from 'data' DataFrame and merge
     for column in columns_to_extract:
+        # Check if the column exists in the 'data' DataFrame
         if column in data.columns:
             citing_art_dict = get_info_references_dict(data, 'citing_art', column)
-            
-            # Add to dict_references only if key is not already present 
-            # It means that the article in our data has been cited by others and is then already present in the references dataframe
+            # Merge the dictionaries, checking for the presence of the key
             for key, value in citing_art_dict.items():
-                if key not in dict_references[period].get(column, {}):
-                    dict_references[period].setdefault(column, {})[key] = value
-
-
-#print(dict_references) 
-
-# Just to check if the key is in the dictionary
-#if "85149566147" in dict_references['2022_2023']['author']:
-    #print("The key '85149566147' exists.")
-#else:
-    #print("The key '85149566147' does not exist.")
-
-```
-
-## Construct the networks with ipysigma
-
-### Another function to graph them all
-
-```{python}
-#| label: citations-construct-networks
-
-def sigma_graph_references(dataframe, period_label):
-        
-    # Create a graph from the given dataframe
-    G = nx.from_pandas_edgelist(dataframe, 'citing_art', 'scopus_id', create_using=nx.DiGraph())
+                if key not in dict_references[period_label].get(column, {}):
+                    dict_references[period_label].setdefault(column, {})[key] = value
+                        
+                        
+    G = nx.from_pandas_edgelist(citations_df, 'citing_art', 'scopus_id', create_using=nx.DiGraph())
     
     # Fetch attributes for the given period from the global dict_references
     attributes_dict = dict_references.get(period_label, {})
@@ -1104,11 +1028,25 @@ def sigma_graph_references(dataframe, period_label):
     #nx.set_node_attributes(G, node_degree_constraint_weighted, 'burt\'s constraint weighted')
     nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt constraint unweighted')
     
-    # Set node attributes based on the selected 'year_period'
-    
+    # Layout settings of graphology  https://graphology.github.io/standard-library/layout-forceatlas2#settings
+    # Some experiments of the different settings: https://observablehq.com/@mef/forceatlas2-layout-settings-visualized
+    layout_settings = {
+    'adjustSizes': False,                          # ?boolean false: should the node’s sizes be taken into account?
+    'barnesHutOptimize': True,                     # ?boolean false: whether to use the Barnes-Hut approximation to compute repulsion in O(n*log(n)) rather than default O(n^2), n being the number of nodes.
+    'barnesHutTheta': 0.5,                         # ?number 0.5: Barnes-Hut approximation theta parameter.
+    'edgeWeightInfluence': 1,                      # ?number 1: influence of the edge’s weights on the layout. To consider edge weight, don’t forget to pass weighted as true when applying the synchronous layout or when instantiating the worker.
+    'gravity': 1,                                 # ?number 1: strength of the layout’s gravity.
+    'linLogMode': True,                            # ?boolean false: whether to use Noack’s LinLog model.
+    'outboundAttractionDistribution': False,       # ?boolean false
+    'scalingRatio': 1,                             # ?number 1
+    'slowDown': 1,                                 # ?number 1
+    'strongGravityMode': False                     # ?boolean false
+    }
+ 
 
     # Construct the sigma graph and customize visualization
     Sigma.write_html(G,
+                 #layout_settings        = layout_settings,                                       # Set layout settings
                  default_edge_type      = "arrow",                                                # Set default edge type
                  fullscreen             = True,                                                   # Display in fullscreen mode
                  label_density          = 2,                                                      # Increase this to have more labels appear
@@ -1119,17 +1057,17 @@ def sigma_graph_references(dataframe, period_label):
                  node_label             = "author",                                               # Set node label from 'author' attribute
                  node_label_size        = G.in_degree,                                            # Set node label size
                  node_label_size_range  = (12, 36),                                               # Set node label size range
-                 node_metrics           = {"community": {"name": "louvain", "resolution": 1}},    # Specify node metrics
+                 node_metrics           = {"community": {"name": "louvain", "resolution": 2}},    # Specify node metrics
                  node_size              = G.in_degree,                                            # Set node size based on the in_degree attribute
                  node_size_range        = (3, 30),                                                # Set node size range
-                 path                   = f"networks/references/{period_label}_sigma.html",       # Specify the output file path
+                 path                   = f"networks/references/{period_label}_sigmadefault.html",       # Specify the output file path
                  start_layout           = 10                                                       # Start the layout algorithm automatically and lasts 5 seconds
                  #node_border_color     = "black",                                                # Set node border color
                  #edge_color            = "source",                                               # Set edge color from 'source' attribute
                  )
 
-    return G
-
+    return G, citations_df
+  
 ```
 
 ### Citations network for 2022-2023 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2022_2023_sigma.html))
@@ -1137,7 +1075,7 @@ def sigma_graph_references(dataframe, period_label):
 ```{python}
 #| label: citations-construct-network-2022-2023
 
-G_2022_2023_references = sigma_graph_references(citations_df_2022_2023, "2022_2023")
+G_2022_2023_references, df_2022_2023_references = sigma_graph_references(list_references_standardized, 2022, 2023)
 
 ```
 
