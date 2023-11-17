@@ -1,0 +1,543 @@
+---
+title: "Systematic literature review"
+bibliography: references.bib
+title-block-banner: true
+subtitle: "A focus on citations/references with networks"
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+date : "last-modified"
+toc: true
+number-sections: true
+number-depth: 10
+format:
+  html:
+    theme:
+      light: yeti
+      #dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1000px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+---
+
+## Citations networks
+
+Let's now dive into the exploration of citation networks. We'll be employing the same approach that we used for analyzing co-authorship networks across different time periods.
+
+In this new investigation, our primary aim remains the acquisition of valuable insights into the ever-evolving landscape of research in marketing using NLP methods.
+
+This research is motivated by the convergence of two critical factors:
+
+1.  The advent of novel tools and techniques that facilitate the analysis of large data volumes ;
+
+2.  The proliferation and the availability of open and private data from various sectors.
+
+While our prior work focused on uncovering emerging research topics, our current focus is about comprehending which papers have garnered the most attention. We seek to determine whether it is predominantly computer science papers that have inspired marketing scholars with new perspectives into data analysis or if marketing papers have also played a role in advocating the development of new theories.
+
+### Data preparation and summary
+
+We'll start by loading the data of references and preparing it for the analysis.
+
+## Libraries and preparing data
+
+```{python}
+#| label: load-libraries-python
+#| echo: false
+
+#Libraries
+import pandas as pd
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import plotly.express as px
+import re
+
+from ipysigma import Sigma, SigmaGrid
+from itertools import combinations
+from datetime import datetime
+from functools import partial
+
+
+#Data
+data = pd.read_csv("data_final.csv")
+data.rename(columns={'citedby-count': 'citedby_count'}, inplace=True)
+# Remove useless characters to keep scopus_id only (e.g. "2-s2.0-85152647358'" becomes "85152647358")
+data['eid'] = data['eid'].str.split('-').str[-1]
+data.rename(columns={'authname': 'author'}, inplace=True)
+```
+
+```{r}
+#| label: citations-data-preparation
+library(tidyverse)
+library(reactable)
+library(gt)
+library(skimr)
+library(plotly)
+library(reticulate)
+library(patchwork)
+# Load the data of references
+list_references <- read_csv2('nlp_references_final_18-08-2023.csv')
+
+# Get the current year
+current_year <- as.integer(format(Sys.Date(), "%Y"))
+
+# Perform the following operations on the list_references DataFrame:
+# 1. Select the first 32 columns
+# 2. Extract the relevant part of the 'citing_art' column
+# 3. Rename columns for easier reference
+# 4. Reorder the 'scopus_id' column
+# 5. Extract the year from the 'prism:coverDate' column
+# 6. Calculate the 'citations_per_year' column
+# 7. Round the 'citations_per_year' column to two decimal places
+# 8. Remove the original 'prism:coverDate' column
+
+#list_references %>%
+  #filter(is.na(year))
+
+list_references <- list_references %>%
+  select(1:32) %>%
+  mutate(citing_art = substr(citing_art, 11, nchar(citing_art))) %>%
+  rename(author = `author-list.author.ce:indexed-name`,
+         scopus_id = `scopus-id`,
+         citedby_count = `citedby-count`) %>%
+  relocate(scopus_id, .after = citing_art) %>%
+  mutate(year = as.integer(substr(`prism:coverDate`, 1, 4))) %>%
+  mutate(citations_per_year = ifelse(!is.na(citedby_count) & !is.na(year), 
+                                     citedby_count / (current_year - year + 1), 
+                                     NA)) %>%
+  mutate(citations_per_year = round(citations_per_year, 2)) %>%
+  mutate(year = as.character(year)) %>%
+  select(-`prism:coverDate`)
+
+#write_csv2(list_references, 'list_ref_test_to_delete.csv')
+```
+
+```{r}
+#| label: summary-references-data
+skim(list_references)
+```
+
+#### Detect inconsistencies
+
+There are some problems with the data that we need to address before proceeding with the analysis.
+
+Some `scopus_id` identifiers (the id of the reference that appears in our marketing NLP corpus articles) have multiple different values of title (even only minor differences), sourcetitle, etc. although they should be equal.
+
+We want to plot the networks with information about the nodes but we need to have only one unique value for each variable of `scopus_id`.
+
+```{python}
+#| label: citations-detect-inconsistencies
+
+list_references = r.list_references
+
+# Group by 'scopus_id' and count the unique number of 'title' for each 'scopus_id'
+title_counts = list_references.groupby('scopus_id')['title'].nunique()
+
+# Find the 'scopus_id' that have more than one associated title
+inconsistent_scopus_id = title_counts[title_counts > 1].index.tolist()
+```
+
+#### List of all inconsistencies
+
+```{r}
+#| label: citations-show-inconsistencies
+
+list_inconsistencies <- list_references %>%
+  filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
+  select(scopus_id, citing_art, title, sourcetitle, year, author)
+
+
+reactable(
+  list_inconsistencies,
+  striped = TRUE,
+  groupBy = "scopus_id",
+  defaultPageSize = 5,
+  defaultColDef = colDef(minWidth = 100, maxWidth = 200),  # Adjust these values as needed
+  columns = list(
+    title = colDef(minWidth = 250)  # Adjust this value based on the length of your titles
+  )
+)
+```
+
+#### Correct inconsistencies
+
+To correct the inconsistencies, we'll use the `standardize_values()` function. Specifically:
+
+1.  **Grouping by Unique Identifiers**: We first organize data by a unique identifier like `scopus_id`. This collates all relevant entries for a particular article or reference.
+
+2.  **Standardizing Titles and Source Names**: Next, within each group, we harmonize key values such as article titles, source names, and author names to remove variations.
+
+3.  **Standardization Priorities**: To choose the 'standard' value within each group, we apply a set of rules that favor the most commonly occurring value, using additional tie-breaker criteria as needed (number of characters, capitalized letters).
+
+```{python}
+#| label: citations-correct-inconsistencies
+
+def standardize_values(df, groupby_column, value_column):
+    """
+    Standardize the values of the specified column based on the most frequent non-empty value and fewest characters 
+    within each group.
+
+    Parameters:
+    - df: DataFrame
+    - groupby_column: The column by which we group data.
+    - value_column: The column whose values we want to standardize based on the rules.
+
+    Returns:
+    - DataFrame with standardized values.
+    """
+    
+    def custom_mode(series):
+        # Remove NA values and other representations of NA
+        series = series.dropna()
+        series = series[~series.isin(['', 'NA'])]
+        
+        # If all values were NA or empty
+        if series.empty:
+            return np.nan  # Using numpy's nan for consistency
+
+        # Get value counts
+        counts = series.value_counts()
+
+        # If there's a single most common value, return it
+        if len(counts) == 1 or counts.iloc[0] != counts.iloc[1]:
+            return counts.idxmax()
+
+        # If multiple values have the same max count, apply further rules
+        top_values = counts[counts == counts.iloc[0]].index.tolist()
+
+        # Sort by fewest characters
+        sorted_by_chars = sorted(top_values, key=lambda x: len(x))
+
+        # If there's a single value with the fewest characters, return it
+        if len(sorted_by_chars) == 1 or len(sorted_by_chars[0]) != len(sorted_by_chars[1]):
+            return sorted_by_chars[0]
+
+        # If the column is not the author's name, apply the uppercase letter rule.
+        if value_column != "author_name":  # adjust "author_name" to the correct column name if necessary
+            return sorted(sorted_by_chars, key=lambda x: sum(1 for c in x if c.isupper()), reverse=True)[0]
+        else:
+            return sorted_by_chars[0]
+
+    # Find the most common value for each group based on the custom mode
+    most_common_value = df.groupby(groupby_column)[value_column].apply(custom_mode).to_dict()
+
+    # Map the most common values to the dataframe based on the group
+    df[value_column] = df[groupby_column].map(most_common_value)
+
+    return df
+
+
+# Usage example:
+list_references_standardized = standardize_values(list_references, 'scopus_id', 'title')
+list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'sourcetitle')
+list_references_standardized = standardize_values(list_references_standardized, 'scopus_id', 'author')
+
+```
+
+#### Check inconsistencies
+
+We check that the inconsistencies have been corrected.
+
+```{r}
+#| label: citations-check-inconsistencies
+
+check_inconsistencies <- py$list_references_standardized %>%
+  filter(scopus_id %in% py$inconsistent_scopus_id) %>% #we take the inconsistent scopus_id from python by using reticulate
+  select(scopus_id, citing_art, title, sourcetitle, year, author)
+
+
+reactable(
+  check_inconsistencies,
+  striped = TRUE,
+  defaultPageSize = 5,
+  groupBy = "scopus_id",
+  defaultColDef = colDef(minWidth = 100, maxWidth = 200), 
+  columns = list(
+    title = colDef(minWidth = 250)
+  )
+)
+
+```
+
+#### Get missing data (to be done later if necessary)
+
+We have a lot of missing data when it comes to the year of publication of the articles, the title, the sourcetitle the authors, DOI. It could be helpful to retrieve these data so we can see them when we click on the nodes.
+
+```{r}
+#| label: citations-get-missing-data-todo
+
+# First, let's construct a df where "year" is missing::
+missing_years <- py$list_references_standardized %>%
+  filter(year == "NA") %>%
+  select(scopus_id, citing_art, title, sourcetitle, year, author, `ce:doi`)
+
+
+```
+
+## Construct the networks
+
+Ipysigma allows us to view different information when clicking on the nodes. This enhances the interactive experience by providing context-relevant details for each node in the network.
+
+To achieve this functionality, we have two primary options:
+
+-   The first is to create a loop that assigns the relevant information, such as author name, year, title, and source title, to each individual node. We have done this for the authors' networks.
+
+-   The second option is to construct a dictionary where each node serves as a key and the corresponding information serves as the value.
+
+We opted for the latter approach here. This dictionary is then passed as attributes to the nodes using NetworkX's **`set_node_attributes`** property.
+
+### Another function to graph them all
+
+```{python}
+#| label: citations-construct-dataframes
+
+def get_citations_df(df, data, start_year=None, end_year=None):
+    """
+    Filter and extract necessary columns for a citation network from a DataFrame based on a range of years.
+    
+    Parameters:
+    - df: DataFrame containing the data
+    - start_year: Optional, the starting year for filtering
+    - end_year: Optional, the ending year for filtering
+    
+    Returns:
+    - DataFrame with filtered data
+    """
+    
+    # Convert 'NA' strings to NaN and the column to numeric
+    df['year'] = pd.to_numeric(df['year'], errors='coerce')
+    
+    # Only apply filtering if both start_year and end_year are provided
+    if start_year is not None and end_year is not None:
+        # Filter the data based on the 'year' column for the given range
+        df = df[df['year'].between(start_year, end_year)]
+        data = data[data['year'].between(start_year, end_year)]
+        
+    # Extract necessary columns for the citation network
+    # Change here if we need more or less columns
+    citations_df = df[['citing_art', 'scopus_id', 'sourcetitle', 'title', 'citedby_count', 'citations_per_year', 'author', 'year']]
+    
+    # Rename the 'citedby_count' column to 'citations'
+    citations_df = citations_df.rename(columns={'citedby_count': 'citations'})
+
+    return citations_df
+
+  
+def sort_dict(dict):
+    sorted_dict = {k: v for k, v in sorted(dict.items(), key=lambda item: item[0])}
+    return sorted_dict
+
+
+def get_info_references_dict(df, key, column):
+    """
+    Create a dictionary with keys from the specified key_column and values from the specified value_column.
+
+    :param df: Input DataFrame.
+    :param key_column: Column name to be used as keys in the resulting dictionary.
+    :param value_column: Column name to be used as values in the resulting dictionary.
+    :return: Dictionary with keys from key_column and values from value_column.
+    """
+    if key not in df.columns and column not in df.columns:
+        raise ValueError(f"Both key '{key}' and column '{column}' are not present in the DataFrame.")
+    elif key not in df.columns:
+        raise ValueError(f"The key '{key}' is not present in the DataFrame.")
+    elif column not in df.columns:
+        raise ValueError(f"The column '{column}' is not present in the DataFrame.")
+    
+    return sort_dict(df.set_index(key)[column].to_dict())
+  
+
+  
+def sigma_graph_references(df, data, start_year=None, end_year=None):
+
+    citations_df = get_citations_df(df, data , start_year, end_year)# Create a graph from the given dataframe
+
+    # Initialize the output dictionary
+    dict_references = {}
+    
+    columns_to_extract = ['title', 'sourcetitle', 'author', 'year', 'citedby_count', 'citations_per_year']
+    
+    # Create the period label with start_year and end_year
+    period_label = "{}_{}".format(start_year, end_year) if start_year and end_year else "overall"
+
+    # Initialize the nested dictionary for this period
+    dict_references = {period_label: {}}
+
+    for column in columns_to_extract:
+        # Check if the column exists in the DataFrame
+        if column in df.columns:
+            # Populate the dictionary with the column data using the get_info_references_dict function
+            dict_references[period_label][column] = get_info_references_dict(df, 'scopus_id', column)
+
+    # Get the citing_art dictionary from 'data' DataFrame and merge
+    for column in columns_to_extract:
+        # Check if the column exists in the 'data' DataFrame
+        if column in data.columns:
+            citing_art_dict = get_info_references_dict(data, 'eid', column)
+            # Merge the dictionaries, checking for the presence of the key
+            for key, value in citing_art_dict.items():
+                if key not in dict_references[period_label].get(column, {}):
+                    dict_references[period_label].setdefault(column, {})[key] = value
+                        
+                        
+    G = nx.from_pandas_edgelist(citations_df, 'citing_art', 'scopus_id', create_using=nx.DiGraph())
+    
+    # Fetch attributes for the given period from the global dict_references
+    attributes_dict = dict_references.get(period_label, {})
+
+    # Set the attributes from dict_references to the nodes of the graph
+    for attribute, attribute_dict in attributes_dict.items():
+        nx.set_node_attributes(G, attribute_dict, name=attribute)
+
+    # Set edge colors for visualization
+    for u, v in G.edges:
+        G[u][v]["color"] = "#7D7C7C"
+
+    # Calculate the degree of each node
+    node_degree = dict(G.degree)
+
+    # Compute multiple centrality metrics for nodes
+    node_degree_centrality = nx.degree_centrality(G)
+    node_degree_betweenness = nx.betweenness_centrality(G)
+    node_degree_closeness = nx.closeness_centrality(G)
+    node_degree_eigenvector = nx.closeness_centrality(G)
+    node_degree_constraint_unweighted = nx.constraint(G)
+    
+    # Set node attributes for various metrics
+    nx.set_node_attributes(G, node_degree_centrality, 'centrality')
+    nx.set_node_attributes(G, node_degree_betweenness, 'betweenness')
+    nx.set_node_attributes(G, node_degree_closeness, 'closeness')
+    nx.set_node_attributes(G, node_degree_eigenvector, 'eigenvector centrality')
+    nx.set_node_attributes(G, node_degree_constraint_unweighted, 'burt constraint unweighted')
+    
+    # Layout settings of graphology  https://graphology.github.io/standard-library/layout-forceatlas2#settings
+    # Some experiments of the different settings: https://observablehq.com/@mef/forceatlas2-layout-settings-visualized
+    layout_settings = {
+    'adjustSizes': False,                          # ?boolean false: should the node’s sizes be taken into account?
+    'barnesHutOptimize': True,                     # ?boolean false: whether to use the Barnes-Hut approximation to compute repulsion in O(n*log(n)) rather than default O(n^2), n being the number of nodes.
+    'barnesHutTheta': 0.5,                         # ?number 0.5: Barnes-Hut approximation theta parameter.
+    'edgeWeightInfluence': 1,                      # ?number 1: influence of the edge’s weights on the layout. To consider edge weight, don’t forget to pass weighted as true when applying the synchronous layout or when instantiating the worker.
+    'gravity': 1,                                 # ?number 1: strength of the layout’s gravity.
+    'linLogMode': True,                            # ?boolean false: whether to use Noack’s LinLog model.
+    'outboundAttractionDistribution': False,       # ?boolean false
+    'scalingRatio': 1,                             # ?number 1
+    'slowDown': 1,                                 # ?number 1
+    'strongGravityMode': False                     # ?boolean false
+    }
+ 
+
+    # Construct the sigma graph and customize visualization
+    Sigma.write_html(G,
+                 #layout_settings        = layout_settings,                                       # Set layout settings
+                 default_edge_type      = "arrow",                                                # Set default edge type
+                 fullscreen             = True,                                                   # Display in fullscreen mode
+                 label_density          = 2,                                                      # Increase this to have more labels appear
+                 label_font             = "Helvetica Neue",                                       # Set label font
+                 max_categorical_colors = 30,                                                     # Max categorical colors for communities
+                 node_border_color_from = 'node',                                                 # Set node border color from 'node' attribute
+                 node_color             = "community",                                            # Set node colors
+                 node_label             = "author",                                               # Set node label from 'author' attribute
+                 node_label_size        = G.in_degree,                                            # Set node label size
+                 node_label_size_range  = (12, 36),                                               # Set node label size range
+                 node_metrics           = {"community": {"name": "louvain", "resolution": 2}},    # Specify node metrics
+                 node_size              = G.in_degree,                                            # Set node size based on the in_degree attribute
+                 node_size_range        = (3, 30),                                                # Set node size range
+                 path                   = f"networks/references/{period_label}_sigmadefault.html",       # Specify the output file path
+                 start_layout           = 10                                                       # Start the layout algorithm automatically and lasts 5 seconds
+                 #node_border_color     = "black",                                                # Set node border color
+                 #edge_color            = "source",                                               # Set edge color from 'source' attribute
+                 )
+
+    return G, citations_df
+  
+```
+
+### Citations network for 2022-2023 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2022_2023_sigma.html))
+
+```{python}
+#| label: citations-construct-network-2022-2023
+
+G_2022_2023_references, df_2022_2023_references = sigma_graph_references(list_references_standardized, data, 2022, 2023)
+
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/2022_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+### Citations network for 2018-2021 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2018_2021_sigma.html))
+
+```{python}
+#| label: citations-construct-network-2018-2021
+
+
+G_2018_2021_references, df_2018_2021_references = sigma_graph_references(list_references_standardized, data, 2018, 2021)
+
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/2018_2021_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+### Citations network for 2013-2017 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/2013_2017_sigma.html))
+
+```{python}
+#| label: citations-construct-network-2013-2017
+
+G_2013_2017_references, df_2013_2017_references = sigma_graph_references(list_references_standardized, data, 2013, 2017)
+
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/2013_2017_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+### Citations network for before 2013 ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/0_2013_sigma.html))
+
+```{python}
+#| label: citations-construct-network-before-2013
+
+
+G_before_2013_references, df_before_2013_references = sigma_graph_references(list_references_standardized, data, 0, 2013)
+
+
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/0_2013_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+### Citations network for overall ([click here for fullscreen](https://oliviercaron.github.io/systematic_lit_review/networks/references/0_2023_sigma.html))
+
+```{python}
+#| label: citations-construct-network-overall
+
+G_before_2013_references, df_before_2013_references = sigma_graph_references(list_references_standardized, data, 0, 2023)
+
+
+```
+
+```{=html}
+<iframe width="1500" height="900" src="networks/references/0_2023_sigma.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
