@@ -1,0 +1,664 @@
+---
+title: "Systematic Literature Review"
+date: "today"
+date-format: long
+author:
+  - name: Olivier Caron
+    email: olivier.caron@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+  - name: Christophe Benavent
+    email: christophe.benavent@dauphine.psl.eu
+    affiliations: 
+      name: "Paris Dauphine - PSL"
+      city: Paris
+      state: France
+toc: true
+number-sections: true
+number-depth: 10
+format:
+  html:
+    theme:
+      light: yeti
+      #dark: darkly
+    code-fold: true
+    code-summary: "Display code"
+    code-tools: true #enables to display/hide all blocks of code
+    code-copy: true #enables to copy code
+    grid:
+      body-width: 1000px
+      margin-width: 100px
+    toc: true
+    toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+fig-align: "center"
+highlight-style: ayu
+css: styles.css
+reference-location: margin
+bibliography: slrbib.bib
+---
+
+# Introduction
+
+
+```{r 0}
+knitr::opts_chunk$set(echo = TRUE,message=FALSE, warning=FALSE)
+library(tidyverse)
+library(Rtsne)
+library(ggrepel)
+library(ggwordcloud)
+
+library(quanteda)
+library(quanteda.textstats)
+library(quanteda.textmodels)
+
+library(word2vec)
+library(Rtsne)
+library(splitstackshape)
+
+library(ape)
+library(cowplot)
+
+library(reticulate)
+
+theme_set(theme_minimal())
+
+library(tidyverse)
+df <- read_delim("nlp_full_data_final_18-08-2023.csv",delim = ";", 
+                 escape_double = FALSE, trim_ws = TRUE) %>%
+  select(1,5,7,8, 14, 15,16,21,23,32,33,39,40,51,52,53) %>%
+  group_by(entry_number) %>%
+  filter(row_number()==1) %>%
+  rename(id=1,title =8, review=9, text=10, keywords =13)
+
+df$review2<- ifelse(str_detect(df$review,"Proceedings")==TRUE, "out", df$review)
+df$review2<- ifelse(str_detect(df$review2, "Conference")==TRUE, "out", df$review2)
+df$review2<- ifelse(str_detect(df$review2, "Transactions")==TRUE, "out", df$review2)
+
+```
+
+# Description
+
+```{r 1}
+#| fig-height: 7
+#| fig-width: 17
+#| column: page
+#| fig-align: center
+df<- df%>%filter(review2 !="out")
+t0 <-as.data.frame(table(df$review2))%>%
+  filter(Freq>3)
+
+g01 <- ggplot(t0, aes(x=reorder(Var1, Freq), y=Freq)) +
+  geom_bar(stat="identity", fill="steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title="Number of Articles per Journal", y="Proportion", x="") +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_text(size = 10)
+  )
+
+t1<-as.data.frame(table(df$year))
+
+# Graph 2: Number of publications per year
+g02 <- ggplot(t1, aes(x=Var1, y=Freq, group=1)) +
+  geom_line(size=1.1, color="steelblue") +
+  geom_point(size=2, color="steelblue") +
+  geom_smooth(color="#7D7C7C", linewidth=0.5)+
+  theme_minimal() +
+  labs(title="Number of Publications per Year", y="", x="Year") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.title.x = element_blank(),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+plot_grid(g01, g02, labels = c('A', 'B'), label_size = 8, ncol=2,  rel_widths =  c(1,1))
+
+ggsave(filename="./images/quant.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
+
+
+```
+
+# Keywords
+
+```{r 2}
+#| fig-height: 5
+#| fig-width: 10
+#| column: page
+#| fig-align: center
+user2<- df %>% 
+  select(id, keywords)%>% 
+  mutate(keywords=tolower(keywords))%>%
+  separate(keywords, sep="\\|", into=c("A1","A2","A3","A4","A5","A6","A7","A8","A9","A10", "A11", "A12", "A13", "A14", "A15", "A16"))%>%
+  pivot_longer(-id, names_to="Rang", values_to = "keywords") %>%
+  filter(!is.na(keywords))
+
+test_user2 <- df %>% 
+  select(id, keywords) %>%
+  mutate(keywords = tolower(keywords)) %>%
+  cSplit('keywords', sep = "|", direction = "wide") %>%
+  pivot_longer(-id, names_to = "Rang", values_to = "keywords", values_drop_na = TRUE)
+
+
+user2$keywords= str_trim(user2$keywords,side ="both")
+
+user2$keywords[user2$keywords=="artificial intelligence (ai)"]<-"ai"
+user2$keywords[user2$keywords=="automated analysis of text"]<-"automated text analysis"
+user2$keywords[user2$keywords=="automated textual analysis"]<-"automated text analysis"
+user2$keywords[user2$keywords=="natural language processinf"]<-"nlp"
+user2$keywords[user2$keywords=="natural language processing (nlp)"]<-"nlp"
+user2$keywords[user2$keywords=="natural language processing (nlp)-based approach"]<-"nlp"
+user2$keywords[user2$keywords=="nlp tools"]<-"nlp"
+user2$keywords[user2$keywords=="natural language processing"]<-"nlp"
+user2$keywords[user2$keywords=="online review"]<-"online reviews"
+user2$keywords[user2$keywords=="online shopping review"]<-"online reviews"
+user2$keywords[user2$keywords=="review"]<-"online reviews"
+user2$keywords[user2$keywords=="reviews"]<-"online reviews"
+user2$keywords[user2$keywords=="topic modelling"]<-"topic modeling"
+user2$keywords[user2$keywords=="user generated content"]<-"user-generated content"
+
+
+# compter les mots cles
+foo<- user2 %>%
+  mutate(n=1) %>%
+  group_by(id,keywords)%>%
+  summarise(n=sum(n))
+
+foo1<- foo %>%
+  group_by(keywords)%>%
+  summarise(m=n())%>%
+  filter(m>1)
+
+set.seed(42)
+ggplot(foo1, aes(label = keywords, size = m)) +
+  geom_text_wordcloud() +
+  scale_size_area(max_size = 10) +
+  theme_minimal()
+
+ggsave(filename="./images/keywords01.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
+
+#projection tsne
+
+foo2<-user2 %>%
+  select(-Rang)%>% 
+  group_by(id,keywords)%>%
+  summarize(n=n()) %>% 
+  pivot_wider(id,names_from = "keywords", values_from ="n" )
+
+foo2<- foo2 %>% 
+  replace(is.na(.),0)  %>%
+  dplyr::select(-id)
+
+
+foo3<-t(foo2)
+tsne_out <- Rtsne(foo3,perplexity = 10, dim=2,  check_duplicates = FALSE) # Run TSNE
+tsne_out2<-as.data.frame(tsne_out$Y)
+keywords<-rownames(foo3)
+library(ggrepel)
+tsne_out3<-cbind(tsne_out2, keywords) 
+tsne_out3<- merge(tsne_out3,foo1)
+tsne_out3%>% 
+  filter(m>0) %>%
+  ggplot(aes(x=V1, y=V2, label=keywords))+
+  geom_point(aes(size=m), alpha=.5)+
+  geom_text_repel(aes(label=ifelse(m>1,keywords,""),size=log(m)),  max.overlaps =50)
+  
+
+ggsave(filename="./images/keywords.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
+```
+
+## With a breakdown of the keywords
+
+The strategy is to reduce the morphologies of the most frequent keywords, in the form of unigrams, and then re-decompose the terms that make up the non-recoded keywords. 
+
+```{r 2b}
+#| fig-height: 5
+#| fig-width: 10
+#| column: page
+#| fig-align: center
+key1<- df %>% 
+  select(id, keywords)%>% 
+  mutate(keywords=tolower(keywords))%>%
+  separate(keywords, sep="\\|", into=c("A1","A2","A3","A4","A5","A6","A7","A8","A9","A10", "A11", "A12", "A13", "A14", "A15", "A16"))%>%
+  pivot_longer(-id, names_to="Rang", values_to = "keywords") %>%
+  filter(!is.na(keywords)) %>%
+  mutate(keywords=str_squish(keywords),
+         keywords=str_replace(keywords, "text mining", "textmining"),
+         keywords=str_replace(keywords, "text-mining", "textmining"),
+         keywords=str_replace(keywords, "text analysis", "textanalysis"),
+         keywords=str_replace(keywords, "text-analysis", "textanalysis"),
+         keywords=str_replace(keywords, "user-generated content", "ugc"),
+         keywords=str_replace(keywords, "user-generated content-ugc", "ugc"),
+         keywords=str_replace(keywords, "user generated content", "ugc"),
+         keywords=str_replace(keywords, "user genrated content (ugc)", "ugc"),
+         keywords=str_replace(keywords, "artificial intelligence", "ai"),
+         keywords=str_replace(keywords, "artificial intelligence", "ai"),
+         keywords=str_replace(keywords, "artificial intelligence (ai)", "ai"),
+         keywords=str_replace(keywords, "artificial neural network", "ai"),
+         keywords=str_replace(keywords, "artificial neural networks", "neural network"),
+         keywords=str_replace(keywords, "natural language processing", "nlp"),
+         keywords=str_replace(keywords, "natural language processing (nlp)", "nlp"),
+         keywords=str_replace(keywords, "natural language processing (nlp)-based approach", "nlp"),
+         keywords=str_replace(keywords, "natural language processing (nlp)-based approach", "nlp"),
+         keywords=str_replace(keywords, "topic model analysis", "topics"),
+         keywords=str_replace(keywords, "topic modeling", "topics"),
+         keywords=str_replace(keywords, "topic modelling", "topics"),
+         keywords=str_replace(keywords, "topic model", "topics"),
+         keywords=str_replace(keywords, "e wom", "ewom"),
+         keywords=str_replace(keywords, "e-wom", "ewom"),
+         keywords=str_replace(keywords, "electronic word-of-mouth", "ewom"),
+         keywords=str_replace(keywords, "electronic word of mouth", "ewom"),
+         keywords=str_replace(keywords, "electronic word of mouth (ewom)", "ewom"),
+         keywords=str_replace(keywords, "online word-of-mouth", "ewom"),
+         keywords=str_replace(keywords, "online word of mouth", "ewom"),
+                  keywords=str_replace(keywords, "online word of mouth", "ewom"),
+         keywords=str_replace(keywords, "negative word-of-mouth  nwom", "ewom"),
+         keywords=str_replace(keywords, "word-of-mouth communication", "ewom"),
+         keywords=str_replace(keywords, "word-of-mouth", "ewom"),
+         keywords=str_replace(keywords, "online review", "reviews"),
+         keywords=str_replace(keywords, "online reviews", "reviews"),
+         keywords=str_replace(keywords, "social media", "socialmedia"),
+         keywords=str_replace(keywords, "latent dirichlet allocation", "lda"),
+         keywords=str_replace(keywords, "latent dirichlet allocation (lda)", "lda"),
+         keywords=str_replace(keywords, "latent dirichlet allocation algorithm", "lda"),
+         keywords=str_replace(keywords, "word embedding", "embedding"),
+         keywords=str_replace(keywords, "word2vec", "embedding"),
+         keywords=str_replace(keywords, "latent dirichlet allocation model", "lda"),
+         keywords=str_replace(keywords, "machine learning", "ml"),         
+         keywords=str_replace(keywords, "machine learning and linguistic analysis", "ml"),
+         keywords=str_replace(keywords, "big data", "bigdata"),
+         keywords=str_replace(keywords, "liwc", "liwc"),
+         keywords=str_replace(keywords, "linguistic inquiry and word count liwc", "liwc"),
+         keywords=str_replace(keywords, "bibliometrics", "bibliometric"),
+         keywords=str_replace(keywords, "\\(", ""),
+         keywords=str_replace(keywords, "\\)", "")
+  )
+foo<-key1%>% group_by(keywords)%>%
+  summarize(n=n())
+foo
+
+key2<- key1 %>% 
+  select(-Rang) %>%
+    separate(keywords, sep=" ", into=c("A1","A2","A3","A4","A5","A6","A7","A8","A9","A10", "A11", "A12", "A13", "A14", "A15", "A16")) %>%
+  pivot_longer(-id, names_to="Rang", values_to = "keywords")  %>% 
+  mutate(n=nchar(keywords)) %>%
+  filter(!is.na(keywords))%>%
+  filter(n>0) %>%select(-n)
+
+key3<-key2%>%
+  group_by(keywords)%>%
+  summarize(k=n())
+
+foo2<-key2 %>%
+  group_by(id,keywords)%>%
+  summarize(m=n()) %>% 
+  pivot_wider(id,names_from = "keywords", values_from ="m", names_repair= "unique" )
+
+foo2<- foo2 %>% 
+  replace(is.na(.),0)  %>%
+  dplyr::select(-1)
+
+
+foo3<-t(foo2)
+tsne_out <- Rtsne(foo3,perplexity = 25, dim=2,  check_duplicates = FALSE) # Run TSNE
+tsne_out2<-as.data.frame(tsne_out$Y)
+keywords<-rownames(foo3)
+library(ggrepel)
+tsne_out3<-cbind(tsne_out2, keywords) 
+tsne_out3<- merge(tsne_out3,key3)
+
+
+tsne_out3%>% 
+  ggplot(aes(x=V1, y=V2, label=keywords))+
+  geom_text_repel(aes(label=ifelse(k>4,keywords,""),size=k), max.overlaps =50)
+  
+
+ggsave(filename="./images/keywords03.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
+
+
+foo<- df%>%select(id,year)
+  
+foo5<-key2 %>%
+  group_by(id,keywords)%>%
+  summarize(m=n()) %>% 
+  left_join(foo) %>%
+  group_by(year,keywords)%>%
+  summarise(m=sum(m))%>%
+  left_join(key3)%>%
+  filter(keywords=="ai"| keywords=="textmining"| keywords=="nlp" | keywords=="topics" | 
+           keywords=="lda"| keywords=="ml"|keywords=="embbeding" |keywords=="liwc")
+
+ggplot(foo5, aes(x=year, y=m, group=keywords))+geom_area(aes(fill=keywords))
+
+foo5<-key2 %>%
+  group_by(id,keywords)%>%
+  summarize(m=n()) %>% 
+  left_join(foo) %>%
+  group_by(year,keywords)%>%
+  summarise(m=sum(m))%>%
+  left_join(key3)%>%
+  filter(keywords=="ewom"| keywords=="reviews"| keywords=="socialmedia" | keywords=="ugc"| keywords=="bibliometric")
+
+ggplot(foo5, aes(x=year, y=m, group=keywords))+geom_area(aes(fill=keywords))
+
+```
+
+# Structural topic model (STM)
+
+## Data preparation
+
+```{r 3 }
+library(quanteda)
+library(stm)
+df$Texte<-paste(df$title, " . ", df$text, df$keywords)
+
+df$year<-ifelse(df$year<2011,2010, 
+                ifelse(df$year>2010 & df$year<2016,2015,
+                       ifelse(df$year>2015 & df$year<2020,2019,df$year)))%>%
+  as.character()
+table(df$year)
+corpus <- quanteda::corpus(
+            df,
+            text_field = "Texte",
+            docid_field = "id",
+            unique_docnames = FALSE
+            )
+
+corpus_dfm <-
+      quanteda::dfm(corpus) %>%
+    quanteda::dfm_trim(
+      # tokens_remove = 'nan',
+      # Get rid of any word that doesn't occur at least x
+       min_termfreq = 5,
+       # Get rid of any word that is in at least x per cent of documents
+       max_docfreq = 0.9,
+       # Below we specify percentages - we can specify counts or ranks
+       docfreq_type = "prop"
+     ) %>%
+    quanteda::dfm_keep(
+      # '[a-zA-Z]',         # filter out terms without alpha
+      # valuetype='regex',
+      min_nchar = 2)        # Only words with at least 3 characters
+
+out <- quanteda::convert(corpus_dfm, to = 'stm')
+
+
+K = 16 # number of topics
+
+FORMULA_RANGE <-paste("1",as.character(K), sep=":")
+PREVALENCE_FORMULA <- as.formula(paste("~", "year"))
+PREVALENCE_FORMULA_EFFECT <- as.formula( paste(FORMULA_RANGE, paste("~ ", "year",  collapse="+") ) )
+
+OUTPUT_PATH <- "./"
+OUTPUT_FILE <- sprintf("STM_model_%s.RData", K)
+
+message(PREVALENCE_FORMULA)
+message(PREVALENCE_FORMULA_EFFECT)
+message(OUTPUT_FILE)
+
+```
+## Estimation
+
+```{r 3b }
+
+t1=Sys.time()
+stm_model <- stm::stm(
+                        documents = out$documents, 
+                        vocab = out$vocab,
+                        data = out$meta,
+                        K = K, 
+                        prevalence = PREVALENCE_FORMULA,
+                        verbose = TRUE, # show progress
+                        init.type = "Spectral",
+                        seed = 56,
+                        emtol = 1e-05,
+                        max.em.its=40
+                      )
+t2=Sys.time()
+
+
+stm_effects <- stm::estimateEffect(PREVALENCE_FORMULA_EFFECT,
+      stmobj = stm_model, metadata = out$meta)
+
+saveRDS(stm_model, "stm_model.rds")
+saveRDS(stm_effects, "stm_effects.rds")
+
+
+stm_model<-readRDS("stm_model.rds")
+stm_effects<-readRDS("stm_effects.rds")
+
+labelTopics(stm_model, topics = NULL, n = 5, frexweight = 0.5)
+
+```
+
+## Topics' description (beta)
+
+4 indicators: probability, exclusivity, resulting frex, lift and score.
+
+$FREX = \left(\frac{w}{F} + \frac{1-w}{E}\right)^{-1}$
+
+
+
+see lift: 
+$Lift = \beta_{k,v}/(w_v/\sum_v w_v)$
+
+
+the score:
+$\beta_{v, k} (\log \beta_{w,k} - 1 / K \sum_{k'} \log \beta_{v,k'})$
+
+
+```{r 5 }
+#| fig-height: 7
+#| fig-width: 12
+#| column: page
+#| fig-align: center
+beta<-t(stm_model$beta$logbeta[[1]]) %>%
+  as.data.frame()
+
+logbeta<-stm_model$beta$logbeta[[1]]
+
+vocab<-stm_model$vocab %>%
+  as.data.frame()
+
+vocab<- vocab %>% dplyr::rename(feature= 1)
+
+#frequence
+
+beta2<-cbind(vocab, beta) %>%
+  pivot_longer(-feature, names_to="topic", values_to = "logprob") %>%
+  dplyr::group_by(topic)%>%
+ dplyr::mutate(r=rank(desc(logprob)),
+         p=exp(logprob)) %>%
+   dplyr::filter(r<31)
+
+#labelisation des topics
+
+beta3<-calcfrex(logbeta, w = 0.25, wordcounts = NULL)  
+
+beta4<-cbind(vocab, beta3) %>% 
+  as.data.frame() %>%
+  pivot_longer(-feature, names_to="topic2", values_to = "frex") %>%
+  mutate(topic=paste0("V",topic2))
+
+
+beta2<- beta2 %>% 
+  left_join(beta4, by=c("feature", "topic"))
+
+synth<- labelTopics(stm_model, topics = NULL, n = 5, frexweight = 0.25)
+prob<-synth$prob
+frex<-synth$frex
+
+#intitulés suggérés par Bard
+
+beta2$topic[beta2$topic=="V1"]<-"T01 Analyse bibliométrique\ndes recherches marketing"
+beta2$topic[beta2$topic=="V2"]<-"T02 Qualité du service en ligne"
+beta2$topic[beta2$topic=="V3"]<-"T03 Publicité en ligne et contenu personnalisé"
+beta2$topic[beta2$topic=="V4"]<-"T04 Personnalisation du produit et régulation"
+beta2$topic[beta2$topic=="V5"]<-"T05 Consumer exp dictionnary " #il a du mal
+beta2$topic[beta2$topic=="V6"]<-"T06 Avis en ligne et sentiment "
+beta2$topic[beta2$topic=="V7"]<-"T07 Customer online review and satisfaction"
+beta2$topic[beta2$topic=="V8"]<-"T08 Tourism"
+beta2$topic[beta2$topic=="V9"]<-"T09 Decoding Guest Satisfaction Through Airbnb Reviews"
+beta2$topic[beta2$topic=="V10"]<-"T10 Social Media Analysis"
+beta2$topic[beta2$topic=="V11"]<-"T11 Specific Macau"
+beta2$topic[beta2$topic=="V12"]<-"T12 Online Brand Strategy"
+beta2$topic[beta2$topic=="V13"]<-"T13 Text Data for Marketing Decisions"
+beta2$topic[beta2$topic=="V14"]<-"T14 Social Media Engagement"
+beta2$topic[beta2$topic=="V15"]<-"T15 Text Analytics in Market Segmentation"
+beta2$topic[beta2$topic=="V16"]<-"T16 Ewom"
+
+
+#la transparence rend compte de l'exclusitivité frex
+ggplot(beta2)+
+  geom_text_wordcloud(aes(label=feature, size=p, alpha=2100-frex), color="darkblue")+
+  facet_wrap(vars(topic), ncol=4)+
+  scale_size_area(max_size = 7)+
+  theme(strip.text = element_text(size = 14))
+
+ggsave(paste0("./images/stm_topic",K,".jpg"), 
+       plot=last_plot(),
+       width = 28, 
+       height = 20, units = "cm")
+
+
+```
+
+## Prevalence description (beta)
+
+```{r 6}
+#| fig-height: 5
+#| fig-width: 10
+#| fig-align: center
+foo<-stm_effects$parameters
+
+library(tidyr)
+library(plyr)
+
+#pour separer les liste et les transformer en df 
+#attention ça pertube 
+foo1<- ldply(foo, data.frame)%>%
+  select(contains('est')) 
+
+library(dplyr)
+
+
+F<-data.frame(param=c("cte", "2015", "2019","2020","2021","2022","2023")) 
+
+
+# autant de fois que K
+param<-rbind(F, F, F, F, F, F, F, F, F, F,
+             F, F, F, F, F ,F)
+
+
+R<-data.frame(topic=c(
+"T01 bibliometrics consumer",
+"T02 Service quality review",
+"T03 Ads and privacy",
+"T04 Customization",
+"T05 Consumer exp dictionnary ",
+"T06 Product review sentiment ",
+"T07 customer online review",
+"T08 Tourism",
+"T09 Airbnb",
+"T10 Social media",
+"T11 specific",
+"T12 Branding",
+"T13 marketing analytics",
+"T14 engagement media sociaux",
+"T15 marketing strategy",
+"T16 e wom"
+))
+
+#autant de fois que de paramètres
+R<-rbind(R, R, R, R, R, 
+         R, R ) %>% arrange(topic)
+
+
+
+foo2<-cbind(foo1, R, param)%>%
+  pivot_longer(-c("topic","param"), names_to = "sim", values_to = "est") %>%
+  dplyr::group_by(topic,param)%>%
+  dplyr::summarise(mean=mean(est, na.rm=TRUE),
+            se =sd(est)/sqrt(24),
+            t=abs(mean)/se) %>%
+  dplyr::mutate(param= ifelse(param=="cte", "2010", param))
+
+foo3<-cbind(foo1, R, param)%>%
+  pivot_longer(-c("topic","param"), names_to = "sim", values_to = "est") %>%
+  dplyr::group_by(topic,param)%>%
+  dplyr::summarise(mean=mean(est, na.rm=TRUE),
+            se =sd(est)/sqrt(24),
+            t=abs(mean)/se) %>%
+  dplyr::filter(param=="cte")%>%
+  dplyr::select(-2,-4,-5) %>%
+  dplyr::rename(cte = mean)
+
+foo4<-foo2 %>%left_join(foo3) %>% 
+  mutate(mean2=ifelse(param!="2010",mean+cte,mean))
+
+
+# dplyr::mutate(time=ifelse(str_sub(param, 1,1)=="0" |str_sub(param, 1,1)=="1" , "no", "yes"))
+
+
+
+
+
+ggplot(foo4, aes(x=param,y=mean2,group=topic))+
+  geom_bar(stat="identity")+
+#  geom_smooth(se = FALSE )+
+  facet_wrap(vars(topic), scale="fixed",ncol =4)+
+  theme(axis.text.y = element_text(size=5))+
+  theme(axis.text.x = element_text(size=5))+
+  labs(x=NULL, y="prévalence")
+
+
+ggsave(paste0("./images/stm_effect",K,".jpg"), 
+       plot=last_plot(),
+       width = 28, 
+       height = 20, units = "cm")
+library(RColorBrewer)
+
+
+```
+
+## The law of entropy
+
+```{r 7 }
+#| fig-height: 5
+#| fig-width: 8
+#| column: page
+#| fig-align: center
+nb.cols <- 16
+mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
+
+
+ggplot(foo4, aes(x=param,y=mean2,group=topic))+
+  geom_bar(stat="identity", aes(fill=topic))+
+#  geom_smooth(se = FALSE )+
+  theme(axis.text.y = element_text(size=5))+
+  theme(axis.text.x = element_text(size=5))+
+  labs(x=NULL, y="prévalence")+
+  scale_fill_manual(values = mycolors)
+
+
+#entropie
+
+foo5<-foo4%>%select(1,2,7)%>%
+  mutate(e=mean2*log(mean2)) %>%
+  group_by(param) %>%
+  dplyr::summarise(entropie=-sum(e))
+
+foo5$param<-as.numeric(foo5$param)
+ggplot(foo5,aes(x=param, y=entropie, group = 1))+
+  geom_point(stat = "identity")+geom_smooth(se=FALSE)+ylim(1.5,3)
+
+```
+
+
