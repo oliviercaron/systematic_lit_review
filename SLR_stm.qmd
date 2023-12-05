@@ -46,8 +46,8 @@ bibliography: slrbib.bib
 
 # Introduction
 
-
-```{r 0}
+```{r}
+#| label : libraries-data-r
 knitr::opts_chunk$set(echo = TRUE,message=FALSE, warning=FALSE)
 library(tidyverse)
 library(Rtsne)
@@ -64,8 +64,11 @@ library(splitstackshape)
 
 library(ape)
 library(cowplot)
-
+library(reactable)
 library(reticulate)
+library(plotly)
+library(heatmaply)
+library(ggcorrplot)
 
 theme_set(theme_minimal())
 
@@ -81,15 +84,47 @@ df$review2<- ifelse(str_detect(df$review,"Proceedings")==TRUE, "out", df$review)
 df$review2<- ifelse(str_detect(df$review2, "Conference")==TRUE, "out", df$review2)
 df$review2<- ifelse(str_detect(df$review2, "Transactions")==TRUE, "out", df$review2)
 
+# for the networks
+list_articles <- read_csv2("nlp_full_data_final_18-08-2023.csv") %>%
+  select(1,5,7,8, 14, 15,16,21,23,32,33,39,40,51,52,53) %>%
+  rename(id=1,title =8, review=9, text=10, keywords =13)
+
+list_articles$review2<- ifelse(str_detect(list_articles$review,"Proceedings")==TRUE, "out", list_articles$review)
+list_articles$review2<- ifelse(str_detect(list_articles$review2, "Conference")==TRUE, "out", list_articles$review2)
+list_articles$review2<- ifelse(str_detect(list_articles$review2, "Transactions")==TRUE, "out", list_articles$review2)
+list_articles <- list_articles %>% filter(review2 !="out")
+
+```
+
+```{python}
+#| label : libraries-data-python
+
+import community as community_louvain
+import pandas as pd
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import plotly.express as px
+import re
+
+from ipysigma import Sigma, SigmaGrid
+from itertools import combinations
+from datetime import datetime
+from functools import partial
+
+list_articles = r.list_articles
 ```
 
 # Description
 
-```{r 1}
+```{r}
+#| label : description
 #| fig-height: 7
 #| fig-width: 17
-#| column: page
+#| column: screen-right
 #| fig-align: center
+
+
 df<- df%>%filter(review2 !="out")
 t0 <-as.data.frame(table(df$review2))%>%
   filter(Freq>3)
@@ -128,11 +163,13 @@ ggsave(filename="./images/quant.jpeg", plot=last_plot(), width = 27, height = 18
 
 # Keywords
 
-```{r 2}
+```{r}
+#| label : keywords
 #| fig-height: 5
 #| fig-width: 10
 #| column: page
 #| fig-align: center
+
 user2<- df %>% 
   select(id, keywords)%>% 
   mutate(keywords=tolower(keywords))%>%
@@ -216,13 +253,15 @@ ggsave(filename="./images/keywords.jpeg", plot=last_plot(), width = 27, height =
 
 ## With a breakdown of the keywords
 
-The strategy is to reduce the morphologies of the most frequent keywords, in the form of unigrams, and then re-decompose the terms that make up the non-recoded keywords. 
+The strategy is to reduce the morphologies of the most frequent keywords, in the form of unigrams, and then re-decompose the terms that make up the non-recoded keywords.
 
-```{r 2b}
+```{r}
+#| label : keywords2
 #| fig-height: 5
 #| fig-width: 10
 #| column: page
 #| fig-align: center
+
 key1<- df %>% 
   select(id, keywords)%>% 
   mutate(keywords=tolower(keywords))%>%
@@ -354,7 +393,9 @@ ggplot(foo5, aes(x=year, y=m, group=keywords))+geom_area(aes(fill=keywords))
 
 ## Data preparation
 
-```{r 3 }
+```{r}
+#| label: data-preparation
+
 library(quanteda)
 library(stm)
 df$Texte<-paste(df$title, " . ", df$text, df$keywords)
@@ -404,9 +445,11 @@ message(PREVALENCE_FORMULA_EFFECT)
 message(OUTPUT_FILE)
 
 ```
+
 ## Estimation
 
-```{r 3b }
+```{r}
+#| label: estimation
 
 t1=Sys.time()
 stm_model <- stm::stm(
@@ -444,20 +487,15 @@ labelTopics(stm_model, topics = NULL, n = 5, frexweight = 0.5)
 
 $FREX = \left(\frac{w}{F} + \frac{1-w}{E}\right)^{-1}$
 
+see lift: $Lift = \beta_{k,v}/(w_v/\sum_v w_v)$
 
+the score: $\beta_{v, k} (\log \beta_{w,k} - 1 / K \sum_{k'} \log \beta_{v,k'})$
 
-see lift: 
-$Lift = \beta_{k,v}/(w_v/\sum_v w_v)$
-
-
-the score:
-$\beta_{v, k} (\log \beta_{w,k} - 1 / K \sum_{k'} \log \beta_{v,k'})$
-
-
-```{r 5 }
+```{r}
+#| label: topics-description
 #| fig-height: 7
 #| fig-width: 12
-#| column: page
+#| column: screen-right
 #| fig-align: center
 beta<-t(stm_model$beta$logbeta[[1]]) %>%
   as.data.frame()
@@ -520,7 +558,7 @@ ggplot(beta2)+
   geom_text_wordcloud(aes(label=feature, size=p, alpha=2100-frex), color="darkblue")+
   facet_wrap(vars(topic), ncol=4)+
   scale_size_area(max_size = 7)+
-  theme(strip.text = element_text(size = 14))
+  theme(strip.text = element_text(size = 10))
 
 ggsave(paste0("./images/stm_topic",K,".jpg"), 
        plot=last_plot(),
@@ -532,7 +570,8 @@ ggsave(paste0("./images/stm_topic",K,".jpg"),
 
 ## Prevalence description (beta)
 
-```{r 6}
+```{r}
+#| label: prevalence-description
 #| fig-height: 5
 #| fig-width: 10
 #| fig-align: center
@@ -630,7 +669,8 @@ library(RColorBrewer)
 
 ## The law of entropy
 
-```{r 7 }
+```{r}
+#| label: entropy
 #| fig-height: 5
 #| fig-width: 8
 #| column: page
@@ -661,4 +701,356 @@ ggplot(foo5,aes(x=param, y=entropie, group = 1))+
 
 ```
 
+# Networks of authors
+
+## Check name of authors
+
+We need to check if there are more than one unique `authorname` per `authid`. If so, we need to change the different names of author to the same name in order to have the exact same node per author later in the network.
+
+```{r}
+#| label: check-name-authors
+
+test <- list_articles %>%
+  group_by(authid) %>%
+  select(authid, authname, id) %>%
+  dplyr::mutate(n = n()) %>%
+  ungroup
+
+result <- test %>%
+  group_by(authid) %>%
+  filter(n_distinct(authname) > 1) %>%
+  distinct(authid, .keep_all = TRUE)
+
+result %>% reactable()
+
+number_duplicates <- nrow(result)
+
+cat("There are ", number_duplicates, " authors registered with different names.")
+```
+
+## Correct the duplicate names
+
+Let's correct that by using one property of the distinct function: the `.keep_all = TRUE` parameter. It keeps the first occurrence of each group, which is the first row encountered for each unique combination of `authid` and `authname`. It will be faster than manually changing the name of each author.
+
+```{r}
+#| label: change-name-authors
+
+# Merge list_articles with result on the authid column
+merged_df <- left_join(list_articles, result, by = "authid")
+
+# Replace authname values in list_articles with those from result
+list_articles$authname <- ifelse(!is.na(merged_df$authname.y), merged_df$authname.y, list_articles$authname)
+
+cat("There are", n_distinct(list_articles$id), "articles and", n_distinct(list_articles$authname), "authors overall in the data.")
+
+# Write the updated dataframe to a CSV file 
+write_csv2(list_articles, "nlp_full_data_final_unique_author_names.csv")
+```
+
+It is now done. We can check again if there are more than one unique `authorname` per `authid`.
+
+## Verification of duplicate names
+
+```{r}
+#| label: check-unique-name-authors
+
+test <- list_articles %>%
+  group_by(authid) %>%
+  select(authid, authname, id) %>%
+  dplyr::mutate(n = n())
+
+result <- test %>%
+  group_by(authid) %>%
+  filter(n_distinct(authname) > 1) %>%
+  distinct(authid, .keep_all = TRUE) %>%
+  relocate(id)
+
+result %>% reactable()
+
+```
+
+## Construct the networks
+
+```{python}
+#| label: function-network
+
+# Constants to include in the network as hovering text for nodes
+COLUMNS_TO_COLLECT = [
+    'affilname', 'affiliation_country', 'title', 'review', 'year', 'citedby_count', 'subjects_area', 'keywords'
+]
+
+def get_author_info(filtered_articles, columns):
+    """
+    Given a DataFrame of filtered articles and a list of column names,
+    this function collects author information and returns it as a dictionary.
+    """
+    author_info = {col: {} for col in columns}
+    author_info["citations"] = {}
+
+    for _, row in filtered_articles.iterrows():
+        author_name = row['authname']
+
+        if pd.notna(row['citedby_count']):
+            author_info["citations"][author_name] = author_info["citations"].get(author_name, 0) + row['citedby_count']
+
+        for col in columns:
+            value = row[col]
+            if pd.notna(value):
+                value = str(value).strip()
+                if author_name in author_info[col]:
+                    if value not in author_info[col][author_name]:
+                        author_info[col][author_name] += " | " + value
+                else:
+                    author_info[col][author_name] = value
+
+    return author_info
+
+def sigma_graph(dataframe, start_year, end_year):
+    """
+    Creates a graph representing author collaborations based on a given DataFrame of articles.
+    Filters the articles based on the given start and end years.
+    """
+    # Error handling
+    if dataframe.empty:
+        print("The DataFrame is empty.")
+        return None, None
+
+    for column in COLUMNS_TO_COLLECT:
+        if column not in dataframe.columns:
+            print(f"The DataFrame is missing the column: {column}")
+            return None, None
+
+    list_articles = dataframe
+    filtered_articles = list_articles[(list_articles['year'] >= start_year) & (list_articles['year'] <= end_year)]
+
+    author_pairs = []
+    grouped = filtered_articles.groupby('id')[['authid', 'authname']].agg(list).reset_index()
+
+    for _, row in grouped.iterrows():
+        id = row['id']
+        authors = row['authid']
+        authnames = row['authname']
+
+        if len(authors) == 1:
+            author_pairs.append((id, authors[0], authors[0], authnames[0], authnames[0]))
+        elif len(authors) > 1:
+            author_combinations = list(combinations(range(len(authors)), 2))
+            for i, j in author_combinations:
+                author_pairs.append((id, authors[i], authors[j], authnames[i], authnames[j]))
+
+    result_df = pd.DataFrame(author_pairs, columns=['id', 'authid1', 'authid2', 'authname1', 'authname2'])
+
+    collaboration_df = result_df[["authname1", "authname2"]]
+    collaboration_df = pd.DataFrame(np.sort(collaboration_df.values, axis=1), columns=collaboration_df.columns)
+    collaboration_df['value'] = 1
+    collaboration_df = collaboration_df.groupby(["authname1", "authname2"], sort=False, as_index=False).sum()
+
+    G = nx.from_pandas_edgelist(collaboration_df, 'authname1', 'authname2', edge_attr='value', create_using=nx.Graph())
+
+    for u, v in G.edges:
+        G[u][v]["color"] = "#7D7C7C"
+
+    for index, row in collaboration_df.iterrows():
+        G.add_edge(row['authname1'], row['authname2'], weight=row['value'])
+
+    metrics = {
+        'centrality': nx.degree_centrality,
+        'betweenness': nx.betweenness_centrality,
+        'closeness': nx.closeness_centrality,
+        'eigenvector_centrality': partial(nx.eigenvector_centrality, max_iter=1000),
+        'burt_constraint_weighted': partial(nx.constraint, weight="value"),
+        'burt_constraint_unweighted': nx.constraint
+    }
+
+    for attr, func in metrics.items():
+        nx.set_node_attributes(G, func(G), attr)
+
+    author_info = get_author_info(filtered_articles, COLUMNS_TO_COLLECT)
+
+    for col in COLUMNS_TO_COLLECT:
+        nx.set_node_attributes(G, author_info[col], col)
+
+    nx.set_node_attributes(G, author_info['citations'], 'citations')
+
+    # Compute the inverse burt constraint to plot the lowest values as the biggest nodes
+    # (= authors that are the less constrained in their network => multiple probable collaborations)
+    for node in G.nodes:
+        # Check if the 'burt_constraint_weighted' metric exists for the node
+        if 'burt_constraint_weighted' in G.nodes[node]:
+            burt_score = G.nodes[node]['burt_constraint_weighted']
+            # Calculate the inverse, avoiding division by zero
+            G.nodes[node]['inverse_burt_weighted'] = 1 / burt_score if burt_score != 0 else 0
+        else:
+            # Handle the case where the 'burt_constraint_weighted' metric is not available for this node
+            # For example, by setting the value to None or a default value
+            G.nodes[node]['inverse_burt_weighted'] = None  # or another default value
+            
+    # Compute Louvain commmunities
+    partition = community_louvain.best_partition(G)
+    
+    for node, comm_number in partition.items():
+      G.nodes[node]['community'] = comm_number
+      
+    # Color the graph using the greedy coloring algorithm with the 'largest_first' strategy
+    colors = nx.greedy_color(G, strategy='largest_first', interchange=False)
+    
+    # Set the computed colors as an attribute to each node in the graph
+    nx.set_node_attributes(G, colors, 'color')
+    # Now, each node in the graph G has an attribute 'color' that corresponds to the color assigned by the greedy_color function
+
+    
+    data_for_df = []
+    for node in G.nodes(data=True):
+        # `node` is a tuple (node_name, attributes_dict)
+        node_data = node[1]  # Extracting the attributes dictionary
+        node_data['Node'] = node[0]  # Adding the node name as an attribute
+    
+        # Adding the attributes dictionary of this node to the list
+        data_for_df.append(node_data)
+    
+    # Creating a DataFrame from the list of dictionaries
+    df_nodes = pd.DataFrame(data_for_df)
+
+    Sigma.write_html(G,
+                 default_edge_type       = "curve",                                                     # Default edge type
+                 clickable_edges         = True,                                                        # Clickable edges
+                 edge_size               = "value",                                                     # Set edge size
+                 fullscreen              = True,                                                        # Display in fullscreen
+                 label_density           = 3,                                                           # Label density (= increase to have more labels appear at normal zoom level)
+                 label_font              = "Helvetica Neue",                                            # Label font
+                 max_categorical_colors  = 10,                                                          # Max categorical colors
+                 node_border_color_from  = 'node',                                                      # Node border color from node attribute
+                 node_color              = "community",                                                 # Set node colors
+                 node_label_size         = "inverse_burt_weighted",                                                 # Node label size
+                 #node_label_size_range   = (12, 36),                                                    # Node label size range
+                 node_label_size_range   = (12, 36),                                                    # Node label size range
+                 #node_metrics            = {"community": {"name": "louvain", "resolution": 1}},         # Specify node metrics
+                 node_size               = "inverse_burt_weighted",                                                 # Node size
+                 #node_size_range         = (3, 30),                                                     # Node size range
+                 node_size_range         = (2, 20),                                                     # Node size range
+                 path                    = f"networks/authors/{start_year}_{end_year}_sigma_burt_SLR.html",   # Output file path
+                 start_layout            = 3,                                                           # Start layout algorithm
+                 #node_border_color      = "black",                                                     # Node border color
+                 #edge_color             = "#7D7C7C"                                                    # Edge color
+                 # node_label_color      = "community"                                                  # Node label color
+                 )
+    
+
+    return G, df_nodes
+```
+
+## Create the network overall (from 0 to 2023)
+
+```{python}
+#| label: create-network-overall
+
+print("The year range of the publications is from {} to {}".format(list_articles['year'].min(), list_articles['year'].max()))
+
+
+G_0_2023, df_0_2023 = sigma_graph(list_articles, 1996, 2023)
+```
+```{=html}
+<iframe width="1500" height="900" src="networks/authors/1996_2023_sigma_burt_SLR.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+```
+
+# Analysis of the network overall (from 0 to 2023)
+
+Let's sort by the Burt constraint weighted and see the top 10 authors with the lowest Burt constraint weighted.
+
+```{r}
+#| label: analysis-network
+
+df_0_2023 <- py$df_0_2023
+  
+reactable_burt <- df_0_2023 %>%
+  select(Node, burt_constraint_weighted, community, affilname, affiliation_country, citations) %>%
+  arrange(burt_constraint_weighted)
+
+reactable(reactable_burt, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
+  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
+  style = list(fontSize = "12px")
+))
+
+```
+
+Let's do the same thing but with number of citations.
+
+```{r}
+#| label: analysis-network-2
+
+df_0_2023 <- py$df_0_2023
+
+reactable_citations <- df_0_2023 %>%
+  select(Node, burt_constraint_weighted, community, affilname, affiliation_country, citations) %>%
+  arrange(desc(citations))
+
+reactable(reactable_citations, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
+  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
+  style = list(fontSize = "12px")
+))
+
+
+```
+
+## Correlations
+
+
+```{r}
+#| label: correlation-matrix-2
+
+# Select only the numeric columns from the dataframe
+df_numeric <- df_0_2023[sapply(df_0_2023, is.numeric)]
+
+# Calculate the correlation matrix and round the values to one decimal point
+corr <- round(cor(df_numeric, use = "complete.obs"), 1)
+
+# Calculate a matrix of p-values for the correlations
+# Note: 'cor_pmat' is typically a custom function or part of a specific package.
+# Make sure you have defined or installed any package that includes this function.
+p.mat <- cor_pmat(df_numeric)
+
+# Visualize the lower triangle of the correlation matrix using ggcorrplot
+# The heatmap color indicates the correlation coefficient between variables
+# 'hc.order' is set to TRUE to reorder the matrix using hierarchical clustering
+# 'type' is set to "lower" to show only the lower triangle of the matrix
+# 'outline.col' is set to "white" to define the border color around the squares
+corr.plot <- ggcorrplot(
+  corr, hc.order = TRUE, type = "lower", outline.col = "white",
+  p.mat = p.mat
+)
+
+# Convert the ggcorrplot object to an interactive plotly object
+# This allows for interactive features such as tooltips on hover
+ggplotly(corr.plot)
+```
+
+```{r}
+#| label: correlation-matrix-3
+
+# Compute correlation coefficients
+cor.coef <- cor(df_numeric)
+
+# Compute correlation p-values
+cor.test.p <- function(x){
+    FUN <- function(x, y) cor.test(x, y)[["p.value"]]
+    z <- outer(
+      colnames(x), 
+      colnames(x), 
+      Vectorize(function(i,j) FUN(x[,i], x[,j]))
+    )
+    dimnames(z) <- list(colnames(x), colnames(x))
+    z
+}
+p <- cor.test.p(df_numeric)
+
+
+# Create the heatmap
+heatmaply_cor(
+  cor.coef,
+  node_type = "scatter",
+  point_size_mat = -log10(p), 
+  point_size_name = "-log10(p-value)",
+  label_names = c("x", "y", "Correlation")
+)
+```
 
