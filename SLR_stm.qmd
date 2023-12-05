@@ -121,8 +121,7 @@ list_articles = r.list_articles
 #| label : description
 #| fig-height: 7
 #| fig-width: 17
-#| column: screen-right
-#| fig-align: center
+#| column: page
 
 
 df<- df%>%filter(review2 !="out")
@@ -939,21 +938,28 @@ def sigma_graph(dataframe, start_year, end_year):
     return G, df_nodes
 ```
 
-## Create the network overall (from 0 to 2023)
+## Create the overall network (from 1996 to 2023)
 
 ```{python}
 #| label: create-network-overall
 
-print("The year range of the publications is from {} to {}".format(list_articles['year'].min(), list_articles['year'].max()))
+print("The year range of the publications is from {} to {}".format(int(list_articles['year'].min()), int(list_articles['year'].max())))
 
+# periiods : 1996-2023 ; 1996-2015 ; 2014-2019 ; 2015-2019 ; 2018-2022 ; 2021-2023
 
 G_0_2023, df_0_2023 = sigma_graph(list_articles, 1996, 2023)
+G_0_2015, df_0_2015 = sigma_graph(list_articles, 1996, 2015)
+G_2014_2019, df_2014_2019 = sigma_graph(list_articles, 2014, 2019)
+G_2015_2019, df_2015_2019 = sigma_graph(list_articles, 2015, 2019)
+G_2018_2022, df_2018_2022 = sigma_graph(list_articles, 2018, 2022)
+G_2021_2023, df_2021_2023 = sigma_graph(list_articles, 2021, 2023)
+
 ```
+
 ```{=html}
 <iframe width="1500" height="900" src="networks/authors/1996_2023_sigma_burt_SLR.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
 ```
-
-# Analysis of the network overall (from 0 to 2023)
+# Analysis of the networks
 
 Let's sort by the Burt constraint weighted and see the top 10 authors with the lowest Burt constraint weighted.
 
@@ -982,7 +988,8 @@ df_0_2023 <- py$df_0_2023
 
 reactable_citations <- df_0_2023 %>%
   select(Node, burt_constraint_weighted, community, affilname, affiliation_country, citations) %>%
-  arrange(desc(citations))
+  arrange(desc(citations)) #%>%
+  #relocate(citations, .after = burt_constraint_weighted)
 
 reactable(reactable_citations, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
   headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
@@ -993,7 +1000,6 @@ reactable(reactable_citations, searchable = TRUE, defaultPageSize = 10, highligh
 ```
 
 ## Correlations
-
 
 ```{r}
 #| label: correlation-matrix-2
@@ -1054,3 +1060,25 @@ heatmaply_cor(
 )
 ```
 
+## Density of the networks
+
+Let's compare the density of multiple networks over time :
+
+-   1996-2015 ;
+
+-   2014-2019 ;
+
+-   2015-2019 ;
+
+-   2018-2022 ;
+
+-   2021-2023.
+
+```{r}
+#| label: density-networks
+
+# Density of the network 1996-2015
+
+
+
+```
