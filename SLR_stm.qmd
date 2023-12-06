@@ -69,6 +69,8 @@ library(reticulate)
 library(plotly)
 library(heatmaply)
 library(ggcorrplot)
+library(ggthemes)
+
 
 theme_set(theme_minimal())
 
@@ -108,6 +110,7 @@ import plotly.express as px
 import re
 
 from ipysigma import Sigma, SigmaGrid
+from pyvis.network import Network
 from itertools import combinations
 from datetime import datetime
 from functools import partial
@@ -896,8 +899,16 @@ def sigma_graph(dataframe, start_year, end_year):
     # Set the computed colors as an attribute to each node in the graph
     nx.set_node_attributes(G, colors, 'color')
     # Now, each node in the graph G has an attribute 'color' that corresponds to the color assigned by the greedy_color function
-
     
+    # Computer HITS scores
+    hubs, authorities = nx.hits(G, max_iter=100, nstart=None, normalized=False)
+    
+    # Set the computed scores as an attribute to each node in the graph
+    nx.set_node_attributes(G, hubs, 'hub_score')
+    nx.set_node_attributes(G, authorities, 'authority_score')
+
+
+    # Creating a list of dictionaries containing the attributes of each node
     data_for_df = []
     for node in G.nodes(data=True):
         # `node` is a tuple (node_name, attributes_dict)
@@ -945,14 +956,15 @@ def sigma_graph(dataframe, start_year, end_year):
 
 print("The year range of the publications is from {} to {}".format(int(list_articles['year'].min()), int(list_articles['year'].max())))
 
-# periiods : 1996-2023 ; 1996-2015 ; 2014-2019 ; 2015-2019 ; 2018-2022 ; 2021-2023
+# periiods : 1996-2023 ; 1996-2015 ; 2014-2019 ; 2018-2022 ; 2021-2023
 
-G_0_2023, df_0_2023 = sigma_graph(list_articles, 1996, 2023)
-G_0_2015, df_0_2015 = sigma_graph(list_articles, 1996, 2015)
-G_2014_2019, df_2014_2019 = sigma_graph(list_articles, 2014, 2019)
-G_2015_2019, df_2015_2019 = sigma_graph(list_articles, 2015, 2019)
-G_2018_2022, df_2018_2022 = sigma_graph(list_articles, 2018, 2022)
-G_2021_2023, df_2021_2023 = sigma_graph(list_articles, 2021, 2023)
+G_1996_2019, df_1996_2019 = sigma_graph(list_articles, 1996, 2015)
+G_1996_2018, df_1996_2018 = sigma_graph(list_articles, 1996, 2018)
+G_1996_2019, df_1996_2019 = sigma_graph(list_articles, 1996, 2019)
+G_1996_2022, df_1996_2022 = sigma_graph(list_articles, 1996, 2022)
+G_1996_2023, df_1996_2023 = sigma_graph(list_articles, 1996, 2023)
+
+
 
 ```
 
@@ -984,8 +996,6 @@ Let's do the same thing but with number of citations.
 ```{r}
 #| label: analysis-network-2
 
-df_0_2023 <- py$df_0_2023
-
 reactable_citations <- df_0_2023 %>%
   select(Node, burt_constraint_weighted, community, affilname, affiliation_country, citations) %>%
   arrange(desc(citations)) #%>%
@@ -999,7 +1009,45 @@ reactable(reactable_citations, searchable = TRUE, defaultPageSize = 10, highligh
 
 ```
 
-## Correlations
+Let's do the same thing but with HITS scores.
+
+- HITS authority score
+
+```{r}
+#| label: analyses-network-3
+
+reactable_hits_authority <- df_0_2023 %>%
+  select(Node, authority_score, community, affilname, affiliation_country, citations) %>%
+  arrange(authority_score) #%>%
+  #relocate(citations, .after = burt_constraint_weighted)
+
+reactable(reactable_hits_authority, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
+  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
+  style = list(fontSize = "12px")
+))
+
+```
+
+
+- HITS hub score
+
+```{r}
+#| label: analyses-network-4
+
+reactable_hits_hub <- df_0_2023 %>%
+  select(Node, hub_score, community, affilname, affiliation_country, citations) %>%
+  arrange(desc(hub_score)) #%>%
+  #relocate(citations, .after = burt_constraint_weighted)
+
+reactable(reactable_hits_hub, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
+  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
+  style = list(fontSize = "12px")
+))
+
+
+
+```
+
 
 ```{r}
 #| label: correlation-matrix-2
@@ -1060,25 +1108,127 @@ heatmaply_cor(
 )
 ```
 
-## Density of the networks
+## An interesting metric: the graph density
+
+The graph density is the ratio of the number of edges to the maximum number of possible edges. It is a measure of the proportion of edges present in a graph. A graph with a high density has a large number of edges compared to the number of nodes. A graph with a low density has a small number of edges compared to the number of nodes.
+
+A more formal definition is given [here](https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.density.html) by the following formulas:
+
+-   For undirected graphs:
+
+$$
+\begin{equation}d=\frac{2 m}{n(n-1)}\end{equation}
+$$
+
+-   For directed graphs:
+
+$$
+\begin{equation}d=\frac{m}{n(n-1)}\end{equation}
+$$
+
+where $n$ is the number of nodes and $m$ is the number of edges in the graph.
+
+From an interpretation standpoint, we can appreciate the density in the graphs bellow as follows:
+
++--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| $d$          | **Interpretation**                                                                                                                                         |
++:============:+:===========================================================================================================================================================+
+| Close to $0$ | -   The collaborative relationships among authors are sparse:                                                                                              |
+|              |                                                                                                                                                            |
+|              | -   Authors have limited connections with each other outside of their community.                                                                           |
+|              |                                                                                                                                                            |
+|              | -   Scientific papers are primarily the work of individual authors or small isolated groups.                                                               |
++--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Close to $1$ | -   Authors frequently collaborate with one another, leading to a web of interconnected scientific collaborations.                                         |
+|              |                                                                                                                                                            |
+|              | -   Scientific papers often involve contributions from multiple authors, reflecting a high level of teamwork and interdisciplinary research.               |
+|              |                                                                                                                                                            |
+|              | -   Collaborations are a significant aspect of the research process in this marketing field, and authors actively seek out opportunities to work together. |
+|              |                                                                                                                                                            |
+|              | -   The network of collaborations is well-established and robust, facilitating the exchange of ideas and the advancement of scientific knowledge.          |
++--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Let's compare the density of multiple networks over time :
 
 -   1996-2015 ;
 
--   2014-2019 ;
+-   1996-2018 ;
 
--   2015-2019 ;
+-   1996-2019 ;
 
--   2018-2022 ;
+-   1996-2022 ;
 
--   2021-2023.
+-   1996-2023.
 
-```{r}
+```{python}
 #| label: density-networks
 
-# Density of the network 1996-2015
+# Density of all the networks loop and plot with plotly
 
+list_networks = [G_0_2015, G_2014_2019, G_2015_2019, G_2018_2022, G_2021_2023]
+list_networks_name = ["1996-2015", "2014-2019", "2015-2019", "2018-2022", "2021-2023"]
 
+for i in range(len(list_networks)):
+    print("Density of the network {} : {}".format(list_networks_name[i], nx.density(list_networks[i])))
 
 ```
+
+
+```{r}
+#| label: regression
+
+
+
+#model <- lm(citations ~ inverse_burt_weighted + closeness + community + color, data = df_0_2023)
+#summary(model)
+#plot(density(df_0_2023$citations), main = "Density Plot of Citations", xlab = "Citations")
+#hist(df_0_2023$citations, main = "Distribution of Citations", xlab = "Citations")
+
+#shapiro.test(residuals(model))
+
+#plot(model, which = 1)
+
+#stargazer::stargazer(model, type = "text")
+
+#library(MASS)
+
+#model_negbin <- glm.nb(citations ~ inverse_burt_weighted + closeness + community + color, data = df_0_2023)
+
+#summary(model_negbin)
+#stargazer::stargazer(model_negbin, type = "text")
+
+```
+
+```{r}
+#| label: density-citations
+#| fig.width: 10
+#| fig.height: 6
+#| fig.align: center
+#| fig.cap: Density of citations (log scale)
+
+df_0_2023 %>%
+  ggplot(aes(x = log(citations + 1),
+             y = ..density..)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_density(color = "black", 
+                 size = 1)+
+  theme_wsj() +
+  labs(title = "", x = "Citations", y = "Density")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14),
+        plot.title = element_text(size = 16, face = "bold"))
+
+
+
+ggplot(df_0_2023, aes(x = citations,
+                      y = ..density..)) +
+  geom_histogram(binwidth = 10, fill = "blue", color = "black") +
+  geom_density(color = "black", 
+               size = 0.7)+
+  labs(title = "Distribution of Citations", x = "Citations", y = "Frequency") +
+  theme_minimal()                                                                                                                                                                   
+```
+
