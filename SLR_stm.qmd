@@ -157,8 +157,9 @@ g02 <- ggplot(t1, aes(x=Var1, y=Freq, group=1)) +
   )
 
 plot_grid(g01, g02, labels = c('A', 'B'), label_size = 8, ncol=2,  rel_widths =  c(1,1))
+plotgrid <- plot_grid(g01, g02, labels = c('A', 'B'), label_size = 8, ncol=2,  rel_widths =  c(1,1))
 
-ggsave(filename="./images/quant.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
+ggsave(filename="./images/quant.jpeg", plotgrid, width = 27, height = 18, units = "cm")
 
 
 ```
@@ -243,14 +244,14 @@ keywords<-rownames(foo3)
 library(ggrepel)
 tsne_out3<-cbind(tsne_out2, keywords) 
 tsne_out3<- merge(tsne_out3,foo1)
-tsne_out3%>% 
+tsneplot <- tsne_out3%>% 
   filter(m>0) %>%
   ggplot(aes(x=V1, y=V2, label=keywords))+
   geom_point(aes(size=m), alpha=.5)+
   geom_text_repel(aes(label=ifelse(m>1,keywords,""),size=log(m)),  max.overlaps =50)
   
-
-ggsave(filename="./images/keywords.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
+tsneplot
+ggsave(filename="./images/keywords.jpeg", tsneplot, width = 27, height = 18, units = "cm")
 ```
 
 ## With a breakdown of the keywords
@@ -931,14 +932,14 @@ def sigma_graph(dataframe, start_year, end_year):
                  max_categorical_colors  = 10,                                                          # Max categorical colors
                  node_border_color_from  = 'node',                                                      # Node border color from node attribute
                  node_color              = "community",                                                 # Set node colors
-                 node_label_size         = "inverse_burt_weighted",                                                 # Node label size
+                 node_label_size         = "citations",                                                 # Node label size
                  #node_label_size_range   = (12, 36),                                                    # Node label size range
                  node_label_size_range   = (12, 36),                                                    # Node label size range
                  #node_metrics            = {"community": {"name": "louvain", "resolution": 1}},         # Specify node metrics
-                 node_size               = "inverse_burt_weighted",                                                 # Node size
+                 node_size               = "citations",                                                 # Node size
                  #node_size_range         = (3, 30),                                                     # Node size range
                  node_size_range         = (2, 20),                                                     # Node size range
-                 path                    = f"networks/authors/{start_year}_{end_year}_sigma_burt_SLR.html",   # Output file path
+                 path                    = f"networks/authors/{start_year}_{end_year}_VF.html",   # Output file path
                  start_layout            = 3,                                                           # Start layout algorithm
                  #node_border_color      = "black",                                                     # Node border color
                  #edge_color             = "#7D7C7C"                                                    # Edge color
@@ -956,13 +957,40 @@ def sigma_graph(dataframe, start_year, end_year):
 
 print("The year range of the publications is from {} to {}".format(int(list_articles['year'].min()), int(list_articles['year'].max())))
 
-# periiods : 1996-2023 ; 1996-2015 ; 2014-2019 ; 2018-2022 ; 2021-2023
+#Let's try each year from 2015 as end year onwards
 
-G_1996_2019, df_1996_2019 = sigma_graph(list_articles, 1996, 2015)
+
+G_1996_2015, df_1996_2015 = sigma_graph(list_articles, 1996, 2015)
+G_1996_2016, df_1996_2016 = sigma_graph(list_articles, 1996, 2016)
+G_1996_2017, df_1996_2017 = sigma_graph(list_articles, 1996, 2017)
 G_1996_2018, df_1996_2018 = sigma_graph(list_articles, 1996, 2018)
 G_1996_2019, df_1996_2019 = sigma_graph(list_articles, 1996, 2019)
+G_1996_2020, df_1996_2020 = sigma_graph(list_articles, 1996, 2020)
+G_1996_2021, df_1996_2021 = sigma_graph(list_articles, 1996, 2021)
 G_1996_2022, df_1996_2022 = sigma_graph(list_articles, 1996, 2022)
 G_1996_2023, df_1996_2023 = sigma_graph(list_articles, 1996, 2023)
+
+networks = {
+    '1996_2015': G_1996_2015,
+    '1996_2016': G_1996_2016,
+    '1996_2017': G_1996_2017,
+    '1996_2018': G_1996_2018,
+    '1996_2019': G_1996_2019,
+    '1996_2020': G_1996_2020,
+    '1996_2021': G_1996_2021,
+    '1996_2022': G_1996_2022,
+    '1996_2023': G_1996_2023
+}
+
+max(nx.find_cliques(G_1996_2023), key=len)
+max(nx.find_cliques(G_1996_2015), key=len)
+max(nx.find_cliques(G_1996_2016), key=len)
+max(nx.find_cliques(G_1996_2017), key=len)
+max(nx.find_cliques(G_1996_2018), key=len)
+max(nx.find_cliques(G_1996_2019), key=len)
+max(nx.find_cliques(G_1996_2020), key=len)
+max(nx.find_cliques(G_1996_2021), key=len)
+max(nx.find_cliques(G_1996_2022), key=len)
 
 
 
@@ -974,77 +1002,22 @@ G_1996_2023, df_1996_2023 = sigma_graph(list_articles, 1996, 2023)
 # Analysis of the networks
 
 Let's sort by the Burt constraint weighted and see the top 10 authors with the lowest Burt constraint weighted.
+You can filter by different metrics: Burt's constraint, number of citations, betweenness centrality, closeness centrality, hub score, authority score (HITS)...
 
 ```{r}
 #| label: analysis-network
+#| column: page
 
 df_0_2023 <- py$df_0_2023
-  
+
 reactable_burt <- df_0_2023 %>%
-  select(Node, burt_constraint_weighted, community, affilname, affiliation_country, citations) %>%
+  dplyr::select(Node, citations, burt_constraint_weighted, betweenness, closeness, hub_score, authority_score, affilname, affiliation_country, community) %>%
   arrange(burt_constraint_weighted)
 
 reactable(reactable_burt, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
   headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
   style = list(fontSize = "12px")
 ))
-
-```
-
-Let's do the same thing but with number of citations.
-
-```{r}
-#| label: analysis-network-2
-
-reactable_citations <- df_0_2023 %>%
-  select(Node, burt_constraint_weighted, community, affilname, affiliation_country, citations) %>%
-  arrange(desc(citations)) #%>%
-  #relocate(citations, .after = burt_constraint_weighted)
-
-reactable(reactable_citations, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
-  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
-  style = list(fontSize = "12px")
-))
-
-
-```
-
-Let's do the same thing but with HITS scores.
-
-- HITS authority score
-
-```{r}
-#| label: analyses-network-3
-
-reactable_hits_authority <- df_0_2023 %>%
-  select(Node, authority_score, community, affilname, affiliation_country, citations) %>%
-  arrange(authority_score) #%>%
-  #relocate(citations, .after = burt_constraint_weighted)
-
-reactable(reactable_hits_authority, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
-  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
-  style = list(fontSize = "12px")
-))
-
-```
-
-
-- HITS hub score
-
-```{r}
-#| label: analyses-network-4
-
-reactable_hits_hub <- df_0_2023 %>%
-  select(Node, hub_score, community, affilname, affiliation_country, citations) %>%
-  arrange(desc(hub_score)) #%>%
-  #relocate(citations, .after = burt_constraint_weighted)
-
-reactable(reactable_hits_hub, searchable = TRUE, defaultPageSize = 10, highlight = TRUE, bordered = TRUE, striped = TRUE, compact = TRUE, defaultColDef = colDef(
-  headerStyle = list(background = "#e6e6e6", fontWeight = "bold", fontSize = "12px"),
-  style = list(fontSize = "12px")
-))
-
-
 
 ```
 
@@ -1056,7 +1029,7 @@ reactable(reactable_hits_hub, searchable = TRUE, defaultPageSize = 10, highlight
 df_numeric <- df_0_2023[sapply(df_0_2023, is.numeric)]
 
 # Calculate the correlation matrix and round the values to one decimal point
-corr <- round(cor(df_numeric, use = "complete.obs"), 1)
+corr <- round(cor(df_numeric, use = "complete.obs"), 2)
 
 # Calculate a matrix of p-values for the correlations
 # Note: 'cor_pmat' is typically a custom function or part of a specific package.
@@ -1163,13 +1136,19 @@ Let's compare the density of multiple networks over time :
 ```{python}
 #| label: density-networks
 
-# Density of all the networks loop and plot with plotly
+# Compute Density of all the networks created above with networkx and plot the smooth line with plotly
 
-list_networks = [G_0_2015, G_2014_2019, G_2015_2019, G_2018_2022, G_2021_2023]
-list_networks_name = ["1996-2015", "2014-2019", "2015-2019", "2018-2022", "2021-2023"]
+density_df = pd.DataFrame(columns=["Graph", "Density"])
 
-for i in range(len(list_networks)):
-    print("Density of the network {} : {}".format(list_networks_name[i], nx.density(list_networks[i])))
+temp_dfs = []
+
+for network_name, network in networks.items():
+    density = nx.density(network)
+    temp_df = pd.DataFrame([{"Graph": network_name, "Density": density}])
+    temp_dfs.append(temp_df)
+
+# Concaténer tous les DataFrames temporaires
+density_df = pd.concat(temp_dfs, ignore_index=True)
 
 ```
 
@@ -1204,7 +1183,8 @@ for i in range(len(list_networks)):
 #| fig.width: 10
 #| fig.height: 6
 #| fig.align: center
-#| fig.cap: Density of citations (log scale)
+#| eval: false
+#| echo: false
 
 df_0_2023 %>%
   ggplot(aes(x = log(citations + 1),
@@ -1213,7 +1193,7 @@ df_0_2023 %>%
   geom_density(color = "black", 
                  size = 1)+
   theme_wsj() +
-  labs(title = "", x = "Citations", y = "Density")+
+  labs(title = "Distribution of citations (log scale)", x = "Citations", y = "Frequency")+
   theme(plot.title = element_text(hjust = 0.5))+
   theme(axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
@@ -1228,7 +1208,7 @@ ggplot(df_0_2023, aes(x = citations,
   geom_histogram(binwidth = 10, fill = "blue", color = "black") +
   geom_density(color = "black", 
                size = 0.7)+
-  labs(title = "Distribution of Citations", x = "Citations", y = "Frequency") +
-  theme_minimal()                                                                                                                                                                   
+  labs(title = "Distribution of citations", x = "Citations", y = "Frequency") +
+  theme_wsj()
 ```
 
