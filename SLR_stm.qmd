@@ -98,6 +98,7 @@ list_articles <- list_articles %>% filter(review2 !="out")
 
 ```
 
+
 ```{python}
 #| label : libraries-data-python
 
@@ -159,7 +160,7 @@ g02 <- ggplot(t1, aes(x=Var1, y=Freq, group=1)) +
 plot_grid(g01, g02, labels = c('A', 'B'), label_size = 8, ncol=2,  rel_widths =  c(1,1))
 plotgrid <- plot_grid(g01, g02, labels = c('A', 'B'), label_size = 8, ncol=2,  rel_widths =  c(1,1))
 
-ggsave(filename="./images/quant.jpeg", plotgrid, width = 27, height = 18, units = "cm")
+ggsave(filename="./images/quant.jpeg", plotgrid, width = 40, height = 18, units = "cm")
 
 
 ```
@@ -992,8 +993,8 @@ max(nx.find_cliques(G_1996_2020), key=len)
 max(nx.find_cliques(G_1996_2021), key=len)
 max(nx.find_cliques(G_1996_2022), key=len)
 
-
-
+nx.sigma(G_1996_2023)
+nx.omega(G_1996_2023)
 ```
 
 ```{=html}
@@ -1136,21 +1137,44 @@ Let's compare the density of multiple networks over time :
 ```{python}
 #| label: density-networks
 
-# Compute Density of all the networks created above with networkx and plot the smooth line with plotly
+# Compute Density of all the networks created above with networkx
 
-density_df = pd.DataFrame(columns=["Graph", "Density"])
+density_df = pd.DataFrame(columns=["network", "density"])
 
 temp_dfs = []
 
 for network_name, network in networks.items():
     density = nx.density(network)
-    temp_df = pd.DataFrame([{"Graph": network_name, "Density": density}])
+    temp_df = pd.DataFrame([{"network": network_name, "density": density}])
     temp_dfs.append(temp_df)
 
-# Concaténer tous les DataFrames temporaires
+# Concat all the temp_dfs into one dataframe
 density_df = pd.concat(temp_dfs, ignore_index=True)
 
 ```
+
+```{r}
+#| label: density-networks-2
+#| fig.width: 10
+#| fig.height: 6
+#| fig.align: center
+#| fig.cap: Density of the networks over time
+
+density_df = py$density_df
+
+# Plot the density of the networks over time
+density_plot <- ggplot(density_df, aes(x=network, y=density, group=1)) +
+  geom_line(color="steelblue") +
+  geom_point(color="steelblue") +
+  labs(title="Density of the networks over time", x="Networks", y="Density") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw()
+
+ggsave("images/density_networks.png", density_plot, width = 10, height = 6, dpi = 300)
+
+ggplotly(density_plot)
+```
+
 
 
 ```{r}
