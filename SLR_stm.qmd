@@ -3,18 +3,18 @@ title: "Systematic Literature Review"
 date: "today"
 date-format: long
 author:
-  - name: Olivier Caron
-    email: olivier.caron@dauphine.psl.eu
+  - name: Anonyme1
+    email: Anonyme1
     affiliations: 
-      name: "Paris Dauphine - PSL"
-      city: Paris
-      state: France
-  - name: Christophe Benavent
-    email: christophe.benavent@dauphine.psl.eu
+      name: "Anonyme1"
+      city: Anonyme1
+      state: Anonyme1
+  - name: Anonyme2
+    email: Anonyme2
     affiliations: 
-      name: "Paris Dauphine - PSL"
-      city: Paris
-      state: France
+      name: "Anonyme2"
+      city: Anonyme2
+      state: Anonyme2
 toc: true
 number-sections: true
 number-depth: 10
@@ -63,6 +63,7 @@ library(Rtsne)
 library(splitstackshape)
 
 library(ape)
+library(gt)
 library(cowplot)
 library(reactable)
 library(reticulate)
@@ -70,6 +71,7 @@ library(plotly)
 library(heatmaply)
 library(ggcorrplot)
 library(ggthemes)
+library(RColorBrewer)
 
 
 theme_set(theme_minimal())
@@ -558,16 +560,18 @@ beta2$topic[beta2$topic=="V16"]<-"T16 Ewom"
 
 
 #la transparence rend compte de l'exclusitivité frex
-ggplot(beta2)+
+stm_topics <- ggplot(beta2)+
   geom_text_wordcloud(aes(label=feature, size=p, alpha=2100-frex), color="darkblue")+
   facet_wrap(vars(topic), ncol=4)+
   scale_size_area(max_size = 7)+
   theme(strip.text = element_text(size = 10))
 
 ggsave(paste0("./images/stm_topic",K,".jpg"), 
-       plot=last_plot(),
+       stm_topics,
        width = 28, 
-       height = 20, units = "cm")
+       height = 20, 
+       units = "cm",
+       dpi = 300)
 
 
 ```
@@ -653,7 +657,7 @@ foo4<-foo2 %>%left_join(foo3) %>%
 
 
 
-ggplot(foo4, aes(x=param,y=mean2,group=topic))+
+stm_effect <- ggplot(foo4, aes(x=param,y=mean2,group=topic))+
   geom_bar(stat="identity")+
 #  geom_smooth(se = FALSE )+
   facet_wrap(vars(topic), scale="fixed",ncol =4)+
@@ -661,12 +665,15 @@ ggplot(foo4, aes(x=param,y=mean2,group=topic))+
   theme(axis.text.x = element_text(size=5))+
   labs(x=NULL, y="prévalence")
 
+stm_effect
+
 
 ggsave(paste0("./images/stm_effect",K,".jpg"), 
-       plot=last_plot(),
+       stm_effect,
        width = 28, 
-       height = 20, units = "cm")
-library(RColorBrewer)
+       height = 20,
+       units = "cm",
+       dpi = 300)
 
 
 ```
@@ -935,7 +942,7 @@ def sigma_graph(dataframe, start_year, end_year):
                  node_color              = "community",                                                 # Set node colors
                  node_label_size         = "citations",                                                 # Node label size
                  #node_label_size_range   = (12, 36),                                                    # Node label size range
-                 node_label_size_range   = (12, 36),                                                    # Node label size range
+                 node_label_size_range   = (12, 30),                                                    # Node label size range
                  #node_metrics            = {"community": {"name": "louvain", "resolution": 1}},         # Specify node metrics
                  node_size               = "citations",                                                 # Node size
                  #node_size_range         = (3, 30),                                                     # Node size range
@@ -972,18 +979,18 @@ G_1996_2022, df_1996_2022 = sigma_graph(list_articles, 1996, 2022)
 G_1996_2023, df_1996_2023 = sigma_graph(list_articles, 1996, 2023)
 
 networks = {
-    '1996_2015': G_1996_2015,
-    '1996_2016': G_1996_2016,
-    '1996_2017': G_1996_2017,
-    '1996_2018': G_1996_2018,
-    '1996_2019': G_1996_2019,
-    '1996_2020': G_1996_2020,
-    '1996_2021': G_1996_2021,
-    '1996_2022': G_1996_2022,
-    '1996_2023': G_1996_2023
+    '1996-2015': G_1996_2015,
+    '1996-2016': G_1996_2016,
+    '1996-2017': G_1996_2017,
+    '1996-2018': G_1996_2018,
+    '1996-2019': G_1996_2019,
+    '1996-2020': G_1996_2020,
+    '1996-2021': G_1996_2021,
+    '1996-2022': G_1996_2022,
+    '1996-2023': G_1996_2023
 }
 
-max(nx.find_cliques(G_1996_2023), key=len)
+
 max(nx.find_cliques(G_1996_2015), key=len)
 max(nx.find_cliques(G_1996_2016), key=len)
 max(nx.find_cliques(G_1996_2017), key=len)
@@ -992,9 +999,9 @@ max(nx.find_cliques(G_1996_2019), key=len)
 max(nx.find_cliques(G_1996_2020), key=len)
 max(nx.find_cliques(G_1996_2021), key=len)
 max(nx.find_cliques(G_1996_2022), key=len)
+max(nx.find_cliques(G_1996_2023), key=len)
 
-nx.sigma(G_1996_2023)
-nx.omega(G_1996_2023)
+
 ```
 
 ```{=html}
@@ -1093,7 +1100,6 @@ A more formal definition is given [here](https://networkx.org/documentation/stab
 $$
 \begin{equation}d=\frac{2 m}{n(n-1)}\end{equation}
 $$
-
 -   For directed graphs:
 
 $$
@@ -1145,62 +1151,198 @@ temp_dfs = []
 
 for network_name, network in networks.items():
     density = nx.density(network)
-    temp_df = pd.DataFrame([{"network": network_name, "density": density}])
+    nb_nodes = network.number_of_nodes()
+    nb_edges = network.number_of_edges()
+    linear_density = nb_nodes / nb_edges if nb_edges != 0 else 0
+    nb_communities = len(set(nx.get_node_attributes(network, "community").values()))
+    nb_mean_nodes_per_community = nb_nodes / nb_communities
+    temp_df = pd.DataFrame([{
+        "network": network_name, 
+        "density": density,
+        "nb_edges": nb_edges,
+        "nb_nodes": nb_nodes,
+        "linear_density": linear_density,
+        "nb_communities": nb_communities,
+        "nb_mean_nodes_per_community": nb_mean_nodes_per_community
+    }])
     temp_dfs.append(temp_df)
 
 # Concat all the temp_dfs into one dataframe
 density_df = pd.concat(temp_dfs, ignore_index=True)
-
 ```
 
 ```{r}
 #| label: density-networks-2
-#| fig.width: 10
-#| fig.height: 6
+#| fig.width: 14
+#| fig.height: 8
+#| fig-dpi: 300
 #| fig.align: center
 #| fig.cap: Density of the networks over time
 
-density_df = py$density_df
+density_df <- py$density_df
 
-# Plot the density of the networks over time
-density_plot <- ggplot(density_df, aes(x=network, y=density, group=1)) +
-  geom_line(color="steelblue") +
-  geom_point(color="steelblue") +
-  labs(title="Density of the networks over time", x="Networks", y="Density") +
+density_long <- density_df %>%
+  pivot_longer(
+    cols = -network, # Exclude column
+    names_to = "metric", # Name of new column for the metrics
+    values_to = "value" # Name of new column for the values
+  ) %>%
+  filter(!metric %in% c("linear_density","nb_nodes")) %>%
+  mutate(value = round(value, 3))
+
+
+metric_titles <- c(density = "Density", nb_edges = "Number of Collaborations", nb_communities = "Number of Communities", nb_mean_nodes_per_community = "Mean Number of Authors per Community")
+
+# Créer le graphe avec ggplot
+density_plot <- ggplot(density_long, aes(x = network, y = value)) +
+  geom_line(aes(group = metric), color = "steelblue") +
+  geom_point(color = "steelblue") +
+  labs(title = "Metrics of the networks over time",
+       x = "Networks",
+       y = "Value") +
+  facet_wrap(~ metric, scales = "free_y", labeller = labeller(metric = metric_titles)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme_bw()
 
-ggsave("images/density_networks.png", density_plot, width = 10, height = 6, dpi = 300)
+
+ggsave("images/density_networks.png", density_plot, width = 14, height = 8, dpi = 300)
 
 ggplotly(density_plot)
 ```
 
-
+## Communities
 
 ```{r}
-#| label: regression
+#| label: communities
+df_1996_2023 <- py$df_1996_2023
+# Let's look at the communities of the network 1996-2023
+
+top5_communities <- df_1996_2023 %>%
+  group_by(community) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n)) %>%
+  head(5)
+
+# Compute the number of community per network
+filtered_df <- df_1996_2023 %>%
+  filter(community %in% top5_communities$community)
+
+#print("The most important communities in terms of number of authors are :")
+top5_communities %>% gt()
+
+# Computer the sum of citations per community
+citations_per_community <- df_1996_2023 %>%
+  group_by(community) %>%
+  summarise(citations = sum(citations)) %>%
+  arrange(-citations) %>%
+  mutate(cumulative_citations = cumsum(citations),
+         percentage = cumulative_citations / sum(citations) * 100)
+
+citations_per_community %>% gt() %>% tab_header(title = "Sum of citations per community")
+
+citations_per_community$community <- factor(citations_per_community$community, levels = rev(citations_per_community$community))
 
 
+# Create Pareto chart
+ggplot(citations_per_community, aes(x = reorder(community, -citations), y = citations)) +
+  geom_bar(stat = "identity", fill = "steelblue") + # Bars for the number of citations
+  geom_line(aes(y = cumulative_citations), group = 1, color = "darkred", size = 1) + # Line for the cumulative proportion
+  geom_segment(aes(x = reorder(community, -citations), xend = reorder(community, -citations), y = 0, yend = citations), 
+               color = "grey", size = 0.2) + # Vertical lines from each bar to the x-axis
+  scale_y_continuous(
+    name = "Cumulative number of citations", 
+    sec.axis = sec_axis(~./max(citations_per_community$cumulative_citations) * 100, name = "Cumulative percentage")
+  ) +
+  geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.25, linetype = "dashed", color = "black") +
+  geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.50, linetype = "dashed", color = "black") +
+  geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.75, linetype = "dashed", color = "black") +
+  scale_x_discrete(guide = guide_axis(n.dodge=3)) + # Adjust the x axis
+  theme_bw() +  # Use the black and white theme
+  theme(
+    panel.border = element_blank(),  # Remove panel borders
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.line = element_line(colour = "black"),  # Add axis line
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8)  # Rotate x axis labels to vertical and adjust text size
+  ) +
+  labs(
+    title = "Pareto chart of citations per community",
+    x = "Community",
+    y = "Number of citations"
+  )
 
-#model <- lm(citations ~ inverse_burt_weighted + closeness + community + color, data = df_0_2023)
-#summary(model)
-#plot(density(df_0_2023$citations), main = "Density Plot of Citations", xlab = "Citations")
-#hist(df_0_2023$citations, main = "Distribution of Citations", xlab = "Citations")
 
-#shapiro.test(residuals(model))
+# Save the plot with ticks and labels
+ggsave("images/pareto_chart_ggplot.png", width = 15, height = 7, dpi = 300)
 
-#plot(model, which = 1)
+# No ticks and labels
+ggplot(citations_per_community, aes(x = reorder(community, -citations), y = citations)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_point(aes(y = cumulative_citations), group = 1, color = "darkred", size = 1) +
+  scale_y_continuous(
+    name = "Cumulative number of citations", 
+    sec.axis = sec_axis(~./max(citations_per_community$cumulative_citations) * 100, name = "Cumulative percentage")
+  ) +
+  geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.25, linetype = "dashed", color = "black") +
+  geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.50, linetype = "dashed", color = "black") +
+  geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.75, linetype = "dashed", color = "black") +
+  theme_bw() +
+  theme(
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.ticks.x = element_blank(),  # Supprimer les marques de graduation sur l'axe des x
+    axis.text.x = element_blank()  # Rendre les étiquettes de l'axe des x invisibles
+  ) +
+  labs(
+    title = "Pareto chart of citations per community",
+    x = "Community",
+    y = "Number of Citations"
+  )
 
-#stargazer::stargazer(model, type = "text")
+ggsave("images/pareto_chart_ggplot_no_xtickslabels.png", width = 20, height = 10, dpi = 300)
 
-#library(MASS)
 
-#model_negbin <- glm.nb(citations ~ inverse_burt_weighted + closeness + community + color, data = df_0_2023)
+# Sum of all citations from filtered_df for each community of the top 5
+top5_communities_citations <- filtered_df %>%
+  group_by(community) %>%
+  summarise(citations = sum(citations)) %>%
+  arrange(desc(citations))
 
-#summary(model_negbin)
-#stargazer::stargazer(model_negbin, type = "text")
+sum_citations_df_1996_2023 <- sum(df_1996_2023$citations)
+
+# Compute the proportion of citations and number of authors for each community
+top5_communities_citations <- top5_communities_citations %>% 
+  left_join(top5_communities, by = "community") %>%
+  mutate(prop_citations = citations / sum_citations_df_1996_2023) %>%
+  mutate(prop_authors = n / nrow(df_1996_2023)) %>%
+  mutate(cumul_prop_citations = round(cumsum(prop_citations) * 100,2)) %>%  # Convertir en pourcentage
+  mutate(cumul_prop_authors = round(cumsum(prop_authors) * 100,2)) %>%  # Convertir en pourcentage
+  mutate(prop_citations = round(prop_citations * 100,2)) %>%
+  mutate(prop_authors = round(prop_authors * 100,2)) %>%
+  arrange(desc(citations))
+
+gt_top5_communities_citations <- top5_communities_citations %>%
+  gt() %>%
+  tab_header(title = "Proportion of citations and authors for each community") %>%
+  cols_label(community = "Community",
+             citations = "Number of citations",
+             n = "Number of authors",
+             prop_citations = "Proportion of citations (in %)",
+             prop_authors = "Proportion of authors (in %)",
+             cumul_prop_citations = "Cumulative proportion of citations (in %)",
+             cumul_prop_authors = "Cumulative proportion of authors (in %)") %>%
+  cols_align(align = "center", columns = everything())
+
+# save gt in png
+gtsave(gt_top5_communities_citations, "images/top5_communities_citations.png")
+
+gt_top5_communities_citations
+pareto.chart(citations_per_community$citations, ylab = "Cumulative proportion of citations", col = "steelblue", main = "Pareto chart of the citations per community")
 
 ```
+
 
 ```{r}
 #| label: density-citations
@@ -1213,10 +1355,10 @@ ggplotly(density_plot)
 df_0_2023 %>%
   ggplot(aes(x = log(citations + 1),
              y = ..density..)) +
-  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_histogram(bins = 10, fill = "lightblue", color = "black") +
   geom_density(color = "black", 
                  size = 1)+
-  theme_wsj() +
+  theme_bw() +
   labs(title = "Distribution of citations (log scale)", x = "Citations", y = "Frequency")+
   theme(plot.title = element_text(hjust = 0.5))+
   theme(axis.text.x = element_text(size = 12),
@@ -1229,10 +1371,10 @@ df_0_2023 %>%
 
 ggplot(df_0_2023, aes(x = citations,
                       y = ..density..)) +
-  geom_histogram(binwidth = 10, fill = "blue", color = "black") +
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black") +
   geom_density(color = "black", 
-               size = 0.7)+
+               size = 0.5)+
   labs(title = "Distribution of citations", x = "Citations", y = "Frequency") +
-  theme_wsj()
+  theme_bw()
 ```
 
