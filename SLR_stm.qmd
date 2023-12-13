@@ -1,5 +1,6 @@
 ---
 title: "Systematic Literature Review"
+subtitle: "Diffusion of NLP methods in the field of marketing"
 date: "today"
 date-format: long
 author:
@@ -48,7 +49,6 @@ bibliography: slrbib.bib
 
 ```{r}
 #| label : libraries-data-r
-knitr::opts_chunk$set(echo = TRUE,message=FALSE, warning=FALSE)
 library(ape)
 library(cowplot)
 library(DT)
@@ -61,6 +61,7 @@ library(gt)
 library(heatmaply)
 library(Hmisc)
 library(plotly)
+library(plyr)
 library(quanteda)
 library(quanteda.textmodels)
 library(quanteda.textstats)
@@ -69,13 +70,15 @@ library(reactable)
 library(reticulate)
 library(Rtsne)
 library(splitstackshape)
-library(tidyr)
+library(stm)
+library(tidyverse)
 library(webshot)
+library(wesanderson)
 library(word2vec)
+
 
 theme_set(theme_minimal())
 
-library(tidyverse)
 df <- read_delim("nlp_full_data_final_18-08-2023.csv",delim = ";", 
                  escape_double = FALSE, trim_ws = TRUE) %>%
   select(1,5,7,8, 14, 15,16,21,23,32,33,39,40,51,52,53) %>%
@@ -97,11 +100,33 @@ list_articles$review2<- ifelse(str_detect(list_articles$review2, "Conference")==
 list_articles$review2<- ifelse(str_detect(list_articles$review2, "Transactions")==TRUE, "out", list_articles$review2)
 list_articles <- list_articles %>% filter(review2 !="out")
 
+test <- read_csv2("nlp_full_data_05-12-2023.csv") %>%
+  relocate(entry_number) %>%
+  rename(id = "entry_number") %>%
+  select(id, id, authname, surname, affilname, affiliation_city, affiliation_country, title, review, text, citedby_count, author_count, keywords, year, subjects_area, nref) %>%
+  group_by(entry_number) %>%
+  filter(row_number()==1) %>%
+  rename(id=1, title =8, review=9, text=10, keywords =13)
+
+
+test <- read_delim("nlp_full_data_05-12-2023.csv",delim = ";", 
+                 escape_double = FALSE, trim_ws = TRUE) %>%
+  relocate(entry_number) %>%
+  select(1,5,7,8, 14, 15,16,21,23,32,33,39,40,51,52,53) %>%
+  group_by(entry_number) %>%
+  filter(row_number()==1) %>%
+  rename(id=1,title =8, review=9, text=10, keywords =13)
+
+test <- read_csv2("nlp_full_data_05-12-2023.csv")%>%
+  rename(id = "entry_number", title = `dc:title`, authname = `dc:creator`, review = `prism:publicationName`, text = `dc:description`, keywords = "authkeywords", year = `prism:coverDate`)
+
+intersect(colnames(df), colnames(test))
+colnames(df)
+
 ```
 
-
 ```{python}
-#| label : libraries-data-python
+#| label: libraries-data-python
 
 import community as community_louvain
 import pandas as pd
@@ -123,10 +148,10 @@ list_articles = r.list_articles
 # Description
 
 ```{r}
-#| label : description
-#| fig-height: 7
-#| fig-width: 17
-#| column: page
+#| label: description
+#| fig-height: 6
+#| fig-width: 14
+#| column: screen-inset-right
 
 
 df<- df%>%filter(review2 !="out")
@@ -163,17 +188,15 @@ plotgrid <- plot_grid(g01, g02, labels = c('A', 'B'), label_size = 8, ncol=2,  r
 
 ggsave(filename="./images/quant.jpeg", plotgrid, width = 40, height = 18, units = "cm")
 
-
 ```
 
 # Keywords
 
 ```{r}
-#| label : keywords
+#| label: keywords1
 #| fig-height: 5
-#| fig-width: 10
-#| column: page
-#| fig-align: center
+#| fig-width: 13
+#| column: screen-inset-right
 
 user2<- df %>% 
   select(id, keywords)%>% 
@@ -206,7 +229,6 @@ user2$keywords[user2$keywords=="reviews"]<-"online reviews"
 user2$keywords[user2$keywords=="topic modelling"]<-"topic modeling"
 user2$keywords[user2$keywords=="user generated content"]<-"user-generated content"
 
-
 # compter les mots cles
 foo<- user2 %>%
   mutate(n=1) %>%
@@ -226,7 +248,7 @@ ggplot(foo1, aes(label = keywords, size = m)) +
 
 ggsave(filename="./images/keywords01.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
 
-#projection tsne
+# tsne projection
 
 foo2<-user2 %>%
   select(-Rang)%>% 
@@ -243,14 +265,15 @@ foo3<-t(foo2)
 tsne_out <- Rtsne(foo3,perplexity = 10, dim=2,  check_duplicates = FALSE) # Run TSNE
 tsne_out2<-as.data.frame(tsne_out$Y)
 keywords<-rownames(foo3)
-library(ggrepel)
+
 tsne_out3<-cbind(tsne_out2, keywords) 
 tsne_out3<- merge(tsne_out3,foo1)
 tsneplot <- tsne_out3%>% 
   filter(m>0) %>%
   ggplot(aes(x=V1, y=V2, label=keywords))+
   geom_point(aes(size=m), alpha=.5)+
-  geom_text_repel(aes(label=ifelse(m>1,keywords,""),size=log(m)),  max.overlaps =50)
+  geom_text_repel(aes(label=ifelse(m>1,keywords,""),size=log(m)),  max.overlaps =50)+
+  scale_size_continuous(range = c(2, 10))
   
 tsneplot
 ggsave(filename="./images/keywords.jpeg", tsneplot, width = 27, height = 18, units = "cm")
@@ -261,11 +284,10 @@ ggsave(filename="./images/keywords.jpeg", tsneplot, width = 27, height = 18, uni
 The strategy is to reduce the morphologies of the most frequent keywords, in the form of unigrams, and then re-decompose the terms that make up the non-recoded keywords.
 
 ```{r}
-#| label : keywords2
+#| label: keywords2
 #| fig-height: 5
-#| fig-width: 10
-#| column: page
-#| fig-align: center
+#| fig-width: 15
+#| column: screen-inset-right
 
 key1<- df %>% 
   select(id, keywords)%>% 
@@ -302,7 +324,7 @@ key1<- df %>%
          keywords=str_replace(keywords, "electronic word of mouth (ewom)", "ewom"),
          keywords=str_replace(keywords, "online word-of-mouth", "ewom"),
          keywords=str_replace(keywords, "online word of mouth", "ewom"),
-                  keywords=str_replace(keywords, "online word of mouth", "ewom"),
+         keywords=str_replace(keywords, "online word of mouth", "ewom"),
          keywords=str_replace(keywords, "negative word-of-mouth  nwom", "ewom"),
          keywords=str_replace(keywords, "word-of-mouth communication", "ewom"),
          keywords=str_replace(keywords, "word-of-mouth", "ewom"),
@@ -354,18 +376,27 @@ foo3<-t(foo2)
 tsne_out <- Rtsne(foo3,perplexity = 25, dim=2,  check_duplicates = FALSE) # Run TSNE
 tsne_out2<-as.data.frame(tsne_out$Y)
 keywords<-rownames(foo3)
-library(ggrepel)
+
 tsne_out3<-cbind(tsne_out2, keywords) 
 tsne_out3<- merge(tsne_out3,key3)
 
 
 tsne_out3%>% 
   ggplot(aes(x=V1, y=V2, label=keywords))+
-  geom_text_repel(aes(label=ifelse(k>4,keywords,""),size=k), max.overlaps =50)
+  geom_text_repel(aes(label=ifelse(k>4,keywords,""),size=k), max.overlaps =50)+
+  scale_size_continuous(range = c(1, 10))
   
 
 ggsave(filename="./images/keywords03.jpeg", plot=last_plot(), width = 27, height = 18, units = "cm")
 
+
+```
+
+```{r}
+#| label: keywords3
+#| fig-height: 3
+#| fig-width: 10
+#| column: screen-inset-right
 
 foo<- df%>%select(id,year)
   
@@ -379,7 +410,18 @@ foo5<-key2 %>%
   filter(keywords=="ai"| keywords=="textmining"| keywords=="nlp" | keywords=="topics" | 
            keywords=="lda"| keywords=="ml"|keywords=="embbeding" |keywords=="liwc")
 
-ggplot(foo5, aes(x=year, y=m, group=keywords))+geom_area(aes(fill=keywords))
+ggplot(foo5, aes(x=year, y=m, group=keywords))+
+  geom_area(aes(fill=keywords))+
+  scale_fill_manual(values = rev(wes_palette("Zissou1", n = length(unique(foo5$keywords)), type = "continuous")))+ #nice palette
+  scale_x_continuous(breaks = unique(foo5$year)) #show every year on x axis
+
+```
+
+```{r}
+#| label: keywords4
+#| fig-height: 3
+#| fig-width: 10
+#| column: screen-inset-right
 
 foo5<-key2 %>%
   group_by(id,keywords)%>%
@@ -390,9 +432,12 @@ foo5<-key2 %>%
   left_join(key3)%>%
   filter(keywords=="ewom"| keywords=="reviews"| keywords=="socialmedia" | keywords=="ugc"| keywords=="bibliometric")
 
-ggplot(foo5, aes(x=year, y=m, group=keywords))+geom_area(aes(fill=keywords))
-
+ggplot(foo5, aes(x=year, y=m, group=keywords))+
+  geom_area(aes(fill=keywords))+
+  scale_fill_manual(values = rev(wes_palette("Zissou1", n = length(unique(foo5$keywords)), type = "continuous")))+ 
+  scale_x_continuous(breaks = unique(foo5$year)) #show every year on x axis
 ```
+
 
 # Structural topic model (STM)
 
@@ -401,8 +446,7 @@ ggplot(foo5, aes(x=year, y=m, group=keywords))+geom_area(aes(fill=keywords))
 ```{r}
 #| label: data-preparation
 
-library(quanteda)
-library(stm)
+
 df$Texte<-paste(df$title, " . ", df$text, df$keywords)
 
 df$year<-ifelse(df$year<2011,2010, 
@@ -492,9 +536,13 @@ labelTopics(stm_model, topics = NULL, n = 5, frexweight = 0.5)
 
 $FREX = \left(\frac{w}{F} + \frac{1-w}{E}\right)^{-1}$
 
-see lift: $Lift = \beta_{k,v}/(w_v/\sum_v w_v)$
+see lift: 
 
-the score: $\beta_{v, k} (\log \beta_{w,k} - 1 / K \sum_{k'} \log \beta_{v,k'})$
+$Lift = \beta_{k,v}/(w_v/\sum_v w_v)$
+
+the score: 
+
+$\beta_{v, k} (\log \beta_{w,k} - 1 / K \sum_{k'} \log \beta_{v,k'})$
 
 ```{r}
 #| label: topics-description
@@ -582,17 +630,15 @@ ggsave(paste0("./images/stm_topic",K,".jpg"),
 #| fig-height: 5
 #| fig-width: 10
 #| fig-align: center
+
 foo<-stm_effects$parameters
 
-library(tidyr)
-library(plyr)
 
 #pour separer les liste et les transformer en df 
 #attention ça pertube 
 foo1<- ldply(foo, data.frame)%>%
   select(contains('est')) 
 
-library(dplyr)
 
 
 F<-data.frame(param=c("cte", "2015", "2019","2020","2021","2022","2023")) 
@@ -681,21 +727,23 @@ ggsave(paste0("./images/stm_effect",K,".jpg"),
 
 ```{r}
 #| label: entropy
-#| fig-height: 5
-#| fig-width: 8
-#| column: page
+#| fig-height: 8
+#| fig-width: 10
 #| fig-align: center
+
 nb.cols <- 16
 mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
 
-ggplot(foo4, aes(x=param,y=mean2,group=topic))+
+topics_plot <- ggplot(foo4, aes(x=param,y=mean2,group=topic))+
   geom_bar(stat="identity", aes(fill=topic))+
 #  geom_smooth(se = FALSE )+
   theme(axis.text.y = element_text(size=5))+
   theme(axis.text.x = element_text(size=5))+
   labs(x=NULL, y="prévalence")+
   scale_fill_manual(values = mycolors)
+
+ggplotly(topics_plot)
 
 
 #entropie
@@ -708,6 +756,7 @@ foo5<-foo4%>%select(1,2,7)%>%
 foo5$param<-as.numeric(foo5$param)
 ggplot(foo5,aes(x=param, y=entropie, group = 1))+
   geom_point(stat = "identity")+geom_smooth(se=FALSE)+ylim(1.5,3)
+
 
 ```
 
@@ -990,40 +1039,41 @@ networks = {
 }
 
 
-max(nx.find_cliques(G_1996_2015), key=len)
-max(nx.find_cliques(G_1996_2016), key=len)
-max(nx.find_cliques(G_1996_2017), key=len)
-max(nx.find_cliques(G_1996_2018), key=len)
-max(nx.find_cliques(G_1996_2019), key=len)
-max(nx.find_cliques(G_1996_2020), key=len)
-max(nx.find_cliques(G_1996_2021), key=len)
-max(nx.find_cliques(G_1996_2022), key=len)
-max(nx.find_cliques(G_1996_2023), key=len)
+#max(nx.find_cliques(G_1996_2015), key=len)
+#max(nx.find_cliques(G_1996_2016), key=len)
+#max(nx.find_cliques(G_1996_2017), key=len)
+#max(nx.find_cliques(G_1996_2018), key=len)
+#max(nx.find_cliques(G_1996_2019), key=len)
+#max(nx.find_cliques(G_1996_2020), key=len)
+#max(nx.find_cliques(G_1996_2021), key=len)
+#max(nx.find_cliques(G_1996_2022), key=len)
+#max(nx.find_cliques(G_1996_2023), key=len)
 
 
 ```
 
 ```{=html}
-<iframe width="1500" height="900" src="networks/authors/1996_2023_sigma_burt_SLR.html" title="Sigma graph" frameborder=0 class="column-page"></iframe>
+<iframe width="1300" height="900" src="networks/authors/1996_2023_VF.html" title="Sigma graph 1996-2023" frameborder=0 class="screen-inset-right"></iframe>
 ```
 # Analysis of the networks
 
-Let's sort by the Burt constraint weighted and see the top 10 authors with the lowest Burt constraint weighted.
-You can filter by different metrics: Burt's constraint, number of citations, betweenness centrality, closeness centrality, hub score, authority score (HITS)...
+Let's sort by the Burt constraint weighted and see the top 10 authors with the lowest Burt constraint weighted. You can filter by different metrics: Burt's constraint, number of citations, betweenness centrality, closeness centrality, hub score, authority score (HITS)...
 
 ```{r}
 #| label: analysis-network
 #| column: screen-inset-right
 
-df_1996_2023 <- py$df_1996_2023
+#create column "rank" based on citations
+df_1996_2023 <- py$df_1996_2023 %>%
+  dplyr::mutate(rank_citations = as.integer(rank(desc(citations))))
 
 reactable_burt <- df_1996_2023 %>%
-  dplyr::select(Node, citations, burt_constraint_weighted, betweenness, closeness, hub_score, authority_score, affilname, affiliation_country, community) %>%
+  dplyr::select(Node, rank_citations, citations, burt_constraint_weighted, betweenness, closeness, hub_score, authority_score, affilname, affiliation_country, community) %>%
   arrange(burt_constraint_weighted)
 # center headers in reactable
 reactable(reactable_burt,
           searchable = TRUE,
-          defaultPageSize = 10,
+          defaultPageSize = 5,
           highlight = TRUE,
           bordered = TRUE,
           striped = TRUE,
@@ -1038,7 +1088,6 @@ reactable(reactable_burt,
 
 ```
 
-
 ```{r}
 #| label: correlation-matrix-2
 
@@ -1049,8 +1098,6 @@ df_numeric <- df_1996_2023[sapply(df_1996_2023, is.numeric)]
 corr <- round(cor(df_numeric, use = "complete.obs"), 2)
 
 # Calculate a matrix of p-values for the correlations
-# Note: 'cor_pmat' is typically a custom function or part of a specific package.
-# Make sure you have defined or installed any package that includes this function.
 p.mat <- cor_pmat(df_numeric)
 
 # Visualize the lower triangle of the correlation matrix using ggcorrplot
@@ -1106,10 +1153,11 @@ A more formal definition is given [here](https://networkx.org/documentation/stab
 
 -   For undirected graphs:
 
-$$
-\begin{equation}d=\frac{2 m}{n(n-1)}\end{equation}
-$$
--   For directed graphs:
+    $$
+    \begin{equation}d=\frac{2 m}{n(n-1)}\end{equation}
+    $$
+
+-   For undirected graphs:
 
 $$
 \begin{equation}d=\frac{m}{n(n-1)}\end{equation}
@@ -1120,7 +1168,7 @@ where $n$ is the number of nodes and $m$ is the number of edges in the graph.
 From an interpretation standpoint, we can appreciate the density in the graphs bellow as follows:
 
 +--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| $d$          | **Interpretation**                                                                                                                                         |
+| $d$          |   **Interpretation**                                                                                                                                       |
 +:============:+:===========================================================================================================================================================+
 | Close to $0$ | -   The collaborative relationships among authors are sparse:                                                                                              |
 |              |                                                                                                                                                            |
@@ -1172,11 +1220,11 @@ density_df = pd.concat(temp_dfs, ignore_index=True)
 
 ```{r}
 #| label: density-networks-2
-#| column: screen-inset-right
-#| fig.width: 15
-#| fig.height: 20
+#| fig.width: 18
+#| fig.height: 18
 #| fig-dpi: 300
 #| fig.align: center
+#| column: screen-inset-right
 
 density_df <- py$density_df
 
@@ -1192,7 +1240,7 @@ density_long <- density_df %>%
 
 metric_titles <- c(density = "Density", nb_edges = "Number of Collaborations", nb_communities = "Number of Communities", nb_mean_nodes_per_community = "Mean Number of Authors per Community")
 
-# Créer le graphe avec ggplot
+# Creat ggplot graph to transform into plotly
 density_plot <- ggplot(density_long, aes(x = network, y = value)) +
   geom_line(aes(group = metric), color = "steelblue") +
   geom_point(color = "steelblue") +
@@ -1200,8 +1248,8 @@ density_plot <- ggplot(density_long, aes(x = network, y = value)) +
        x = "Networks",
        y = "Value") +
   facet_wrap(~ metric, scales = "free_y", labeller = labeller(metric = metric_titles)) +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme_bw()
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))
 
 
 ggsave("images/density_networks.png", density_plot, width = 14, height = 8, dpi = 300)
@@ -1215,9 +1263,6 @@ ggplotly(density_plot)
 
 ```{r}
 #| label: communities
-#| fig.width: 16
-#| fig.height: 10
-#| fig-dpi: 300
 
 # Let's look at the communities of the network 1996-2023
 
@@ -1233,14 +1278,14 @@ filtered_df <- df_1996_2023 %>%
   filter(community %in% top5_communities$community)
 
 #print("The most important communities in terms of number of authors are :")
-top5_communities %>% gt() %>% tab_header(title = "Top 5 communities in terms of number of authors") %>% cols_label(community = "Community", n = "Number of authors") 
+#top5_communities %>% gt() %>% tab_header(title = "Top 5 communities in terms of number of authors") %>% cols_label(community = "Community", n = "Number of authors") 
 
 ```
 
 ```{r}
 #| label: communities-2
-#| fig.width: 16
-#| fig.height: 10
+#| fig.width: 13
+#| fig.height: 6
 #| fig-dpi: 300
 #| fig.align: center
 #| column: screen-inset-right
@@ -1263,6 +1308,7 @@ ggplot(citations_per_community, aes(x = reorder(community, -citations), y = cita
     name = "Cumulative number of citations", 
     sec.axis = sec_axis(~./max(citations_per_community$cumulative_citations) * 100, name = "Cumulative percentage")
   ) +
+  scale_x_discrete(guide = guide_axis(n.dodge=3)) +
   geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.25, linetype = "dashed", color = "black") +
   geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.50, linetype = "dashed", color = "black") +
   geom_hline(yintercept = max(citations_per_community$cumulative_citations) * 0.75, linetype = "dashed", color = "black") +
@@ -1272,8 +1318,7 @@ ggplot(citations_per_community, aes(x = reorder(community, -citations), y = cita
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks.x = element_blank(),  # Supprimer les marques de graduation sur l'axe des x
-    axis.text.x = element_blank()  # Rendre les étiquettes de l'axe des x invisibles
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1, size = 8)  # Rotate x axis labels, adjust justification, and set font size
   ) +
   labs(
     title = "Pareto chart of citations per community",
@@ -1281,6 +1326,7 @@ ggplot(citations_per_community, aes(x = reorder(community, -citations), y = cita
     y = "Number of Citations"
   )
 
+#ggsave("images/pareto_chart_ggplot_xtickslabels.png", width = 20, height = 10, dpi = 300)
 ggsave("images/pareto_chart_ggplot_no_xtickslabels.png", width = 20, height = 10, dpi = 300)
 
 ```
@@ -1288,7 +1334,7 @@ ggsave("images/pareto_chart_ggplot_no_xtickslabels.png", width = 20, height = 10
 ### Proportion of the top 5 communities in terms of citations and authors
 
 ```{r}
-#|label: gt
+#| label: gt-top5-communities
 # Sum of all citations from filtered_df for each community of the top 5
 top5_communities_citations <- filtered_df %>%
   group_by(community) %>%
@@ -1326,13 +1372,16 @@ gt_top5_communities_citations <- top5_communities_citations %>%
 
 
 gt_top5_communities_citations
-#pareto.chart(citations_per_community$citations, ylab = "Cumulative proportion of citations", col = "steelblue", main = "Pareto chart of the citations per community")
+
 
 ```
 
 ```{r}
 #| label: regression
+#| eval: false
+#| echo: false
 
+#pareto.chart(citations_per_community$citations, ylab = "Cumulative proportion of citations", col = "steelblue", main = "Pareto chart of the citations per community")
 #model <- lm(citations ~ inverse_burt_weighted + closeness + community + color, data = df_0_2023)
 #summary(model)
 #plot(density(df_0_2023$citations), main = "Density Plot of Citations", xlab = "Citations")
@@ -1386,4 +1435,3 @@ ggplot(df_0_2023, aes(x = citations,
   labs(title = "Distribution of citations", x = "Citations", y = "Frequency") +
   theme_bw()
 ```
-
