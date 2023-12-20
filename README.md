@@ -11,6 +11,7 @@ An automatic systematic literature review of marketing publications using NLP me
 5. [Topic modeling](https://oliviercaron.github.io/systematic_lit_review/topic_modeling.html)
 6. [NLP Techniques used in marketing articles](https://oliviercaron.github.io/systematic_lit_review/nlp_techniques.html)
 7. Networks:[authors](https://oliviercaron.github.io/systematic_lit_review/networks_author.html), [references](https://oliviercaron.github.io/systematic_lit_review/networks_citations.html)
+8. [STM + analysis for submission to review](https://oliviercaron.github.io/systematic_lit_review/SLR_stm.html)
 
 
 ### Tips not to forget
