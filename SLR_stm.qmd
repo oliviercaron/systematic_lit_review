@@ -100,29 +100,6 @@ list_articles$review2<- ifelse(str_detect(list_articles$review2, "Conference")==
 list_articles$review2<- ifelse(str_detect(list_articles$review2, "Transactions")==TRUE, "out", list_articles$review2)
 list_articles <- list_articles %>% filter(review2 !="out")
 
-test <- read_csv2("nlp_full_data_05-12-2023.csv") %>%
-  relocate(entry_number) %>%
-  rename(id = "entry_number") %>%
-  select(id, id, authname, surname, affilname, affiliation_city, affiliation_country, title, review, text, citedby_count, author_count, keywords, year, subjects_area, nref) %>%
-  group_by(entry_number) %>%
-  filter(row_number()==1) %>%
-  rename(id=1, title =8, review=9, text=10, keywords =13)
-
-
-test <- read_delim("nlp_full_data_05-12-2023.csv",delim = ";", 
-                 escape_double = FALSE, trim_ws = TRUE) %>%
-  relocate(entry_number) %>%
-  select(1,5,7,8, 14, 15,16,21,23,32,33,39,40,51,52,53) %>%
-  group_by(entry_number) %>%
-  filter(row_number()==1) %>%
-  rename(id=1,title =8, review=9, text=10, keywords =13)
-
-test <- read_csv2("nlp_full_data_05-12-2023.csv")%>%
-  rename(id = "entry_number", title = `dc:title`, authname = `dc:creator`, review = `prism:publicationName`, text = `dc:description`, keywords = "authkeywords", year = `prism:coverDate`)
-
-intersect(colnames(df), colnames(test))
-colnames(df)
-
 ```
 
 ```{python}
